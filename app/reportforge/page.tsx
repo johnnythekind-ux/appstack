@@ -1,23 +1,44 @@
 "use client";
 
+import Page from "../components/Page";
+import Card from "../components/Card";
+import Button from "../components/Button";
 import { useEffect, useState } from "react";
-import { reports } from "../data/reports";
-import { supabase } from "../../lib/supabase";
+import toast from "react-hot-toast";
+import {
+  createWorkspaceReport,
+  getWorkspaceReports,
+} from "../../lib/workspaceService";
 
 export default function ReportForgePage() {
   const [analysis, setAnalysis] = useState<any>(null);
   const [report, setReport] = useState("");
   const [saved, setSaved] = useState(false);
+  const [savedReports, setSavedReports] = useState<any[]>([]);
 
-  useEffect(() => {
-    const stored = localStorage.getItem(
-      "appstack_saved_analysis"
-    );
+  async function loadReports() {
+  const { data, error } = await getWorkspaceReports();
 
-    if (stored) {
-      setAnalysis(JSON.parse(stored));
-    }
-  }, []);
+  if (error) {
+    console.error(error);
+    toast.error("Failed to load reports.");
+    return;
+  }
+
+  setSavedReports(data || []);
+}
+
+useEffect(() => {
+  const stored = localStorage.getItem(
+    "appstack_saved_analysis"
+  );
+
+  if (stored) {
+    setAnalysis(JSON.parse(stored));
+  }
+
+  loadReports();
+}, []);
 
 function generateReport() {
   if (!analysis) return;
@@ -59,23 +80,21 @@ async function saveReport() {
     JSON.stringify(savedReport)
   );
 
-  const { error } = await supabase
-    .from("workspace_items")
-    .insert({
-      type: "report",
-      title: savedReport.title,
-      address: savedReport.address,
-      status: "Saved",
-      content: savedReport.content,
-    });
+  const { error } = await createWorkspaceReport({
+  title: savedReport.title,
+  address: savedReport.address,
+  status: "Saved",
+  content: savedReport.content,
+});
 
   if (error) {
     console.error(error);
-    alert("Supabase report save failed.");
+    toast.error("Failed to save report.");
     return;
   }
 
   setSaved(true);
+  toast.success("Report saved successfully.");
 }
 
   return (
@@ -89,10 +108,10 @@ async function saveReport() {
       </p>
 
       {analysis && (
-  <div className="mt-8 rounded-xl border border-slate-800 p-5">
-    <h2 className="text-xl font-semibold">
-      Loaded Analysis
-    </h2>
+  <Card
+  title="Loaded Analysis"
+  className="mt-8"
+>
 
     <p className="mt-4">
       <strong>Name:</strong> {analysis.name}
@@ -126,36 +145,68 @@ async function saveReport() {
       <strong>Recommendation:</strong>{" "}
       {analysis.recommendation}
     </p>
-    <button
-  onClick={generateReport}
-  className="mt-6 rounded-lg bg-white px-5 py-3 font-semibold text-slate-950"
->
+    <Button onClick={generateReport} className="mt-6">
   Generate Investor Report
-</button>
-  </div>
+</Button>
+  </Card>
   )}
   {report && (
-  <div className="mt-8 rounded-xl border border-slate-800 p-5">
-    <h2 className="text-xl font-semibold">
-      Generated Investor Report
-    </h2>
+  <Card
+  title="Generated Investor Report"
+  className="mt-8"
+  actions={
+    <Button
+      variant="secondary"
+      onClick={loadReports}
+    >
+      Refresh
+    </Button>
+  }
+>
 
     <pre className="mt-4 whitespace-pre-wrap text-slate-300">
       {report}
     </pre>
-    <button
+    <Button
   onClick={saveReport}
-  className="mt-6 rounded-lg bg-white px-5 py-3 font-semibold text-slate-950"
+  className="mt-6"
+  variant="success"
 >
   Save Report
-</button>
+</Button>
 {saved && (
   <p className="mt-4 text-green-400">
     Report saved to Supabase.
   </p>
 )}
-  </div>
+  </Card>
 )}
+<section className="mt-10 rounded-xl border border-slate-800 p-5">
+  <h2 className="text-xl font-semibold">Saved Reports</h2>
+
+  <div className="mt-5 space-y-4">
+    {savedReports.map((item) => (
+      <div
+        key={item.id}
+        className="rounded-lg border border-slate-800 p-4"
+      >
+        <p className="text-sm text-slate-400">
+          {item.status}
+        </p>
+
+        <h3 className="mt-1 font-semibold">
+          {item.title}
+        </h3>
+
+        {item.address && (
+          <p className="mt-2 text-slate-400">
+            {item.address}
+          </p>
+        )}
+      </div>
+    ))}
+  </div>
+</section>
     </main>
   );
 }

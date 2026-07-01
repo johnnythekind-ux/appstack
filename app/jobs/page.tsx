@@ -1,8 +1,9 @@
 "use client";
 
+import { createJob as createWorkspaceJob, updateJobStatus } from "../../lib/jobService";
 import { useState } from "react";
+import toast from "react-hot-toast";
 import { jobs } from "../data/jobs";
-import { supabase } from "../../lib/supabase";
 
 export default function JobsPage() {
   const [jobName, setJobName] = useState("");
@@ -10,29 +11,47 @@ export default function JobsPage() {
 
   async function createJob() {
   const newJob = {
-    title: jobName || "Investor Report Processing Job",
-    status: "Completed",
-    source: "QueuePilot",
-  };
+  title: jobName || "Investor Report Processing Job",
+  status: "Queued",
+  source: "QueuePilot",
+};
 
   jobs.push(newJob);
 
-  const { error } = await supabase
-    .from("workspace_items")
-    .insert({
-      type: "job",
-      title: newJob.title,
-      status: newJob.status,
-      metadata: {
-        source: newJob.source,
-      },
-    });
+  const { data, error } = await createWorkspaceJob(newJob);
 
   if (error) {
     console.error(error);
-    alert("Supabase save failed.");
+    toast.error("Failed to save job.");
     return;
   }
+
+  setTimeout(async () => {
+  console.log("Attempting to update job to Running:", data);
+
+  const { error: updateError } = await updateJobStatus(data.id, "Running");
+
+  if (updateError) {
+  console.log("Update error object:", updateError);
+console.log("Inserted row:", data);
+  toast.error(updateError.message);
+  return;
+}
+
+  console.log("Job updated to Running.");
+}, 2000);
+
+setTimeout(async () => {
+  const { error: completeError } = await updateJobStatus(data.id, "Completed");
+
+  if (completeError) {
+    console.error("Completed update failed:", completeError);
+    toast.error(completeError.message);
+    return;
+  }
+
+  console.log("Job updated to Completed.");
+}, 5000);
 
   localStorage.setItem(
     "appstack_saved_job",
@@ -40,6 +59,7 @@ export default function JobsPage() {
   );
 
   setSaved(true);
+toast.success("Job queued successfully.");
 }
 
   return (
@@ -70,7 +90,7 @@ export default function JobsPage() {
 
           {saved && (
             <p className="mt-4 text-green-400">
-              Job completed and saved locally.
+              Job queued and saved to Workspace.
             </p>
           )}
         </section>

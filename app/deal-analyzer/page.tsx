@@ -1,5 +1,6 @@
 "use client";
 
+import toast from "react-hot-toast";
 import { useState } from "react";
 import { analyses } from "../data/analyses";
 import { supabase } from "../../lib/supabase";
@@ -60,7 +61,7 @@ export default function DealAnalyzerPage() {
 
   if (error) {
     console.error(error);
-    alert("Supabase save failed. Check console.");
+    toast.error("Supabase save failed. Check console.");
     return;
   }
 
