@@ -1,8 +1,11 @@
 "use client";
 
-import { createJob as createWorkspaceJob, updateJobStatus } from "../../lib/jobService";
 import { useState } from "react";
 import toast from "react-hot-toast";
+import Page from "../components/Page";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import { createJob as createWorkspaceJob, updateJobStatus } from "../../lib/jobService";
 import { jobs } from "../data/jobs";
 
 export default function JobsPage() {
@@ -63,15 +66,15 @@ toast.success("Job queued successfully.");
 }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-4xl font-bold">QueuePilot Jobs</h1>
+  <Page
+    title="Jobs"
+    description="Manage background jobs and processing tasks."
+  >
 
-        <p className="mt-3 text-slate-400">
-          Create and track async processing jobs.
-        </p>
-
-        <section className="mt-10 rounded-xl border border-slate-800 p-6">
+        <Card
+  title="Create Job"
+  className="mt-10"
+>
           <label className="text-sm text-slate-400">Job Name</label>
 
           <input
@@ -81,20 +84,19 @@ toast.success("Job queued successfully.");
             placeholder="Investor Report Processing Job"
           />
 
-          <button
-            onClick={createJob}
-            className="mt-6 rounded-lg bg-white px-5 py-3 font-semibold text-slate-950"
-          >
-            Create Job
-          </button>
+          <Button
+  onClick={createJob}
+  className="mt-6"
+>
+  Create Job
+</Button>
 
           {saved && (
             <p className="mt-4 text-green-400">
               Job queued and saved to Workspace.
             </p>
           )}
-        </section>
-      </div>
-    </main>
+        </Card>
+      </Page>
   );
 }

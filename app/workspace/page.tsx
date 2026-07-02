@@ -1,5 +1,8 @@
 "use client";
 
+import Page from "../components/Page";
+import Card from "../components/Card";
+import Button from "../components/Button";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
@@ -183,13 +186,10 @@ function openSelectedItem() {
 }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        <h1 className="text-4xl font-bold">Workspace</h1>
-
-        <p className="mt-3 text-slate-400">
-          Shared storage layer for analyses, reports, jobs, and generated outputs.
-        </p>
+  <Page
+    title="Workspace"
+    description="Shared storage layer for analyses, reports, jobs, and generated outputs."
+  >
 
         <div className="mt-8 flex gap-4">
           <input
@@ -213,24 +213,26 @@ function openSelectedItem() {
         </div>
 
         <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-          <div className="rounded-xl border border-slate-800 p-5">
+          <Card>
             <p className="text-sm text-slate-400">Saved Analyses</p>
             <p className="mt-2 text-3xl font-bold">{analyses.length}</p>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-800 p-5">
+          <Card>
             <p className="text-sm text-slate-400">Reports</p>
             <p className="mt-2 text-3xl font-bold">{reports.length}</p>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-800 p-5">
+          <Card>
             <p className="text-sm text-slate-400">Jobs</p>
             <p className="mt-2 text-3xl font-bold">{jobs.length}</p>
-          </div>
+          </Card>
         </section>
 
-        <section className="mt-10">
-          <h2 className="text-2xl font-semibold">Recent Workspace Items</h2>
+        <Card
+  title="Recent Workspace Items"
+  className="mt-10"
+>
 
           <div className="mt-5 space-y-5">
   {loading && (
@@ -289,7 +291,7 @@ function openSelectedItem() {
               </div>
             ))}
           </div>
-        </section>
+        </Card>
         {selectedItem && (
   <section className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-6">
     <div className="flex items-center justify-between">
@@ -437,7 +439,6 @@ function openSelectedItem() {
     </div>
   </section>
 )}
-      </div>
-    </main>
+        </Page>
   );
 }

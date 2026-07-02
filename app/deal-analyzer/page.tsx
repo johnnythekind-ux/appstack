@@ -1,5 +1,9 @@
 "use client";
 
+import Page from "../components/Page";
+import Card from "../components/Card";
+import Button from "../components/Button";
+import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { useState } from "react";
 import { analyses } from "../data/analyses";
@@ -69,15 +73,15 @@ export default function DealAnalyzerPage() {
 }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
-      <div className="mx-auto max-w-4xl px-6 py-12">
-        <h1 className="text-4xl font-bold">Deal Analyzer</h1>
+  <Page
+    title="Deal Analyzer"
+    description="Analyze investment properties and calculate maximum allowable offers."
+  >
 
-        <p className="mt-3 text-slate-400">
-          Analyze a real estate investment opportunity using basic deal logic.
-        </p>
-
-        <section className="mt-10 rounded-xl border border-slate-800 p-6">
+        <Card
+  title="Analyze Deal"
+  className="mt-10"
+>
           <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
             <div>
               <label className="text-sm text-slate-400">Analysis Name</label>
@@ -132,19 +136,21 @@ export default function DealAnalyzerPage() {
             </div>
           </div>
 
-          <button
-            onClick={analyzeDeal}
-            className="mt-6 rounded-lg bg-white px-5 py-3 font-semibold text-slate-950"
-          >
-            Analyze Deal
-          </button>
-        </section>
+          <Button
+  onClick={analyzeDeal}
+  className="mt-6"
+>
+  Analyze Deal
+</Button>
+        </Card>
 
         {result && (
-          <section className="mt-8 rounded-xl border border-slate-800 p-6">
-            <p className="text-sm text-slate-400">Recommendation</p>
+          <Card
+  title="Recommendation"
+  className="mt-8"
+>
 
-            <h2 className="mt-2 text-4xl font-bold">{result}</h2>
+            <StatusBadge status={result} />
 
             <div className="mt-4">
               <h3 className="text-xl font-semibold">
@@ -190,21 +196,21 @@ export default function DealAnalyzerPage() {
               This result is based on a simple max offer rule: ARV × 70% minus repairs.
             </p>
 
-            <button
-              onClick={saveAnalysis}
-              className="mt-6 rounded-lg border border-slate-700 px-5 py-3 font-semibold text-white transition hover:border-slate-400"
-            >
-              Save Analysis
-            </button>
+            <Button
+  onClick={saveAnalysis}
+  className="mt-6"
+  variant="secondary"
+>
+  Save Analysis
+</Button>
 
             {saved && (
               <p className="mt-4 text-sm text-green-400">
                 Analysis saved to Supabase.
               </p>
             )}
-          </section>
+          </Card>
         )}
-      </div>
-    </main>
+      </Page>
   );
 }
