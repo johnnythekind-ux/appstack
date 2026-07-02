@@ -1,5 +1,7 @@
 "use client";
 
+import Page from "../components/Page";
+import Card from "../components/Card";
 import toast from "react-hot-toast";
 import { useEffect, useState } from "react";
 import { getWorkspaceItems } from "../../lib/workspaceService";
@@ -55,70 +57,70 @@ function getItemIcon(type: string) {
 }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+  <Page
+    title="Dashboard"
+    description="Control center for modules, workflows, and platform activity."
+  >
       <div className="mx-auto max-w-6xl px-6 py-12">
-        <h1 className="text-4xl font-bold">AppStack Dashboard</h1>
-
-        <p className="mt-3 text-slate-400">
-          Control center for modules, workflows, and platform activity.
-        </p>
 
         <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-4">
-            <div className="rounded-xl border border-slate-800 p-5">
+            <Card>
   <p className="text-sm text-slate-400">Total Items</p>
 
   <p className="mt-2 text-4xl font-bold">
     {totalItems}
   </p>
-</div>
-          <div className="rounded-xl border border-slate-800 p-5">
+</Card>
+          <Card>
             <p className="text-sm text-slate-400">Saved Analyses</p>
             <p className="mt-2 text-4xl font-bold">
               {analyses.length}
             </p>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-800 p-5">
+          <Card>
             <p className="text-sm text-slate-400">Reports</p>
             <p className="mt-2 text-4xl font-bold">
               {reports.length}
             </p>
-          </div>
+          </Card>
 
-          <div className="rounded-xl border border-slate-800 p-5">
+          <Card>
             <p className="text-sm text-slate-400">Jobs</p>
             <p className="mt-2 text-4xl font-bold">
               {jobs.length}
             </p>
-          </div>
+          </Card>
         </section>
 
         <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-4">
-  <div className="rounded-xl border border-slate-800 p-5">
+  <Card>
     <p className="text-sm text-slate-400">Active Jobs</p>
     <p className="mt-2 text-3xl font-bold">{activeJobs.length}</p>
-  </div>
+  </Card>
 
-  <div className="rounded-xl border border-slate-800 p-5">
+  <Card>
     <p className="text-sm text-slate-400">Completed Jobs</p>
     <p className="mt-2 text-3xl font-bold">{completedJobs.length}</p>
-  </div>
+  </Card>
 
-  <div className="rounded-xl border border-slate-800 p-5">
+  <Card>
     <p className="text-sm text-slate-400">Reports Generated</p>
     <p className="mt-2 text-3xl font-bold">{reports.length}</p>
-  </div>
+  </Card>
 
-  <div className="rounded-xl border border-slate-800 p-5">
+  <Card>
     <p className="text-sm text-slate-400">Latest Analysis</p>
     <p className="mt-2 truncate text-lg font-semibold">
       {latestAnalysis ? latestAnalysis.title : "None yet"}
     </p>
-  </div>
+  </Card>
 </section>
 
-        <section className="mt-10 rounded-xl border border-slate-800 p-6">
-  <h2 className="text-2xl font-semibold">Recent Activity</h2>
+        <Card
+  title="Recent Activity"
+  className="mt-10"
+>
 
   <div className="mt-6 space-y-4">
     {recentItems.map((item) => (
@@ -144,7 +146,7 @@ function getItemIcon(type: string) {
       </div>
     ))}
   </div>
-</section>
+</Card>
 
         <section className="mt-10 rounded-xl border border-slate-800 p-6">
           <h2 className="text-2xl font-semibold">Platform Workflow</h2>
@@ -172,6 +174,6 @@ function getItemIcon(type: string) {
           </div>
         </section>
       </div>
-    </main>
+    </Page>
   );
 }
