@@ -98,14 +98,10 @@ async function saveReport() {
 }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-8">
-      <h1 className="text-3xl font-bold">
-        ReportForge
-      </h1>
-
-      <p className="text-slate-400 mt-2">
-        Generate investor reports.
-      </p>
+  <Page
+    title="ReportForge"
+    description="Generate investor reports."
+  >
 
       {analysis && (
   <Card
@@ -181,8 +177,10 @@ async function saveReport() {
 )}
   </Card>
 )}
-<section className="mt-10 rounded-xl border border-slate-800 p-5">
-  <h2 className="text-xl font-semibold">Saved Reports</h2>
+<Card
+  title="Saved Reports"
+  className="mt-10"
+>
 
   <div className="mt-5 space-y-4">
     {savedReports.map((item) => (
@@ -206,7 +204,7 @@ async function saveReport() {
       </div>
     ))}
   </div>
-</section>
-    </main>
+</Card>
+    </Page>
   );
 }
