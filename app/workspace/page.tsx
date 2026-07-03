@@ -325,7 +325,7 @@ function openSelectedItem() {
           </div>
         </Card>
         {selectedItem && (
-  <section className="mt-10 rounded-xl border border-slate-800 bg-slate-900 p-6">
+  <Card title="Workspace Item" className="mt-10">
     <div className="flex items-center justify-between">
       <h2 className="text-2xl font-bold">Workspace Item</h2>
 
@@ -338,6 +338,7 @@ function openSelectedItem() {
     </div>
 
     <div className="mt-6 space-y-4">
+        
       <div>
         <p className="text-sm text-slate-400">Type</p>
         <p className="text-lg">{selectedItem.type}</p>
@@ -430,46 +431,33 @@ function openSelectedItem() {
   <h3 className="text-xl font-semibold">Actions</h3>
 
   <div className="mt-4 flex flex-wrap gap-3">
-    <button
-  onClick={openSelectedItem}
-  className="rounded-lg bg-blue-600 px-4 py-2 font-medium hover:bg-blue-500"
->
+    <Button onClick={openSelectedItem}>
   Open
-</button>
+</Button>
 
-    <button
+    <Button
   onClick={generateReportFromSelectedItem}
   disabled={selectedItem?.type !== "analysis"}
-  className="rounded-lg bg-green-600 px-4 py-2 font-medium hover:bg-green-500 disabled:cursor-not-allowed disabled:opacity-40"
 >
   Generate Report
-</button>
+</Button>
 
-    <button
-  onClick={createJobFromSelectedItem}
-  className="rounded-lg bg-purple-600 px-4 py-2 font-medium hover:bg-purple-500"
->
+    <Button onClick={createJobFromSelectedItem}>
   Create Job
-</button>
+</Button>
 
-    <button
-  onClick={duplicateSelectedItem}
-  className="rounded-lg border border-slate-600 px-4 py-2 font-medium hover:bg-slate-800"
->
+    <Button onClick={duplicateSelectedItem}>
   Duplicate
-</button>
+</Button>
 
-    <button
-  onClick={deleteSelectedItem}
-  className="rounded-lg border border-red-700 px-4 py-2 font-medium text-red-400 hover:bg-red-900/20"
->
+    <Button onClick={deleteSelectedItem}>
   Delete
-</button>
+</Button>
   </div>
 </div>
 
     </div>
-  </section>
+    </Card>
 )}
         </Page>
   );
