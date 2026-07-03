@@ -7,6 +7,7 @@ import Button from "../components/Button";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
+import { createEvent } from "../../lib/eventService";
 import {
   getWorkspaceItems,
   deleteWorkspaceItem,
@@ -134,8 +135,23 @@ Based on the 70% rule, this deal currently receives a ${selectedItem.status} rec
     return;
   }
 
-  setItems([data, ...items]);
-  setSelectedItem(data);
+  const { error: eventError } = await createEvent({
+  workspace_item_id: data.id,
+  event_type: "report_generated",
+  description: `Report generated for ${selectedItem.title}`,
+  source: "Workspace",
+  metadata: {
+    original_item_id: selectedItem.id,
+    report_title: data.title,
+  },
+});
+
+if (eventError) {
+  toast.error("Event tracking failed.");
+}
+
+setItems([data, ...items]);
+setSelectedItem(data);
 }
 
 async function createJobFromSelectedItem() {
