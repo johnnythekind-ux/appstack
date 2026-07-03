@@ -1,5 +1,6 @@
 "use client";
 
+import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
 import Card from "../components/Card";
 import Button from "../components/Button";
@@ -15,14 +16,17 @@ import {
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
+import SearchBar from "../components/SearchBar";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
-  const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("all");
-  const [selectedItem, setSelectedItem] = useState<any | null>(null);
-  const [loading, setLoading] = useState(true);
-  const router = useRouter();
+const [search, setSearch] = useState("");
+const [filter, setFilter] = useState("all");
+const [sort, setSort] = useState("newest");
+const [selectedItem, setSelectedItem] = useState<any | null>(null);
+const [loading, setLoading] = useState(true);
+
+const router = useRouter();
 
   useEffect(() => {
     async function loadItems() {
@@ -51,7 +55,8 @@ return () => clearInterval(interval);
   const reports = items.filter((item) => item.type === "report");
   const jobs = items.filter((item) => item.type === "job");
 
-  const filteredItems = items.filter((item) => {
+  const filteredItems = items
+  .filter((item) => {
     const searchText = search.toLowerCase();
 
     const matchesSearch =
@@ -61,6 +66,23 @@ return () => clearInterval(interval);
     const matchesFilter = filter === "all" || item.type === filter;
 
     return matchesSearch && matchesFilter;
+  })
+  .sort((a, b) => {
+    if (sort === "oldest") {
+      return (
+        new Date(a.created_at).getTime() -
+        new Date(b.created_at).getTime()
+      );
+    }
+
+    if (sort === "az") {
+      return a.title.localeCompare(b.title);
+    }
+
+    return (
+      new Date(b.created_at).getTime() -
+      new Date(a.created_at).getTime()
+    );
   });
 
   async function deleteSelectedItem() {
@@ -191,14 +213,13 @@ function openSelectedItem() {
     description="Shared storage layer for analyses, reports, jobs, and generated outputs."
   >
 
-        <div className="mt-8 flex gap-4">
-          <input
-            type="text"
-            placeholder="Search title or address..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            className="flex-1 rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
-          />
+        <Toolbar>
+          <SearchBar
+  value={search}
+  onChange={setSearch}
+  placeholder="Search title or address..."
+  className="flex-1 bg-slate-900 py-3 text-white"
+/>
 
           <select
             value={filter}
@@ -210,7 +231,18 @@ function openSelectedItem() {
             <option value="report">Reports</option>
             <option value="job">Jobs</option>
           </select>
-        </div>
+
+<select
+  value={sort}
+  onChange={(e) => setSort(e.target.value)}
+  className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
+>
+  <option value="newest">Newest</option>
+  <option value="oldest">Oldest</option>
+  <option value="az">A–Z</option>
+</select>
+
+        </Toolbar>
 
         <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
           <Card>

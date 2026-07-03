@@ -1,5 +1,30 @@
 import { supabase } from "./supabase";
 
+export type WorkspaceStatus =
+  | "queued"
+  | "running"
+  | "completed"
+  | "buy"
+  | "negotiate"
+  | "pass";
+
+  export type WorkspaceItemType =
+  | "analysis"
+  | "report"
+  | "job";
+
+export type WorkspaceItem = {
+  id: string;
+  type: WorkspaceItemType;
+  title: string;
+  address?: string | null;
+  status: WorkspaceStatus;
+  metadata?: Record<string, any> | null;
+  content?: string | null;
+  created_at?: string;
+  updated_at?: string;
+};
+
 export async function getWorkspaceItems() {
   return await supabase
     .from("workspace_items")
@@ -14,7 +39,7 @@ export async function deleteWorkspaceItem(id: string) {
     .eq("id", id);
 }
 
-export async function duplicateWorkspaceItem(item: any) {
+export async function duplicateWorkspaceItem(item: WorkspaceItem) {
   return await supabase
     .from("workspace_items")
     .insert({
