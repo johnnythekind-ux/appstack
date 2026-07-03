@@ -7,7 +7,10 @@ import Button from "../components/Button";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
-import { createEvent } from "../../lib/eventService";
+import {
+  createEvent,
+  getEventsForWorkspaceItem,
+} from "../../lib/eventService";
 import {
   getWorkspaceItems,
   deleteWorkspaceItem,
@@ -25,6 +28,7 @@ const [search, setSearch] = useState("");
 const [filter, setFilter] = useState("all");
 const [sort, setSort] = useState("newest");
 const [selectedItem, setSelectedItem] = useState<any | null>(null);
+const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
@@ -204,6 +208,20 @@ function getItemIcon(type: string) {
   }
 }
 
+async function selectWorkspaceItem(item: any) {
+  setSelectedItem(item);
+
+  const { data, error } = await getEventsForWorkspaceItem(item.id);
+
+  if (error) {
+    toast.error("Failed to load activity.");
+    setSelectedItemEvents([]);
+    return;
+  }
+
+  setSelectedItemEvents(data || []);
+}
+
 function openSelectedItem() {
   if (!selectedItem) return;
 
@@ -298,7 +316,7 @@ function openSelectedItem() {
   {!loading && filteredItems.map((item) => (
               <div
   key={item.id}
-  onClick={() => setSelectedItem(item)}
+  onClick={() => selectWorkspaceItem(item)}
   className={`cursor-pointer rounded-xl p-5 transition ${
   selectedItem?.id === item.id
     ? "border-2 border-blue-500 bg-slate-900"
@@ -346,7 +364,10 @@ function openSelectedItem() {
       <h2 className="text-2xl font-bold">Workspace Item</h2>
 
       <button
-        onClick={() => setSelectedItem(null)}
+        onClick={() => {
+  setSelectedItem(null);
+  setSelectedItemEvents([]);
+}}
         className="rounded-lg border border-slate-700 px-4 py-2 hover:bg-slate-800"
       >
         Close
@@ -433,6 +454,28 @@ function openSelectedItem() {
     </div>
   </div>
 )}
+
+<div className="mt-8">
+  <h3 className="text-xl font-semibold">Activity</h3>
+
+  <div className="mt-4 space-y-3">
+    {selectedItemEvents.length === 0 && (
+      <p className="text-sm text-slate-400">No activity yet.</p>
+    )}
+
+    {selectedItemEvents.map((event) => (
+      <div
+        key={event.id}
+        className="rounded-lg border border-slate-800 p-4"
+      >
+        <p className="font-medium">{event.description}</p>
+        <p className="mt-1 text-sm text-slate-400">
+          {new Date(event.created_at).toLocaleString()}
+        </p>
+      </div>
+    ))}
+  </div>
+</div>
 
       {selectedItem.content && (
         <div>
