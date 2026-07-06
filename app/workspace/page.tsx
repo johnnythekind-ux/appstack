@@ -101,8 +101,24 @@ return () => clearInterval(interval);
     return;
   }
 
-  setItems(items.filter((item) => item.id !== selectedItem.id));
-  setSelectedItem(null);
+  const { error: eventError } = await createEvent({
+  workspace_item_id: null,
+  event_type: "item_deleted",
+  description: `Item deleted: ${selectedItem.title}`,
+  source: "Workspace",
+  metadata: {
+    deleted_item_id: selectedItem.id,
+    deleted_title: selectedItem.title,
+  },
+});
+
+if (eventError) {
+  toast.error("Event tracking failed.");
+}
+
+setItems(items.filter((item) => item.id !== selectedItem.id));
+setSelectedItem(null);
+setSelectedItemEvents([]);
 }
 
 async function generateReportFromSelectedItem() {

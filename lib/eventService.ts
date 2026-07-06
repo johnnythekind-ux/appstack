@@ -9,7 +9,7 @@ export type EventType =
 
 export type Event = {
   id: string;
-  workspace_item_id: string;
+  workspace_item_id?: string | null;
   event_type: EventType;
   description: string;
   source?: string | null;
@@ -18,7 +18,7 @@ export type Event = {
 };
 
 export async function createEvent(event: {
-  workspace_item_id: string;
+  workspace_item_id?: string | null;
   event_type: EventType;
   description: string;
   source?: string;
