@@ -173,8 +173,23 @@ async function createJobFromSelectedItem() {
     return;
   }
 
-  setItems([data, ...items]);
-  setSelectedItem(data);
+  const { error: eventError } = await createEvent({
+  workspace_item_id: data.id,
+  event_type: "job_created",
+  description: `Job created for ${selectedItem.title}`,
+  source: "Workspace",
+  metadata: {
+    original_item_id: selectedItem.id,
+    job_title: data.title,
+  },
+});
+
+if (eventError) {
+  toast.error("Event tracking failed.");
+}
+
+setItems([data, ...items]);
+setSelectedItem(data);
 }
 
 async function duplicateSelectedItem() {
@@ -188,8 +203,23 @@ async function duplicateSelectedItem() {
     return;
   }
 
-  setItems([data, ...items]);
-  setSelectedItem(data);
+  const { error: eventError } = await createEvent({
+  workspace_item_id: data.id,
+  event_type: "item_duplicated",
+  description: `Item duplicated from ${selectedItem.title}`,
+  source: "Workspace",
+  metadata: {
+    original_item_id: selectedItem.id,
+    duplicated_title: data.title,
+  },
+});
+
+if (eventError) {
+  toast.error("Event tracking failed.");
+}
+
+setItems([data, ...items]);
+setSelectedItem(data);
 }
 
 function getItemIcon(type: string) {
