@@ -8,6 +8,7 @@ import toast from "react-hot-toast";
 import { useState } from "react";
 import { analyses } from "../data/analyses";
 import { supabase } from "../../lib/supabase";
+import { createEvent } from "../../lib/eventService";
 
 export default function DealAnalyzerPage() {
   const [analysisName, setAnalysisName] = useState("");
@@ -50,7 +51,9 @@ export default function DealAnalyzerPage() {
     JSON.stringify(savedAnalysis)
   );
 
-  const { error } = await supabase.from("workspace_items").insert({
+  const { data, error } = await supabase
+  .from("workspace_items")
+  .insert({
     type: "analysis",
     title: savedAnalysis.name,
     address: savedAnalysis.address,
@@ -61,15 +64,33 @@ export default function DealAnalyzerPage() {
       repairCost: savedAnalysis.repairCost,
       maxOffer: savedAnalysis.maxOffer,
     },
-  });
+  })
+.select()
+.single();
 
   if (error) {
-    console.error(error);
-    toast.error("Supabase save failed. Check console.");
-    return;
-  }
+  console.error(error);
+  toast.error("Supabase save failed. Check console.");
+  return;
+}
 
-  setSaved(true);
+const { error: eventError } = await createEvent({
+  workspace_item_id: data.id,
+  event_type: "analysis_created",
+  description: `Analysis created: ${savedAnalysis.name}`,
+  source: "Deal Analyzer",
+  metadata: {
+    address: savedAnalysis.address,
+    recommendation: savedAnalysis.recommendation,
+    maxOffer: savedAnalysis.maxOffer,
+  },
+});
+
+if (eventError) {
+  toast.error("Event tracking failed.");
+}
+
+setSaved(true);
 }
 
   return (
