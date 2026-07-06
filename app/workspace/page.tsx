@@ -1,5 +1,6 @@
 "use client";
 
+import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
 import Card from "../components/Card";
@@ -32,6 +33,7 @@ const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
+const workspaceAnalysis = analyzeWorkspaceEvents(selectedItemEvents);
 
   useEffect(() => {
     async function loadItems() {
@@ -520,6 +522,51 @@ function openSelectedItem() {
         </p>
       </div>
     ))}
+  </div>
+</div>
+
+<div className="mt-8">
+  <h3 className="text-xl font-semibold">Analysis</h3>
+
+  <div className="mt-4 space-y-3 rounded-lg border border-slate-800 p-4">
+    <div className="flex justify-between">
+      <span>Stage</span>
+      <span>{workspaceAnalysis.stage}</span>
+    </div>
+
+    <div className="flex justify-between">
+      <span>Health</span>
+      <span>{workspaceAnalysis.health}</span>
+    </div>
+
+    <div className="flex justify-between">
+      <span>Events</span>
+      <span>{workspaceAnalysis.eventCount}</span>
+    </div>
+
+    {workspaceAnalysis.missingSteps.length > 0 && (
+      <div>
+        <p className="font-medium">Missing Steps</p>
+
+        <ul className="mt-2 list-disc pl-6 text-sm text-slate-400">
+          {workspaceAnalysis.missingSteps.map((step) => (
+            <li key={step}>{step}</li>
+          ))}
+        </ul>
+      </div>
+    )}
+
+    {workspaceAnalysis.insights.length > 0 && (
+      <div>
+        <p className="font-medium">Insights</p>
+
+        <ul className="mt-2 list-disc pl-6 text-sm text-slate-400">
+          {workspaceAnalysis.insights.map((insight) => (
+            <li key={insight}>{insight}</li>
+          ))}
+        </ul>
+      </div>
+    )}
   </div>
 </div>
 
