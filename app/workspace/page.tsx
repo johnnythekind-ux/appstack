@@ -1,5 +1,6 @@
 "use client";
 
+import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
@@ -34,6 +35,8 @@ const [loading, setLoading] = useState(true);
 
 const router = useRouter();
 const workspaceAnalysis = analyzeWorkspaceEvents(selectedItemEvents);
+const recommendation =
+  getWorkspaceRecommendation(workspaceAnalysis);
 
   useEffect(() => {
     async function loadItems() {
@@ -567,6 +570,29 @@ function openSelectedItem() {
         </ul>
       </div>
     )}
+  </div>
+</div>
+
+<div className="mt-8">
+  <h3 className="text-xl font-semibold">Recommendation</h3>
+
+  <div className="mt-4 rounded-lg border border-slate-800 p-4 space-y-3">
+    <div className="flex justify-between">
+      <span>Next Action</span>
+      <span>{recommendation.action}</span>
+    </div>
+
+    <div>
+      <p className="font-medium">Reason</p>
+      <p className="mt-1 text-sm text-slate-400">
+        {recommendation.reason}
+      </p>
+    </div>
+
+    <div className="flex justify-between">
+      <span>Priority</span>
+      <span>{recommendation.priority}</span>
+    </div>
   </div>
 </div>
 
