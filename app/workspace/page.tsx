@@ -24,6 +24,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
+import { backfillWorkspaceEvents } from "../../lib/workspaceEventBackfillService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -273,6 +274,33 @@ setItems([data, ...items]);
 setSelectedItem(data);
 }
 
+async function backfillMissingWorkspaceEvents() {
+  const { created, error } = await backfillWorkspaceEvents(items);
+
+  if (error) {
+    console.error(error);
+    toast.error("Backfill failed.");
+    return;
+  }
+
+  toast.success(`Backfill complete. ${created} events created.`);
+
+  const {
+    data: intelligence,
+    error: intelligenceError,
+  } = await buildWorkspaceIntelligence(items);
+
+  if (intelligenceError) {
+    console.error(intelligenceError);
+    toast.error("Failed to refresh workspace intelligence.");
+    return;
+  }
+
+  if (intelligence) {
+    setWorkspaceIntelligence(intelligence);
+  }
+}
+
 function getItemIcon(type: string) {
   switch (type) {
     case "analysis":
@@ -413,6 +441,12 @@ function openSelectedItem() {
       {workspaceIntelligence.recommendedAction}
     </p>
   </div>
+
+  <div className="mt-6">
+  <Button onClick={backfillMissingWorkspaceEvents}>
+    Backfill Missing Events
+  </Button>
+</div>
 
   <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
     <div>
