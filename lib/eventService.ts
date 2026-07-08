@@ -40,3 +40,10 @@ export async function getEventsForWorkspaceItem(
     .eq("workspace_item_id", workspaceItemId)
     .order("created_at", { ascending: false });
 }
+
+export async function getAllEvents() {
+  return await supabase
+    .from("events")
+    .select("*")
+    .order("created_at", { ascending: false });
+}

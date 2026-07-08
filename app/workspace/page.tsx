@@ -1,7 +1,6 @@
 "use client";
 
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
-import { analyzeWorkspace } from "../../lib/workspaceIntelligenceService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
@@ -24,6 +23,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../components/SearchBar";
+import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -32,6 +32,13 @@ const [filter, setFilter] = useState("all");
 const [sort, setSort] = useState("newest");
 const [selectedItem, setSelectedItem] = useState<any | null>(null);
 const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
+const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
+  totalItems: 0,
+  needsReports: 0,
+  needsJobs: 0,
+  healthyItems: 0,
+  unknownItems: 0,
+});
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
@@ -39,25 +46,37 @@ const workspaceAnalysis = analyzeWorkspaceEvents(selectedItemEvents);
 const recommendation =
   getWorkspaceRecommendation(workspaceAnalysis);
 
-  const workspaceAnalyses = selectedItemEvents.length
-  ? [workspaceAnalysis]
-  : [];
-
-const workspaceIntelligence = analyzeWorkspace(workspaceAnalyses);
-
   useEffect(() => {
     async function loadItems() {
-      const { data, error } = await getWorkspaceItems();
+  const { data, error } = await getWorkspaceItems();
 
-      if (error) {
-        console.error(error);
-        toast.error("Failed to load workspace items.");
-        return;
-      }
+  if (error) {
+    console.error(error);
+    toast.error("Failed to load workspace items.");
+    setLoading(false);
+    return;
+  }
 
-      setItems(data || []);
-setLoading(false);
-    }
+  const workspaceItems = data || [];
+
+  setItems(workspaceItems);
+
+  const {
+    data: intelligence,
+    error: intelligenceError,
+  } = await buildWorkspaceIntelligence(workspaceItems);
+
+  if (intelligenceError) {
+    console.error(intelligenceError);
+    toast.error("Failed to load workspace intelligence.");
+  }
+
+  if (intelligence) {
+    setWorkspaceIntelligence(intelligence);
+  }
+
+  setLoading(false);
+}
 
     loadItems();
 
