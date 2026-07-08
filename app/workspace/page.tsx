@@ -38,6 +38,10 @@ const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
   needsJobs: 0,
   healthyItems: 0,
   unknownItems: 0,
+  workspaceHealth: "Unknown",
+  primaryBottleneck: "No workspace data",
+  recommendedAction: "Load workspace intelligence.",
+  progressPercent: 0,
 });
 const [loading, setLoading] = useState(true);
 
@@ -373,38 +377,68 @@ function openSelectedItem() {
         </section>
 
         <Card title="Workspace Intelligence" className="mt-10">
-  <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+  <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+    <div>
+      <p className="text-sm text-slate-400">Workspace Health</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.workspaceHealth}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Primary Bottleneck</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.primaryBottleneck}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Progress</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.progressPercent}%
+      </p>
+    </div>
+
     <div>
       <p className="text-sm text-slate-400">Total Items</p>
       <p className="mt-2 text-2xl font-bold">
         {workspaceIntelligence.totalItems}
       </p>
     </div>
+  </div>
 
+  <div className="mt-8 rounded-lg border border-slate-800 p-4">
+    <p className="text-sm text-slate-400">Recommended Action</p>
+    <p className="mt-2 text-lg font-semibold">
+      {workspaceIntelligence.recommendedAction}
+    </p>
+  </div>
+
+  <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
     <div>
       <p className="text-sm text-slate-400">Needs Reports</p>
-      <p className="mt-2 text-2xl font-bold">
+      <p className="mt-2 text-xl font-bold">
         {workspaceIntelligence.needsReports}
       </p>
     </div>
 
     <div>
       <p className="text-sm text-slate-400">Needs Jobs</p>
-      <p className="mt-2 text-2xl font-bold">
+      <p className="mt-2 text-xl font-bold">
         {workspaceIntelligence.needsJobs}
       </p>
     </div>
 
     <div>
       <p className="text-sm text-slate-400">Healthy</p>
-      <p className="mt-2 text-2xl font-bold">
+      <p className="mt-2 text-xl font-bold">
         {workspaceIntelligence.healthyItems}
       </p>
     </div>
 
     <div>
       <p className="text-sm text-slate-400">Unknown</p>
-      <p className="mt-2 text-2xl font-bold">
+      <p className="mt-2 text-xl font-bold">
         {workspaceIntelligence.unknownItems}
       </p>
     </div>
