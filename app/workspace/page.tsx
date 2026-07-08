@@ -1,6 +1,7 @@
 "use client";
 
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
+import { analyzeWorkspace } from "../../lib/workspaceIntelligenceService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
@@ -37,6 +38,12 @@ const router = useRouter();
 const workspaceAnalysis = analyzeWorkspaceEvents(selectedItemEvents);
 const recommendation =
   getWorkspaceRecommendation(workspaceAnalysis);
+
+  const workspaceAnalyses = selectedItemEvents.length
+  ? [workspaceAnalysis]
+  : [];
+
+const workspaceIntelligence = analyzeWorkspace(workspaceAnalyses);
 
   useEffect(() => {
     async function loadItems() {
@@ -345,6 +352,45 @@ function openSelectedItem() {
             <p className="mt-2 text-3xl font-bold">{jobs.length}</p>
           </Card>
         </section>
+
+        <Card title="Workspace Intelligence" className="mt-10">
+  <div className="grid grid-cols-1 gap-4 md:grid-cols-5">
+    <div>
+      <p className="text-sm text-slate-400">Total Items</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.totalItems}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Needs Reports</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.needsReports}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Needs Jobs</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.needsJobs}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Healthy</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.healthyItems}
+      </p>
+    </div>
+
+    <div>
+      <p className="text-sm text-slate-400">Unknown</p>
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceIntelligence.unknownItems}
+      </p>
+    </div>
+  </div>
+</Card>
 
         <Card
   title="Recent Workspace Items"
