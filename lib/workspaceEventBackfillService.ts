@@ -55,7 +55,7 @@ export async function backfillWorkspaceEvents(workspaceItems: any[]) {
       workspace_item_id: item.id,
       event_type: eventType,
       description,
-      source: "Workspace Backfill",
+      source: "Developer Tools",
       metadata: {
         backfilled: true,
         backfilled_item_id: item.id,
