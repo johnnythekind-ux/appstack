@@ -24,7 +24,7 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
-import { backfillWorkspaceEvents } from "../../lib/workspaceEventBackfillService";
+import { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -44,6 +44,9 @@ const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
   recommendedAction: "Load workspace intelligence.",
   progressPercent: 0,
 });
+const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
+  WorkspacePriorityAction[]
+>([]);
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
@@ -77,8 +80,9 @@ const recommendation =
   }
 
   if (intelligence) {
-    setWorkspaceIntelligence(intelligence);
-  }
+  setWorkspaceIntelligence(intelligence.intelligence);
+  setWorkspacePriorityActions(intelligence.priorityActions);
+}
 
   setLoading(false);
 }
@@ -274,33 +278,6 @@ setItems([data, ...items]);
 setSelectedItem(data);
 }
 
-async function backfillMissingWorkspaceEvents() {
-  const { created, error } = await backfillWorkspaceEvents(items);
-
-  if (error) {
-    console.error(error);
-    toast.error("Backfill failed.");
-    return;
-  }
-
-  toast.success(`Backfill complete. ${created} events created.`);
-
-  const {
-    data: intelligence,
-    error: intelligenceError,
-  } = await buildWorkspaceIntelligence(items);
-
-  if (intelligenceError) {
-    console.error(intelligenceError);
-    toast.error("Failed to refresh workspace intelligence.");
-    return;
-  }
-
-  if (intelligence) {
-    setWorkspaceIntelligence(intelligence);
-  }
-}
-
 function getItemIcon(type: string) {
   switch (type) {
     case "analysis":
@@ -442,12 +419,6 @@ function openSelectedItem() {
     </p>
   </div>
 
-  <div className="mt-6">
-  <Button onClick={backfillMissingWorkspaceEvents}>
-    Backfill Missing Events
-  </Button>
-</div>
-
   <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
     <div>
       <p className="text-sm text-slate-400">Needs Reports</p>
@@ -476,6 +447,36 @@ function openSelectedItem() {
         {workspaceIntelligence.unknownItems}
       </p>
     </div>
+  </div>
+</Card>
+
+<Card title="Priority Actions" className="mt-10">
+  <div className="space-y-4">
+    {workspacePriorityActions.length === 0 && (
+      <p className="text-slate-400">
+        No priority actions right now. Workspace is currently healthy.
+      </p>
+    )}
+
+    {workspacePriorityActions.map((action, index) => (
+      <div
+        key={`${action.title}-${action.itemTitle}-${index}`}
+        className="rounded-lg border border-slate-800 p-4"
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <p className="text-lg font-semibold">{action.title}</p>
+            <p className="mt-1 text-sm text-slate-400">
+              {action.itemTitle}
+            </p>
+          </div>
+
+          <StatusBadge status={action.priority} />
+        </div>
+
+        <p className="mt-3 text-sm text-slate-400">{action.reason}</p>
+      </div>
+    ))}
   </div>
 </Card>
 
