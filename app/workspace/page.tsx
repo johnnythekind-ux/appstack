@@ -161,33 +161,33 @@ setSelectedItem(null);
 setSelectedItemEvents([]);
 }
 
-async function generateReportFromSelectedItem() {
-  if (!selectedItem || selectedItem.type !== "analysis") return;
+async function generateReportFromItem(item: any) {
+  if (!item || item.type !== "analysis") return;
 
   const generatedReport = `Investor Report
 
 Property:
-${selectedItem.title}
-${selectedItem.address}
+${item.title}
+${item.address}
 
 Deal Summary:
-This deal has a purchase price of $${selectedItem.metadata.purchasePrice.toLocaleString()}, an ARV of $${selectedItem.metadata.arv.toLocaleString()}, and estimated repairs of $${selectedItem.metadata.repairCost.toLocaleString()}.
+This deal has a purchase price of $${item.metadata.purchasePrice.toLocaleString()}, an ARV of $${item.metadata.arv.toLocaleString()}, and estimated repairs of $${item.metadata.repairCost.toLocaleString()}.
 
 Maximum Allowable Offer:
-$${selectedItem.metadata.maxOffer.toLocaleString()}
+$${item.metadata.maxOffer.toLocaleString()}
 
 Recommendation:
-${selectedItem.status}
+${item.status}
 
 Interpretation:
-Based on the 70% rule, this deal currently receives a ${selectedItem.status} recommendation.`;
+Based on the 70% rule, this deal currently receives a ${item.status} recommendation.`;
 
   const { data, error } = await createWorkspaceReport({
-  title: `${selectedItem.title} Investor Report`,
-  address: selectedItem.address,
-  status: "Saved",
-  content: generatedReport,
-});
+    title: `${item.title} Investor Report`,
+    address: item.address,
+    status: "Saved",
+    content: generatedReport,
+  });
 
   if (error) {
     console.error(error);
@@ -196,32 +196,36 @@ Based on the 70% rule, this deal currently receives a ${selectedItem.status} rec
   }
 
   const { error: eventError } = await createEvent({
-  workspace_item_id: data.id,
-  event_type: "report_generated",
-  description: `Report generated for ${selectedItem.title}`,
-  source: "Workspace",
-  metadata: {
-    original_item_id: selectedItem.id,
-    report_title: data.title,
-  },
-});
+    workspace_item_id: data.id,
+    event_type: "report_generated",
+    description: `Report generated for ${item.title}`,
+    source: "Workspace",
+    metadata: {
+      original_item_id: item.id,
+      report_title: data.title,
+    },
+  });
 
-if (eventError) {
-  toast.error("Event tracking failed.");
+  if (eventError) {
+    toast.error("Event tracking failed.");
+  }
+
+  setItems([data, ...items]);
+  setSelectedItem(data);
 }
 
-setItems([data, ...items]);
-setSelectedItem(data);
+async function generateReportFromSelectedItem() {
+  await generateReportFromItem(selectedItem);
 }
 
-async function createJobFromSelectedItem() {
-  if (!selectedItem) return;
+async function createJobFromItem(item: any) {
+  if (!item) return;
 
   const { data, error } = await createWorkspaceJob({
-  title: `${selectedItem.title} Processing Job`,
-  status: "Completed",
-  source: "Workspace",
-});
+    title: `${item.title} Processing Job`,
+    status: "Completed",
+    source: "Workspace",
+  });
 
   if (error) {
     console.error(error);
@@ -230,22 +234,26 @@ async function createJobFromSelectedItem() {
   }
 
   const { error: eventError } = await createEvent({
-  workspace_item_id: data.id,
-  event_type: "job_created",
-  description: `Job created for ${selectedItem.title}`,
-  source: "Workspace",
-  metadata: {
-    original_item_id: selectedItem.id,
-    job_title: data.title,
-  },
-});
+    workspace_item_id: data.id,
+    event_type: "job_created",
+    description: `Job created for ${item.title}`,
+    source: "Workspace",
+    metadata: {
+      original_item_id: item.id,
+      job_title: data.title,
+    },
+  });
 
-if (eventError) {
-  toast.error("Event tracking failed.");
+  if (eventError) {
+    toast.error("Event tracking failed.");
+  }
+
+  setItems([data, ...items]);
+  setSelectedItem(data);
 }
 
-setItems([data, ...items]);
-setSelectedItem(data);
+async function createJobFromSelectedItem() {
+  await createJobFromItem(selectedItem);
 }
 
 async function duplicateSelectedItem() {
@@ -276,6 +284,29 @@ if (eventError) {
 
 setItems([data, ...items]);
 setSelectedItem(data);
+}
+
+async function handlePriorityAction(action: WorkspacePriorityAction) {
+  const item = items.find((workspaceItem) => workspaceItem.id === action.itemId);
+
+  if (!item) {
+    toast.error("Workspace item not found.");
+    return;
+  }
+
+  if (action.actionType === "generate_report") {
+    await generateReportFromItem(item);
+    toast.success("Report generated from priority action.");
+    return;
+  }
+
+  if (action.actionType === "create_job") {
+    await createJobFromItem(item);
+    toast.success("Job created from priority action.");
+    return;
+  }
+
+  setSelectedItem(item);
 }
 
 function getItemIcon(type: string) {
@@ -475,6 +506,14 @@ function openSelectedItem() {
         </div>
 
         <p className="mt-3 text-sm text-slate-400">{action.reason}</p>
+
+<div className="mt-4">
+  <Button onClick={() => handlePriorityAction(action)}>
+    {action.actionType === "generate_report" && "Generate Now"}
+    {action.actionType === "create_job" && "Create Job"}
+    {action.actionType === "review_item" && "Review Item"}
+  </Button>
+</div>
       </div>
     ))}
   </div>

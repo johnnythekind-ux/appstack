@@ -7,7 +7,9 @@ export type WorkspacePriorityRecord = {
 
 export type WorkspacePriorityAction = {
   title: string;
+  itemId: string;
   itemTitle: string;
+  actionType: "generate_report" | "create_job" | "review_item";
   reason: string;
   priority: "High" | "Medium" | "Low";
 };
@@ -21,7 +23,9 @@ export function buildWorkspacePriorities(
       if (record.analysis.stage === "Analysis") {
         return {
           title: "Generate Report",
+          itemId: record.item.id,
           itemTitle: record.item.title,
+          actionType: "generate_report" as const,
           reason: "This analysis does not have a report yet.",
           priority: "High" as const,
         };
@@ -30,7 +34,9 @@ export function buildWorkspacePriorities(
       if (record.analysis.stage === "Reporting") {
         return {
           title: "Create Job",
+          itemId: record.item.id,
           itemTitle: record.item.title,
+          actionType: "create_job" as const,
           reason: "This report does not have an execution job yet.",
           priority: "Medium" as const,
         };
@@ -38,7 +44,9 @@ export function buildWorkspacePriorities(
 
       return {
         title: "Review Item",
+        itemId: record.item.id,
         itemTitle: record.item.title,
+        actionType: "review_item" as const,
         reason: "This item needs manual review.",
         priority: "Low" as const,
       };
@@ -49,8 +57,8 @@ export function buildWorkspacePriorities(
       index ===
       self.findIndex(
         (existingAction) =>
-          existingAction.title === action.title &&
-          existingAction.itemTitle === action.itemTitle
+          existingAction.actionType === action.actionType &&
+          existingAction.itemId === action.itemId
       )
     );
   });
