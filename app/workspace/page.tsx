@@ -27,6 +27,7 @@ import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoord
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
 import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
+import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -55,6 +56,9 @@ const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
 
 const [workspaceForecast, setWorkspaceForecast] =
   useState<WorkspaceForecast | null>(null);
+
+const [workspaceStrategy, setWorkspaceStrategy] =
+  useState<WorkspaceStrategy | null>(null);
 
 const [loading, setLoading] = useState(true);
 
@@ -93,6 +97,7 @@ const recommendation =
   setWorkspacePriorityActions(intelligence.priorityActions);
   setWorkspaceDirectorPlan(intelligence.directorPlan);
   setWorkspaceForecast(intelligence.forecast);
+  setWorkspaceStrategy(intelligence.strategy);
 }
 
   setLoading(false);
@@ -608,6 +613,72 @@ function openSelectedItem() {
     <p className="mt-4 text-sm text-slate-500">
       This is a rule-based projection, not a guaranteed outcome.
     </p>
+  </Card>
+)}
+
+{workspaceStrategy && (
+  <Card title={workspaceStrategy.title} className="mt-10">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div>
+        <p className="text-sm text-slate-400">Strategic Focus</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceStrategy.strategicFocus}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Strategy Confidence</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceStrategy.strategyConfidence}
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-8 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">Execution Order</p>
+
+      <ol className="mt-3 space-y-2">
+        {workspaceStrategy.executionOrder.map((step, index) => (
+          <li key={`${step}-${index}`} className="text-lg font-semibold">
+            {index + 1}. {step}
+          </li>
+        ))}
+      </ol>
+    </div>
+
+    <div className="mt-6 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">What Should Wait</p>
+
+      <ul className="mt-3 space-y-2">
+        {workspaceStrategy.delayActions.map((action, index) => (
+          <li key={`${action}-${index}`} className="text-lg font-semibold">
+            • {action}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="rounded-lg border border-slate-800 p-4">
+        <p className="text-sm text-slate-400">
+          Bottleneck Explanation
+        </p>
+
+        <p className="mt-2 text-lg font-semibold">
+          {workspaceStrategy.bottleneckExplanation}
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4">
+        <p className="text-sm text-slate-400">
+          Tradeoff Explanation
+        </p>
+
+        <p className="mt-2 text-lg font-semibold">
+          {workspaceStrategy.tradeoffExplanation}
+        </p>
+      </div>
+    </div>
   </Card>
 )}
 
