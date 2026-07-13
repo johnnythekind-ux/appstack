@@ -27,6 +27,7 @@ import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoord
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
 import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
+import type { WorkspaceRisk } from "../../lib/workspaceRiskService";
 import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
 
 export default function WorkspacePage() {
@@ -59,6 +60,9 @@ const [workspaceForecast, setWorkspaceForecast] =
 
 const [workspaceStrategy, setWorkspaceStrategy] =
   useState<WorkspaceStrategy | null>(null);
+
+const [workspaceRisk, setWorkspaceRisk] =
+  useState<WorkspaceRisk | null>(null);
 
 const [loading, setLoading] = useState(true);
 
@@ -98,6 +102,7 @@ const recommendation =
   setWorkspaceDirectorPlan(intelligence.directorPlan);
   setWorkspaceForecast(intelligence.forecast);
   setWorkspaceStrategy(intelligence.strategy);
+  setWorkspaceRisk(intelligence.risk);
 }
 
   setLoading(false);
@@ -677,6 +682,72 @@ function openSelectedItem() {
         <p className="mt-2 text-lg font-semibold">
           {workspaceStrategy.tradeoffExplanation}
         </p>
+      </div>
+    </div>
+  </Card>
+)}
+
+{workspaceRisk && (
+  <Card title={workspaceRisk.title} className="mt-10">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div>
+        <p className="text-sm text-slate-400">Overall Risk</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceRisk.overallRisk}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Risk Score</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceRisk.riskScore}/100
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Assessment Confidence</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceRisk.confidence}
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-8 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">Primary Risk</p>
+      <p className="mt-2 text-lg font-semibold">
+        {workspaceRisk.primaryRisk}
+      </p>
+    </div>
+
+    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
+      <div className="rounded-lg border border-slate-800 p-4">
+        <p className="text-sm text-slate-400">Risk Factors</p>
+
+        <ul className="mt-3 space-y-2">
+          {workspaceRisk.riskFactors.map((factor, index) => (
+            <li
+              key={`${factor}-${index}`}
+              className="text-lg font-semibold"
+            >
+              • {factor}
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div className="rounded-lg border border-slate-800 p-4">
+        <p className="text-sm text-slate-400">Safeguards</p>
+
+        <ul className="mt-3 space-y-2">
+          {workspaceRisk.safeguards.map((safeguard, index) => (
+            <li
+              key={`${safeguard}-${index}`}
+              className="text-lg font-semibold"
+            >
+              • {safeguard}
+            </li>
+          ))}
+        </ul>
       </div>
     </div>
   </Card>
