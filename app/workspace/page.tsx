@@ -24,7 +24,8 @@ import { useRouter } from "next/navigation";
 import { supabase } from "../../lib/supabase";
 import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
-import { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
+import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
+import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -47,6 +48,10 @@ const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
 const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
   WorkspacePriorityAction[]
 >([]);
+
+const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
+  useState<WorkspaceDirectorPlan | null>(null);
+
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
@@ -82,6 +87,7 @@ const recommendation =
   if (intelligence) {
   setWorkspaceIntelligence(intelligence.intelligence);
   setWorkspacePriorityActions(intelligence.priorityActions);
+  setWorkspaceDirectorPlan(intelligence.directorPlan);
 }
 
   setLoading(false);
@@ -480,6 +486,55 @@ function openSelectedItem() {
     </div>
   </div>
 </Card>
+
+{workspaceDirectorPlan && (
+  <Card title={workspaceDirectorPlan.title} className="mt-10">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div>
+        <p className="text-sm text-slate-400">Workspace Status</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceDirectorPlan.workspaceStatus}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Next Best Action</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceDirectorPlan.nextBestAction}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Estimated Work</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceDirectorPlan.estimatedMinutes} minutes
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-8 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">Today&apos;s Plan</p>
+
+      <ul className="mt-3 space-y-2">
+        {workspaceDirectorPlan.summary.map((summaryItem) => (
+          <li key={summaryItem} className="text-lg font-semibold">
+            • {summaryItem}
+          </li>
+        ))}
+      </ul>
+    </div>
+
+    <div className="mt-6 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">
+        Completion Prediction
+      </p>
+
+      <p className="mt-2 text-lg font-semibold">
+        {workspaceDirectorPlan.completionPrediction}
+      </p>
+    </div>
+  </Card>
+)}
 
 <Card title="Priority Actions" className="mt-10">
   <div className="space-y-4">

@@ -2,6 +2,7 @@ import { analyzeWorkspaceEvents } from "./analysisService";
 import { getAllEvents } from "./eventService";
 import { analyzeWorkspace } from "./workspaceIntelligenceService";
 import { buildWorkspacePriorities } from "./workspacePriorityService";
+import { buildWorkspaceDirectorPlan } from "./workspaceDirectorService";
 
 export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
   const { data: events, error } = await getAllEvents();
@@ -35,10 +36,22 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
     (record) => record.analysis
   );
 
+  const intelligence = analyzeWorkspace(workspaceAnalyses);
+
+  const priorityActions = buildWorkspacePriorities(
+    workspaceAnalysisRecords
+  );
+
+  const directorPlan = buildWorkspaceDirectorPlan(
+    intelligence,
+    priorityActions
+  );
+
   return {
     data: {
-      intelligence: analyzeWorkspace(workspaceAnalyses),
-      priorityActions: buildWorkspacePriorities(workspaceAnalysisRecords),
+      intelligence,
+      priorityActions,
+      directorPlan,
     },
     error: null,
   };
