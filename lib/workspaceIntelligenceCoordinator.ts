@@ -6,6 +6,7 @@ import { buildWorkspaceDirectorPlan } from "./workspaceDirectorService";
 import { buildWorkspaceForecast } from "./workspaceForecastService";
 import { buildWorkspaceRisk } from "./workspaceRiskService";
 import { buildWorkspaceStrategy } from "./workspaceStrategyService";
+import { buildWorkspaceInsights } from "./workspaceInsightsService";
 
 export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
   const { data: events, error } = await getAllEvents();
@@ -70,6 +71,14 @@ const risk = buildWorkspaceRisk(
   strategy
 );
 
+const insights = buildWorkspaceInsights(
+  intelligence,
+  priorityActions,
+  forecast,
+  strategy,
+  risk
+);
+
   return {
   data: {
     intelligence,
@@ -78,6 +87,7 @@ const risk = buildWorkspaceRisk(
     forecast,
     strategy,
     risk,
+    insights,
   },
   error: null,
 };

@@ -29,6 +29,7 @@ import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
 import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
 import type { WorkspaceRisk } from "../../lib/workspaceRiskService";
 import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
+import type { WorkspaceInsights } from "../../lib/workspaceInsightsService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -63,6 +64,9 @@ const [workspaceStrategy, setWorkspaceStrategy] =
 
 const [workspaceRisk, setWorkspaceRisk] =
   useState<WorkspaceRisk | null>(null);
+
+const [workspaceInsights, setWorkspaceInsights] =
+  useState<WorkspaceInsights | null>(null);
 
 const [loading, setLoading] = useState(true);
 
@@ -103,6 +107,7 @@ const recommendation =
   setWorkspaceForecast(intelligence.forecast);
   setWorkspaceStrategy(intelligence.strategy);
   setWorkspaceRisk(intelligence.risk);
+  setWorkspaceInsights(intelligence.insights);
 }
 
   setLoading(false);
@@ -749,6 +754,43 @@ function openSelectedItem() {
           ))}
         </ul>
       </div>
+    </div>
+  </Card>
+)}
+
+{workspaceInsights && (
+  <Card title={workspaceInsights.title} className="mt-10">
+    <div className="rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">Headline</p>
+
+      <p className="mt-2 text-2xl font-bold">
+        {workspaceInsights.headline}
+      </p>
+    </div>
+
+    <div className="mt-6 space-y-4">
+      {workspaceInsights.insights.map((insight, index) => (
+        <div
+          key={`${insight.title}-${index}`}
+          className="rounded-lg border border-slate-800 p-4"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-lg font-semibold">
+                {insight.title}
+              </p>
+            </div>
+
+            <StatusBadge status={insight.type} />
+          </div>
+
+          <div className="mt-3">
+            <p className="text-sm text-slate-400">
+              {insight.explanation}
+            </p>
+          </div>
+        </div>
+      ))}
     </div>
   </Card>
 )}
