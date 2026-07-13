@@ -26,6 +26,7 @@ import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
+import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -51,6 +52,9 @@ const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
 
 const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
   useState<WorkspaceDirectorPlan | null>(null);
+
+const [workspaceForecast, setWorkspaceForecast] =
+  useState<WorkspaceForecast | null>(null);
 
 const [loading, setLoading] = useState(true);
 
@@ -88,6 +92,7 @@ const recommendation =
   setWorkspaceIntelligence(intelligence.intelligence);
   setWorkspacePriorityActions(intelligence.priorityActions);
   setWorkspaceDirectorPlan(intelligence.directorPlan);
+  setWorkspaceForecast(intelligence.forecast);
 }
 
   setLoading(false);
@@ -533,6 +538,76 @@ function openSelectedItem() {
         {workspaceDirectorPlan.completionPrediction}
       </p>
     </div>
+  </Card>
+)}
+
+{workspaceForecast && (
+  <Card title={workspaceForecast.title} className="mt-10">
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
+      <div>
+        <p className="text-sm text-slate-400">Current Health</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceForecast.currentHealth}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Projected Health</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceForecast.projectedHealth}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Projected Progress</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceForecast.projectedProgress}%
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">Confidence</p>
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceForecast.confidence}
+        </p>
+      </div>
+    </div>
+
+    <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
+  <div>
+    <p className="text-sm text-slate-400">Current Progress</p>
+    <p className="mt-2 text-xl font-bold">
+      {workspaceForecast.currentProgress}%
+    </p>
+  </div>
+
+  <div>
+    <p className="text-sm text-slate-400">Expected Gain</p>
+    <p className="mt-2 text-xl font-bold">
+      +{workspaceForecast.progressGain}%
+    </p>
+  </div>
+
+  <div>
+    <p className="text-sm text-slate-400">
+      Projected Resolved Actions
+    </p>
+    <p className="mt-2 text-xl font-bold">
+      {workspaceForecast.projectedResolvedActions}
+    </p>
+  </div>
+</div>
+
+    <div className="mt-8 rounded-lg border border-slate-800 p-4">
+      <p className="text-sm text-slate-400">Forecast</p>
+      <p className="mt-2 text-lg font-semibold">
+        {workspaceForecast.prediction}
+      </p>
+    </div>
+
+    <p className="mt-4 text-sm text-slate-500">
+      This is a rule-based projection, not a guaranteed outcome.
+    </p>
   </Card>
 )}
 

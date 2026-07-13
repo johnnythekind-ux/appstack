@@ -3,6 +3,7 @@ import { getAllEvents } from "./eventService";
 import { analyzeWorkspace } from "./workspaceIntelligenceService";
 import { buildWorkspacePriorities } from "./workspacePriorityService";
 import { buildWorkspaceDirectorPlan } from "./workspaceDirectorService";
+import { buildWorkspaceForecast } from "./workspaceForecastService";
 
 export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
   const { data: events, error } = await getAllEvents();
@@ -47,12 +48,19 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
     priorityActions
   );
 
+  const forecast = buildWorkspaceForecast(
+  intelligence,
+  priorityActions,
+  directorPlan
+);
+
   return {
-    data: {
-      intelligence,
-      priorityActions,
-      directorPlan,
-    },
-    error: null,
-  };
+  data: {
+    intelligence,
+    priorityActions,
+    directorPlan,
+    forecast,
+  },
+  error: null,
+};
 }
