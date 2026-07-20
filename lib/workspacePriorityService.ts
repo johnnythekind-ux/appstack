@@ -63,5 +63,15 @@ export function buildWorkspacePriorities(
     );
   });
 
-  return uniqueActions.slice(0, 5);
+  const priorityRank: Record<WorkspacePriorityAction["priority"], number> = {
+  High: 3,
+  Medium: 2,
+  Low: 1,
+};
+
+const rankedActions = [...uniqueActions].sort(
+  (a, b) => priorityRank[b.priority] - priorityRank[a.priority]
+);
+
+return rankedActions.slice(0, 5);
 }

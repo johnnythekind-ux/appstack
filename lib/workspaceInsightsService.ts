@@ -1,8 +1,5 @@
-import type { WorkspaceForecast } from "./workspaceForecastService";
 import type { WorkspaceIntelligence } from "./workspaceIntelligenceService";
 import type { WorkspacePriorityAction } from "./workspacePriorityService";
-import type { WorkspaceRisk } from "./workspaceRiskService";
-import type { WorkspaceStrategy } from "./workspaceStrategyService";
 
 export type WorkspaceInsightType =
   | "Pattern"
@@ -10,8 +7,15 @@ export type WorkspaceInsightType =
   | "Constraint"
   | "Opportunity";
 
+export type WorkspaceInsightSeverity =
+  | "Critical"
+  | "High"
+  | "Medium"
+  | "Opportunity";
+
 export type WorkspaceInsight = {
   type: WorkspaceInsightType;
+  severity: WorkspaceInsightSeverity;
   title: string;
   explanation: string;
 };
@@ -24,10 +28,7 @@ export type WorkspaceInsights = {
 
 export function buildWorkspaceInsights(
   intelligence: WorkspaceIntelligence,
-  priorityActions: WorkspacePriorityAction[],
-  forecast: WorkspaceForecast,
-  strategy: WorkspaceStrategy,
-  risk: WorkspaceRisk
+  priorityActions: WorkspacePriorityAction[]
 ): WorkspaceInsights {
   const insights: WorkspaceInsight[] = [];
 
@@ -43,103 +44,118 @@ export function buildWorkspaceInsights(
     (action) => action.actionType === "review_item"
   );
 
+  const actionableActions =
+    reportActions.length + jobActions.length;
+
   if (intelligence.needsJobs > intelligence.needsReports) {
     insights.push({
       type: "Imbalance",
+      severity: "High",
       title: "Execution work is accumulating",
       explanation:
-        "More workspace items need jobs than reports, which suggests reported work is accumulating before execution is created.",
+        "More workspace items need jobs than reports, showing that completed reporting work is accumulating before execution begins.",
     });
   }
 
   if (intelligence.needsReports > intelligence.needsJobs) {
     insights.push({
       type: "Constraint",
-      title: "Reporting is the dominant constraint",
+      severity: "High",
+      title: "Reporting demand exceeds execution demand",
       explanation:
-        "More items are waiting for reports than jobs, so reporting is limiting downstream execution.",
-    });
-  }
-
-  if (reviewActions.length > reportActions.length + jobActions.length) {
-    insights.push({
-      type: "Pattern",
-      title: "Manual review is dominating the visible workload",
-      explanation:
-        "Most visible priority actions require human review rather than direct workflow execution.",
+        "More workspace items are waiting for reports than jobs, making reporting the most concentrated workflow stage.",
     });
   }
 
   if (
-    priorityActions.length > 0 &&
-    forecast.progressGain <= 3
-  ) {
-    insights.push({
-      type: "Constraint",
-      title: "The current plan has limited workspace-wide impact",
-      explanation:
-        "Completing the visible priority actions is expected to produce only a small increase in overall workspace progress.",
-    });
-  }
-
-  if (
-    forecast.projectedResolvedActions > 0 &&
-    forecast.projectedHealth === intelligence.workspaceHealth
+    intelligence.needsReports > 0 &&
+    intelligence.needsReports === intelligence.needsJobs
   ) {
     insights.push({
       type: "Pattern",
-      title: "Visible progress may not change overall health",
+      severity: "Medium",
+      title: "Report and execution demand are evenly distributed",
       explanation:
-        "The current plan resolves actions, but the projected workspace health remains unchanged because additional backlog remains.",
+        "The workspace contains an equal number of items waiting for reports and execution jobs.",
+    });
+  }
+
+  if (reviewActions.length > actionableActions) {
+    insights.push({
+      type: "Pattern",
+      severity: "High",
+      title: "Manual review dominates the visible workload",
+      explanation:
+        "More visible priority actions require human interpretation than direct report or job execution.",
     });
   }
 
   if (
-    intelligence.unknownItems === 0 &&
-    risk.confidence !== "Low"
+    actionableActions > 0 &&
+    actionableActions > reviewActions.length
   ) {
     insights.push({
       type: "Opportunity",
-      title: "The workspace has enough history for stronger decisions",
+      severity: "Opportunity",
+      title: "Most visible work can advance immediately",
       explanation:
-        "All workspace items have recognized stages, giving the intelligence pipeline a more reliable foundation.",
+        "Direct report and job actions outnumber manual reviews, so most visible work can move forward without additional interpretation.",
     });
   }
 
-  if (strategy.strategyConfidence === "Low") {
+  if (
+    intelligence.totalItems > 0 &&
+    intelligence.unknownItems === 0
+  ) {
     insights.push({
-      type: "Constraint",
-      title: "Strategic confidence is being reduced by uncertainty",
+      type: "Opportunity",
+      severity: "Opportunity",
+      title: "Every workspace item has a recognized stage",
       explanation:
-        "The current execution order is directionally useful, but unresolved items weaken confidence in the strategy.",
+        "The event history provides a defined workflow stage for every current workspace item.",
     });
   }
 
   if (insights.length === 0) {
     insights.push({
       type: "Pattern",
+      severity: "Medium",
       title: "No dominant workspace pattern detected",
       explanation:
-        "The current workspace does not show a strong imbalance, constraint, or opportunity.",
+        "The current workspace does not show a strong imbalance, constraint, or immediately actionable opportunity.",
     });
   }
 
+  const severityRank: Record<WorkspaceInsightSeverity, number> = {
+    Critical: 4,
+    High: 3,
+    Medium: 2,
+    Opportunity: 1,
+  };
+
+  const rankedInsights = [...insights].sort(
+    (a, b) => severityRank[b.severity] - severityRank[a.severity]
+  );
+
   let headline = "Workspace activity is broadly balanced.";
 
-  if (intelligence.needsReports > 0) {
+  if (intelligence.needsReports > intelligence.needsJobs) {
     headline =
-      "Reporting remains the primary pattern shaping workspace progress.";
-  } else if (intelligence.needsJobs > 0) {
+      "Reporting demand is the strongest pattern shaping the workspace.";
+  } else if (intelligence.needsJobs > intelligence.needsReports) {
     headline =
-      "Execution readiness is the strongest pattern in the workspace.";
-  } else if (reviewActions.length > 0) {
+      "Execution demand is the strongest pattern shaping the workspace.";
+  } else if (reviewActions.length > actionableActions) {
     headline =
-      "Unresolved review work is the most visible workspace pattern.";
+      "Manual review is the most concentrated form of visible work.";
+  } else if (actionableActions > 0) {
+    headline =
+      "Most visible workspace work is directly actionable.";
   }
 
   return {
     title: "Workspace Insights",
     headline,
-    insights: insights.slice(0, 5),
+    insights: rankedInsights.slice(0, 5),
   };
 }

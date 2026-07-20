@@ -15,6 +15,13 @@ export type WorkspaceRisk = {
   confidence: "High" | "Moderate" | "Low";
 };
 
+type RiskFinding = {
+  rank: number;
+  score: number;
+  factor: string;
+  safeguard: string;
+};
+
 export function buildWorkspaceRisk(
   intelligence: WorkspaceIntelligence,
   priorityActions: WorkspacePriorityAction[],
@@ -33,77 +40,89 @@ export function buildWorkspaceRisk(
     (action) => action.actionType === "review_item"
   );
 
-  const riskFactors: string[] = [];
-  const safeguards: string[] = [];
-
-  let riskScore = 0;
+  const findings: RiskFinding[] = [];
 
   if (intelligence.unknownItems > 0) {
-    riskScore += 30;
-
-    riskFactors.push(
-      `${intelligence.unknownItems} workspace ${
+    findings.push({
+      rank: 50,
+      score: 30,
+      factor: `${intelligence.unknownItems} workspace ${
         intelligence.unknownItems === 1 ? "item has" : "items have"
-      } an unknown workflow stage.`
-    );
-
-    safeguards.push(
-      "Review unknown items before relying on workspace-wide projections."
-    );
+      } an unknown workflow stage.`,
+      safeguard:
+        "Review unknown items before relying on workspace-wide projections.",
+    });
   }
 
-  if (reportActions.length > 0 && jobActions.length > 0) {
-    riskScore += 20;
-
-    riskFactors.push(
-      "Some execution work depends on reports that are not yet complete."
-    );
-
-    safeguards.push(
-      "Complete report actions before creating dependent execution jobs."
-    );
+  if (strategy.strategyConfidence === "Low") {
+    findings.push({
+      rank: 45,
+      score: 0,
+      factor:
+        "The current strategy depends on unresolved items and low-confidence projections.",
+      safeguard:
+        "Resolve uncertain items and recalculate the strategy before relying on the execution order.",
+    });
   }
 
   if (reviewActions.length > reportActions.length + jobActions.length) {
-    riskScore += 25;
-
-    riskFactors.push(
-      "Manual-review work outweighs clearly actionable workflow tasks."
-    );
-
-    safeguards.push(
-      "Resolve the highest-impact uncertain items before expanding the workflow."
-    );
+    findings.push({
+      rank: 40,
+      score: 25,
+      factor:
+        "Manual-review work outweighs clearly actionable workflow tasks.",
+      safeguard:
+        "Resolve the highest-impact uncertain items before expanding the workflow.",
+    });
   }
 
   if (forecast.confidence === "Low") {
-    riskScore += 20;
+    findings.push({
+      rank: 35,
+      score: 20,
+      factor:
+        "The current forecast has low confidence because unresolved decisions remain.",
+      safeguard:
+        "Treat projected progress as directional until uncertain items are reviewed.",
+    });
+  }
 
-    riskFactors.push(
-      "The current forecast has low confidence because unresolved decisions remain."
-    );
-
-    safeguards.push(
-      "Treat projected progress as directional until uncertain items are reviewed."
-    );
+  if (reportActions.length > 0 && jobActions.length > 0) {
+    findings.push({
+      rank: 30,
+      score: 20,
+      factor:
+        "Some execution work depends on reports that are not yet complete.",
+      safeguard:
+        "Complete report actions before creating dependent execution jobs.",
+    });
   }
 
   if (
     forecast.projectedHealth === intelligence.workspaceHealth &&
     intelligence.workspaceHealth !== "Healthy"
   ) {
-    riskScore += 15;
-
-    riskFactors.push(
-      "Completing the visible plan is not expected to resolve the overall workspace condition."
-    );
-
-    safeguards.push(
-      "Recalculate priorities after the current plan is completed."
-    );
+    findings.push({
+      rank: 20,
+      score: 15,
+      factor:
+        "Completing the visible plan is not expected to resolve the overall workspace condition.",
+      safeguard:
+        "Recalculate priorities after the current plan is completed.",
+    });
   }
 
-  riskScore = Math.min(riskScore, 100);
+  const rankedFindings = [...findings].sort(
+    (a, b) => b.rank - a.rank
+  );
+
+  const riskScore = Math.min(
+    rankedFindings.reduce(
+      (total, finding) => total + finding.score,
+      0
+    ),
+    100
+  );
 
   let overallRisk: WorkspaceRiskLevel = "Low";
 
@@ -113,28 +132,27 @@ export function buildWorkspaceRisk(
     overallRisk = "Moderate";
   }
 
-  if (riskFactors.length === 0) {
-    riskFactors.push(
-      "No significant risk factors are currently detected."
-    );
-  }
+  const riskFactors =
+    rankedFindings.length > 0
+      ? rankedFindings.map((finding) => finding.factor)
+      : ["No significant risk factors are currently detected."];
 
-  if (safeguards.length === 0) {
-    safeguards.push(
-      "Continue monitoring events and recalculate intelligence after new activity."
-    );
-  }
+  const safeguards =
+    rankedFindings.length > 0
+      ? rankedFindings.map((finding) => finding.safeguard)
+      : [
+          "Continue monitoring events and recalculate intelligence after new activity.",
+        ];
 
-  let primaryRisk = riskFactors[0];
-
-  if (strategy.strategyConfidence === "Low") {
-    primaryRisk =
-      "The current strategy depends on unresolved items and low-confidence projections.";
-  }
+  const primaryRisk = riskFactors[0];
 
   let confidence: WorkspaceRisk["confidence"] = "Moderate";
 
-  if (intelligence.unknownItems > 0) {
+  if (
+    intelligence.unknownItems > 0 ||
+    forecast.confidence === "Low" ||
+    strategy.strategyConfidence === "Low"
+  ) {
     confidence = "Low";
   } else if (
     forecast.confidence === "High" &&

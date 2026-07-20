@@ -73,10 +73,7 @@ const risk = buildWorkspaceRisk(
 
 const insights = buildWorkspaceInsights(
   intelligence,
-  priorityActions,
-  forecast,
-  strategy,
-  risk
+  priorityActions
 );
 
   return {

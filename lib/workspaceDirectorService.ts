@@ -1,5 +1,5 @@
-import { WorkspaceIntelligence } from "./workspaceIntelligenceService";
-import { WorkspacePriorityAction } from "./workspacePriorityService";
+import type { WorkspaceIntelligence } from "./workspaceIntelligenceService";
+import type { WorkspacePriorityAction } from "./workspacePriorityService";
 
 export type WorkspaceDirectorPlan = {
   title: string;
@@ -7,7 +7,6 @@ export type WorkspaceDirectorPlan = {
   summary: string[];
   nextBestAction: string;
   estimatedMinutes: number;
-  completionPrediction: string;
 };
 
 export function buildWorkspaceDirectorPlan(
@@ -64,26 +63,11 @@ export function buildWorkspaceDirectorPlan(
   const nextBestAction =
     priorityActions[0]?.title || "Continue monitoring the workspace.";
 
-  let completionPrediction =
-    "Completing today's plan should improve workspace health.";
-
-  if (priorityActions.length === 0) {
-    completionPrediction =
-      "The workspace is currently healthy. Continue monitoring activity.";
-  } else if (intelligence.needsReports > 0) {
-    completionPrediction =
-      "Completing the report actions will unblock downstream job creation.";
-  } else if (intelligence.needsJobs > 0) {
-    completionPrediction =
-      "Completing the job actions will move reported items into execution.";
-  }
-
   return {
     title: "Today's Workspace Plan",
     workspaceStatus: intelligence.workspaceHealth,
     summary,
     nextBestAction,
     estimatedMinutes,
-    completionPrediction,
   };
 }

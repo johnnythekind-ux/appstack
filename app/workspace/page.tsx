@@ -6,6 +6,7 @@ import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
 import Card from "../components/Card";
 import Button from "../components/Button";
+import { RecommendedActionButton } from "../components/RecommendedActionButton";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
@@ -30,6 +31,7 @@ import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
 import type { WorkspaceRisk } from "../../lib/workspaceRiskService";
 import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
 import type { WorkspaceInsights } from "../../lib/workspaceInsightsService";
+import type { WorkspaceAIResponse } from "../../lib/workspaceAIResponse";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -68,6 +70,12 @@ const [workspaceRisk, setWorkspaceRisk] =
 const [workspaceInsights, setWorkspaceInsights] =
   useState<WorkspaceInsights | null>(null);
 
+  const [workspaceAIQuestion, setWorkspaceAIQuestion] = useState("");
+const [workspaceAIAnswer, setWorkspaceAIAnswer] =
+  useState<WorkspaceAIResponse | null>(null);
+const [workspaceAILoading, setWorkspaceAILoading] = useState(false);
+const [workspaceAIStale, setWorkspaceAIStale] = useState(false);
+
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
@@ -80,11 +88,20 @@ const recommendation =
   const { data, error } = await getWorkspaceItems();
 
   if (error) {
-    console.error(error);
-    toast.error("Failed to load workspace items.");
-    setLoading(false);
-    return;
-  }
+  console.log("Workspace item load error:", {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  });
+
+  toast.error(
+    error.message || "Failed to load workspace items."
+  );
+
+  setLoading(false);
+  return;
+}
 
   const workspaceItems = data || [];
 
@@ -321,16 +338,18 @@ async function handlePriorityAction(action: WorkspacePriorityAction) {
   }
 
   if (action.actionType === "generate_report") {
-    await generateReportFromItem(item);
-    toast.success("Report generated from priority action.");
-    return;
-  }
+  await generateReportFromItem(item);
+  setWorkspaceAIStale(true);
+  toast.success("Report generated from priority action.");
+  return;
+}
 
   if (action.actionType === "create_job") {
-    await createJobFromItem(item);
-    toast.success("Job created from priority action.");
-    return;
-  }
+  await createJobFromItem(item);
+  setWorkspaceAIStale(true);
+  toast.success("Job created from priority action.");
+  return;
+}
 
   setSelectedItem(item);
 }
@@ -381,6 +400,76 @@ function openSelectedItem() {
   if (selectedItem.type === "job") {
     router.push("/jobs");
     return;
+  }
+}
+
+async function askWorkspaceAI() {
+  const question = workspaceAIQuestion.trim();
+
+  if (!question) {
+    toast.error("Enter a workspace question.");
+    return;
+  }
+
+  if (
+    !workspaceDirectorPlan ||
+    !workspaceForecast ||
+    !workspaceStrategy ||
+    !workspaceRisk ||
+    !workspaceInsights
+  ) {
+    toast.error("Workspace intelligence is still loading.");
+    return;
+  }
+
+  setWorkspaceAILoading(true);
+
+  try {
+    const response = await fetch("/api/workspace-ai", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        workspace: workspaceIntelligence,
+        priorities: workspacePriorityActions,
+        director: workspaceDirectorPlan,
+        forecast: workspaceForecast,
+        strategy: workspaceStrategy,
+        risk: workspaceRisk,
+        insights: workspaceInsights,
+        question,
+      }),
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(
+        result.error || "The workspace AI request failed."
+      );
+    }
+
+    setWorkspaceAIAnswer(result.answer);
+    setWorkspaceAIStale(false);
+
+    window.setTimeout(() => {
+      document
+        .getElementById("workspace-ai-answer")
+        ?.scrollIntoView({
+          behavior: "smooth",
+          block: "start",
+        });
+    }, 100);
+  } catch (error) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "The workspace AI request failed.";
+
+    toast.error(message);
+  } finally {
+    setWorkspaceAILoading(false);
   }
 }
 
@@ -544,15 +633,6 @@ function openSelectedItem() {
       </ul>
     </div>
 
-    <div className="mt-6 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">
-        Completion Prediction
-      </p>
-
-      <p className="mt-2 text-lg font-semibold">
-        {workspaceDirectorPlan.completionPrediction}
-      </p>
-    </div>
   </Card>
 )}
 
@@ -774,15 +854,21 @@ function openSelectedItem() {
           key={`${insight.title}-${index}`}
           className="rounded-lg border border-slate-800 p-4"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-lg font-semibold">
-                {insight.title}
-              </p>
-            </div>
+          <div className="flex items-center justify-between gap-4">
+  <div>
+    <p className="text-lg font-semibold">
+      {insight.title}
+    </p>
+  </div>
 
-            <StatusBadge status={insight.type} />
-          </div>
+  <div className="flex items-center gap-2">
+    <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300">
+      {insight.severity}
+    </span>
+
+    <StatusBadge status={insight.type} />
+  </div>
+</div>
 
           <div className="mt-3">
             <p className="text-sm text-slate-400">
@@ -793,6 +879,131 @@ function openSelectedItem() {
       ))}
     </div>
   </Card>
+)}
+
+<Card title="Ask AppStack AI" className="mt-10">
+  <p className="text-sm text-slate-400">
+    Ask a question about the current workspace intelligence, priorities,
+    forecast, strategy, risks, or insights.
+  </p>
+
+  <textarea
+    value={workspaceAIQuestion}
+    onChange={(event) =>
+      setWorkspaceAIQuestion(event.target.value)
+    }
+    placeholder="What should I focus on today?"
+    rows={4}
+    className="mt-5 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+  />
+
+  <div className="mt-4">
+    <Button
+      onClick={askWorkspaceAI}
+      disabled={workspaceAILoading}
+    >
+      {workspaceAILoading ? "Thinking..." : "Ask AppStack AI"}
+    </Button>
+  </div>
+
+  {workspaceAIAnswer && (
+    <div
+      id="workspace-ai-answer"
+      className="mt-6 scroll-mt-6 space-y-5 rounded-lg border border-slate-800 p-4"
+    >
+      <div>
+        <p className="text-sm text-slate-400">
+          Today&apos;s Situation
+        </p>
+
+        <p className="mt-2 text-lg leading-8">
+          {workspaceAIAnswer.summary}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">
+          Today&apos;s Focus
+        </p>
+
+        <p className="mt-2 text-lg font-semibold leading-8">
+          {workspaceAIAnswer.recommendation}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">
+          Why this matters
+        </p>
+
+        <ul className="mt-3 space-y-3">
+          {workspaceAIAnswer.evidence.map((item, index) => (
+            <li
+              key={`${item.source}-${item.claim}-${index}`}
+              className="flex gap-3 text-lg leading-8"
+            >
+              <span aria-hidden="true">✓</span>
+              <span>{item.claim}</span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">
+          How certain is this?
+        </p>
+
+        <p className="mt-2 text-lg font-semibold">
+          {workspaceAIAnswer.confidence}
+        </p>
+      </div>
+
+      <div>
+        <p className="text-sm text-slate-400">
+          Do this now
+        </p>
+
+        <p className="mt-2 text-lg font-semibold leading-8">
+          {workspaceAIAnswer.nextStep}
+        </p>
+
+        {workspacePriorityActions[0] && (
+          <RecommendedActionButton
+            label={workspacePriorityActions[0].title}
+            onClick={() =>
+              handlePriorityAction(
+                workspacePriorityActions[0]
+              )
+            }
+          />
+        )}
+      </div>
+    </div>
+  )}
+</Card>
+
+{workspaceAIStale && (
+  <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">
+    <p className="font-semibold text-amber-200">
+      The workspace changed after this advice was generated.
+    </p>
+
+    <p className="mt-2 text-sm text-amber-100/80">
+      Refresh the AI advice so it reflects the current workspace.
+    </p>
+
+    <div className="mt-4">
+      <Button
+        onClick={askWorkspaceAI}
+        disabled={workspaceAILoading}
+      >
+        {workspaceAILoading
+          ? "Refreshing..."
+          : "Refresh Advice"}
+      </Button>
+    </div>
+  </div>
 )}
 
 <Card title="Priority Actions" className="mt-10">

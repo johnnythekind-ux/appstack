@@ -21,21 +21,24 @@ export function buildWorkspaceForecast(
   priorityActions: WorkspacePriorityAction[],
   directorPlan: WorkspaceDirectorPlan
 ): WorkspaceForecast {
-  const actionableItems = priorityActions.filter(
-    (action) =>
-      action.actionType === "generate_report" ||
-      action.actionType === "create_job"
+  const reportActions = priorityActions.filter(
+    (action) => action.actionType === "generate_report"
   );
 
-  const reviewItems = priorityActions.filter(
+  const jobActions = priorityActions.filter(
+    (action) => action.actionType === "create_job"
+  );
+
+  const reviewActions = priorityActions.filter(
     (action) => action.actionType === "review_item"
   );
 
-  const projectedResolvedActions = priorityActions.length;
+  const projectedResolvedActions =
+    reportActions.length + jobActions.length;
 
   const projectedHealthyItems = Math.min(
     intelligence.totalItems,
-    intelligence.healthyItems + actionableItems.length
+    intelligence.healthyItems + jobActions.length
   );
 
   const projectedProgress =
@@ -50,41 +53,63 @@ export function buildWorkspaceForecast(
     projectedProgress - intelligence.progressPercent
   );
 
+  const remainingReports = Math.max(
+    0,
+    intelligence.needsReports - reportActions.length
+  );
+
+  const remainingJobs = Math.max(
+    0,
+    intelligence.needsJobs - jobActions.length
+  );
+
   let projectedHealth: WorkspaceIntelligence["workspaceHealth"] =
     intelligence.workspaceHealth;
 
   if (
     intelligence.totalItems > 0 &&
     intelligence.unknownItems === 0 &&
-    intelligence.needsReports <= actionableItems.length &&
-    intelligence.needsJobs <= actionableItems.length
+    remainingReports === 0 &&
+    remainingJobs === 0 &&
+    reportActions.length === 0
   ) {
     projectedHealth = "Healthy";
+  } else if (intelligence.totalItems === 0) {
+    projectedHealth = "Unknown";
+  } else {
+    projectedHealth = "Needs Attention";
   }
 
   let confidence: ForecastConfidence = "Moderate";
 
   if (priorityActions.length === 0) {
     confidence = "High";
-  } else if (reviewItems.length > actionableItems.length) {
+  } else if (reviewActions.length > 0) {
     confidence = "Low";
+  } else if (
+    reportActions.length + jobActions.length === priorityActions.length
+  ) {
+    confidence = "High";
   }
 
   let prediction =
-    "Completing today's plan should improve workspace progress.";
+    "Completing today's visible actions should improve workspace progress.";
 
   if (priorityActions.length === 0) {
     prediction =
       "No immediate improvement is required because the workspace is currently stable.";
   } else if (projectedHealth === "Healthy") {
     prediction =
-      "Completing today's plan is expected to move the workspace into a healthy state.";
-  } else if (reviewItems.length > 0) {
+      "Completing today's visible actions is expected to move the workspace into a healthy state.";
+  } else if (reportActions.length > 0) {
     prediction =
-      "Completing today's plan should improve progress, but reviewed items may require additional decisions.";
+      "Generating the visible reports will advance analyzed items, but follow-up jobs will still be required.";
+  } else if (reviewActions.length > 0) {
+    prediction =
+      "Completing the visible plan may improve progress, but reviewed items could require additional decisions.";
   } else if (directorPlan.estimatedMinutes > 0) {
     prediction =
-      "Completing the available actions should reduce the current workspace bottleneck.";
+      "Completing the visible job actions should increase healthy workspace items and reduce the current execution backlog.";
   }
 
   return {
