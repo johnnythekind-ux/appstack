@@ -7,6 +7,7 @@ import Page from "../components/Page";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import { RecommendedActionButton } from "../components/RecommendedActionButton";
+import WorkspaceCoach from "../components/workspace/WorkspaceCoach";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
@@ -527,74 +528,44 @@ async function askWorkspaceAI() {
           </Card>
         </section>
 
-        <Card title="Workspace Intelligence" className="mt-10">
-  <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-    <div>
-      <p className="text-sm text-slate-400">Workspace Health</p>
-      <p className="mt-2 text-2xl font-bold">
-        {workspaceIntelligence.workspaceHealth}
-      </p>
-    </div>
+        <WorkspaceCoach
+  estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
+  priorityCount={workspacePriorityActions.length}
+  primaryBottleneck={workspaceIntelligence.primaryBottleneck}
+  recommendedAction={workspaceIntelligence.recommendedAction}
+  onStartPlan={() =>
+    setWorkspaceAIQuestion(
+      "Walk me through today's plan one step at a time."
+    )
+  }
+  onShowBlocker={() =>
+    setWorkspaceAIQuestion(
+      "Explain what is blocking my workspace and tell me what I should do about it."
+    )
+  }
+  onShowOpportunity={() =>
+    setWorkspaceAIQuestion(
+      "Where is the biggest opportunity to make meaningful progress in my workspace?"
+    )
+  }
+  onReviewPlan={() =>
+    setWorkspaceAIQuestion(
+      "Review today's plan, explain the order of work, and tell me what to do first."
+    )
+  }
+  onAskSomethingElse={() => {
+    const questionField = document.getElementById(
+      "workspace-ai-question"
+    );
 
-    <div>
-      <p className="text-sm text-slate-400">Primary Bottleneck</p>
-      <p className="mt-2 text-2xl font-bold">
-        {workspaceIntelligence.primaryBottleneck}
-      </p>
-    </div>
+    questionField?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
 
-    <div>
-      <p className="text-sm text-slate-400">Progress</p>
-      <p className="mt-2 text-2xl font-bold">
-        {workspaceIntelligence.progressPercent}%
-      </p>
-    </div>
-
-    <div>
-      <p className="text-sm text-slate-400">Total Items</p>
-      <p className="mt-2 text-2xl font-bold">
-        {workspaceIntelligence.totalItems}
-      </p>
-    </div>
-  </div>
-
-  <div className="mt-8 rounded-lg border border-slate-800 p-4">
-    <p className="text-sm text-slate-400">Recommended Action</p>
-    <p className="mt-2 text-lg font-semibold">
-      {workspaceIntelligence.recommendedAction}
-    </p>
-  </div>
-
-  <div className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-4">
-    <div>
-      <p className="text-sm text-slate-400">Needs Reports</p>
-      <p className="mt-2 text-xl font-bold">
-        {workspaceIntelligence.needsReports}
-      </p>
-    </div>
-
-    <div>
-      <p className="text-sm text-slate-400">Needs Jobs</p>
-      <p className="mt-2 text-xl font-bold">
-        {workspaceIntelligence.needsJobs}
-      </p>
-    </div>
-
-    <div>
-      <p className="text-sm text-slate-400">Healthy</p>
-      <p className="mt-2 text-xl font-bold">
-        {workspaceIntelligence.healthyItems}
-      </p>
-    </div>
-
-    <div>
-      <p className="text-sm text-slate-400">Unknown</p>
-      <p className="mt-2 text-xl font-bold">
-        {workspaceIntelligence.unknownItems}
-      </p>
-    </div>
-  </div>
-</Card>
+    questionField?.focus();
+  }}
+/>
 
 {workspaceDirectorPlan && (
   <Card title={workspaceDirectorPlan.title} className="mt-10">
@@ -888,6 +859,7 @@ async function askWorkspaceAI() {
   </p>
 
   <textarea
+  id="workspace-ai-question"
     value={workspaceAIQuestion}
     onChange={(event) =>
       setWorkspaceAIQuestion(event.target.value)
