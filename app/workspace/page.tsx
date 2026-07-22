@@ -343,14 +343,22 @@ async function handlePriorityAction(action: WorkspacePriorityAction) {
 
   if (action.actionType === "generate_report") {
   await generateReportFromItem(item);
-  setWorkspaceAIStale(true);
+
+  if (workspaceAIAnswer) {
+    setWorkspaceAIStale(true);
+  }
+
   toast.success("Report generated from priority action.");
   return;
 }
 
   if (action.actionType === "create_job") {
   await createJobFromItem(item);
-  setWorkspaceAIStale(true);
+
+  if (workspaceAIAnswer) {
+    setWorkspaceAIStale(true);
+  }
+
   toast.success("Job created from priority action.");
   return;
 }
