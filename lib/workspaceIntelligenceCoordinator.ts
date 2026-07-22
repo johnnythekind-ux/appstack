@@ -32,7 +32,7 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
 
     return {
       item,
-      analysis: analyzeWorkspaceEvents(relatedEvents),
+      analysis: analyzeWorkspaceEvents(item.type, relatedEvents),
     };
   });
 

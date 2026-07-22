@@ -80,7 +80,10 @@ const [workspaceAIStale, setWorkspaceAIStale] = useState(false);
 const [loading, setLoading] = useState(true);
 
 const router = useRouter();
-const workspaceAnalysis = analyzeWorkspaceEvents(selectedItemEvents);
+const workspaceAnalysis = analyzeWorkspaceEvents(
+  selectedItem?.type ?? "analysis",
+  selectedItemEvents
+);
 const recommendation =
   getWorkspaceRecommendation(workspaceAnalysis);
 
