@@ -2,6 +2,7 @@
 
 import DirectorPanel from "../components/workspace/intelligence/DirectorPanel";
 import ForecastPanel from "../components/workspace/intelligence/ForecastPanel";
+import StrategyPanel from "../components/workspace/intelligence/StrategyPanel";
 import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
@@ -686,47 +687,8 @@ async function askWorkspaceAI() {
 )}
 
             {activeIntelligenceTab === "strategy" && (
-              <>
-                {!workspaceStrategy ? (
-                  <p className="text-slate-400">
-                    Strategy intelligence is still loading.
-                  </p>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div className="rounded-xl border border-slate-800 p-5">
-                        <p className="text-sm text-slate-400">
-                          Strategic Focus
-                        </p>
-                        <p className="mt-2 text-xl font-bold">
-                          {workspaceStrategy.strategicFocus}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-slate-800 p-5">
-                        <p className="text-sm text-slate-400">Confidence</p>
-                        <p className="mt-2 text-xl font-bold">
-                          {workspaceStrategy.strategyConfidence}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-800 p-5">
-                      <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
-                        Execution Order
-                      </p>
-                      <ol className="mt-4 space-y-3">
-                        {workspaceStrategy.executionOrder.map((step, index) => (
-                          <li key={`${step}-${index}`} className="flex gap-3">
-                            <span className="font-bold">{index + 1}.</span>
-                            <span>{step}</span>
-                          </li>
-                        ))}
-                      </ol>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+  <StrategyPanel strategy={workspaceStrategy} />
+)}
 
             {activeIntelligenceTab === "risk" && (
               <>
