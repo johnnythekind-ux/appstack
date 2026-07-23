@@ -5,6 +5,7 @@ import ForecastPanel from "../components/workspace/intelligence/ForecastPanel";
 import StrategyPanel from "../components/workspace/intelligence/StrategyPanel";
 import RiskPanel from "../components/workspace/intelligence/RiskPanel";
 import InsightsPanel from "../components/workspace/intelligence/InsightsPanel";
+import AIAdvisorPanel from "../components/workspace/intelligence/AIAdvisorPanel";
 import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
@@ -703,89 +704,16 @@ async function askWorkspaceAI() {
 )}
 
             {activeIntelligenceTab === "ai" && (
-              <div>
-                <p className="text-sm leading-6 text-slate-400">
-                  Ask AppStack AI about the current workspace, priorities,
-                  forecast, strategy, risks, or insights.
-                </p>
-
-                <textarea
-                  id="workspace-ai-question"
-                  value={workspaceAIQuestion}
-                  onChange={(event) =>
-                    setWorkspaceAIQuestion(event.target.value)
-                  }
-                  placeholder="What should I focus on today?"
-                  rows={4}
-                  className="mt-5 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
-                />
-
-                <div className="mt-4">
-                  <Button
-                    onClick={askWorkspaceAI}
-                    disabled={workspaceAILoading}
-                  >
-                    {workspaceAILoading ? "Thinking..." : "Ask AppStack AI"}
-                  </Button>
-                </div>
-
-                {workspaceAIAnswer && (
-                  <div
-                    id="workspace-ai-answer"
-                    className="mt-6 space-y-5 rounded-xl border border-slate-800 p-5"
-                  >
-                    <div>
-                      <p className="text-sm text-slate-400">
-                        Today&apos;s Situation
-                      </p>
-                      <p className="mt-2 leading-7">
-                        {workspaceAIAnswer.summary}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-400">
-                        Today&apos;s Focus
-                      </p>
-                      <p className="mt-2 font-semibold leading-7">
-                        {workspaceAIAnswer.recommendation}
-                      </p>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-400">Evidence</p>
-                      <ul className="mt-3 space-y-3">
-                        {workspaceAIAnswer.evidence.map((item, index) => (
-                          <li
-                            key={`${item.source}-${item.claim}-${index}`}
-                            className="flex gap-3"
-                          >
-                            <span aria-hidden="true">✓</span>
-                            <span>{item.claim}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <div>
-                      <p className="text-sm text-slate-400">Next Step</p>
-                      <p className="mt-2 font-semibold">
-                        {workspaceAIAnswer.nextStep}
-                      </p>
-
-                      {workspacePriorityActions[0] && (
-                        <RecommendedActionButton
-                          label={workspacePriorityActions[0].title}
-                          onClick={() =>
-                            handlePriorityAction(workspacePriorityActions[0])
-                          }
-                        />
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            )}
+  <AIAdvisorPanel
+    question={workspaceAIQuestion}
+    answer={workspaceAIAnswer}
+    loading={workspaceAILoading}
+    onQuestionChange={setWorkspaceAIQuestion}
+    onAsk={askWorkspaceAI}
+    priorityActions={workspacePriorityActions}
+    onPriorityAction={handlePriorityAction}
+  />
+)}
           </div>
         </Card>
       </section>
