@@ -3,6 +3,7 @@
 import DirectorPanel from "../components/workspace/intelligence/DirectorPanel";
 import ForecastPanel from "../components/workspace/intelligence/ForecastPanel";
 import StrategyPanel from "../components/workspace/intelligence/StrategyPanel";
+import RiskPanel from "../components/workspace/intelligence/RiskPanel";
 import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
@@ -691,44 +692,8 @@ async function askWorkspaceAI() {
 )}
 
             {activeIntelligenceTab === "risk" && (
-              <>
-                {!workspaceRisk ? (
-                  <p className="text-slate-400">
-                    Risk intelligence is still loading.
-                  </p>
-                ) : (
-                  <div className="space-y-6">
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                      <div className="rounded-xl border border-slate-800 p-4">
-                        <p className="text-sm text-slate-400">Overall Risk</p>
-                        <p className="mt-2 text-xl font-bold">
-                          {workspaceRisk.overallRisk}
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-slate-800 p-4">
-                        <p className="text-sm text-slate-400">Risk Score</p>
-                        <p className="mt-2 text-xl font-bold">
-                          {workspaceRisk.riskScore}/100
-                        </p>
-                      </div>
-                      <div className="rounded-xl border border-slate-800 p-4">
-                        <p className="text-sm text-slate-400">Confidence</p>
-                        <p className="mt-2 text-xl font-bold">
-                          {workspaceRisk.confidence}
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-xl border border-slate-800 p-5">
-                      <p className="text-sm text-slate-400">Primary Risk</p>
-                      <p className="mt-2 text-lg font-semibold">
-                        {workspaceRisk.primaryRisk}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </>
-            )}
+  <RiskPanel risk={workspaceRisk} />
+)}
 
             {activeIntelligenceTab === "insights" && (
               <>
