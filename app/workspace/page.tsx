@@ -1,5 +1,7 @@
 "use client";
 
+import DirectorPanel from "../components/workspace/intelligence/DirectorPanel";
+import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import Toolbar from "../components/Toolbar";
@@ -7,7 +9,6 @@ import Page from "../components/Page";
 import Card from "../components/Card";
 import Button from "../components/Button";
 import { RecommendedActionButton } from "../components/RecommendedActionButton";
-import WorkspaceCoach from "../components/workspace/WorkspaceCoach";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
@@ -23,7 +24,6 @@ import {
 } from "../../lib/workspaceService";
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { supabase } from "../../lib/supabase";
 import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
@@ -78,6 +78,10 @@ const [workspaceAILoading, setWorkspaceAILoading] = useState(false);
 const [workspaceAIStale, setWorkspaceAIStale] = useState(false);
 
 const [loading, setLoading] = useState(true);
+const [showAllItems, setShowAllItems] = useState(false);
+const [activeIntelligenceTab, setActiveIntelligenceTab] = useState<
+  "director" | "forecast" | "strategy" | "risk" | "insights" | "ai"
+>("director");
 
 const router = useRouter();
 const workspaceAnalysis = analyzeWorkspaceEvents(
@@ -485,839 +489,573 @@ async function askWorkspaceAI() {
   }
 }
 
+  const visibleItems = showAllItems
+    ? filteredItems
+    : filteredItems.slice(0, 5);
+
+  const intelligenceTabs = [
+    { id: "director", label: "Director" },
+    { id: "forecast", label: "Forecast" },
+    { id: "strategy", label: "Strategy" },
+    { id: "risk", label: "Risk" },
+    { id: "insights", label: "Insights" },
+    { id: "ai", label: "AI" },
+  ] as const;
+
   return (
-  <Page
-    title="Workspace"
-    description="Shared storage layer for analyses, reports, jobs, and generated outputs."
-  >
+    <Page
+      title="Workspace"
+      description="Your operational command center for analyses, reports, jobs, and intelligence."
+    >
+      <Toolbar>
+        <SearchBar
+          value={search}
+          onChange={setSearch}
+          placeholder="Search title or address..."
+          className="flex-1 bg-slate-900 py-3 text-white"
+        />
 
-        <Toolbar>
-          <SearchBar
-  value={search}
-  onChange={setSearch}
-  placeholder="Search title or address..."
-  className="flex-1 bg-slate-900 py-3 text-white"
-/>
-
-          <select
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-            className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
-          >
-            <option value="all">All</option>
-            <option value="analysis">Analyses</option>
-            <option value="report">Reports</option>
-            <option value="job">Jobs</option>
-          </select>
-
-<select
-  value={sort}
-  onChange={(e) => setSort(e.target.value)}
-  className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
->
-  <option value="newest">Newest</option>
-  <option value="oldest">Oldest</option>
-  <option value="az">A–Z</option>
-</select>
-
-        </Toolbar>
-
-        <section className="mt-10 grid grid-cols-1 gap-6 md:grid-cols-3">
-          <Card>
-            <p className="text-sm text-slate-400">Saved Analyses</p>
-            <p className="mt-2 text-3xl font-bold">{analyses.length}</p>
-          </Card>
-
-          <Card>
-            <p className="text-sm text-slate-400">Reports</p>
-            <p className="mt-2 text-3xl font-bold">{reports.length}</p>
-          </Card>
-
-          <Card>
-            <p className="text-sm text-slate-400">Jobs</p>
-            <p className="mt-2 text-3xl font-bold">{jobs.length}</p>
-          </Card>
-        </section>
-
-        <WorkspaceCoach
-  estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
-  priorityCount={workspacePriorityActions.length}
-  primaryBottleneck={workspaceIntelligence.primaryBottleneck}
-  recommendedAction={workspaceIntelligence.recommendedAction}
-  onStartPlan={() =>
-    setWorkspaceAIQuestion(
-      "Walk me through today's plan one step at a time."
-    )
-  }
-  onShowBlocker={() =>
-    setWorkspaceAIQuestion(
-      "Explain what is blocking my workspace and tell me what I should do about it."
-    )
-  }
-  onShowOpportunity={() =>
-    setWorkspaceAIQuestion(
-      "Where is the biggest opportunity to make meaningful progress in my workspace?"
-    )
-  }
-  onReviewPlan={() =>
-    setWorkspaceAIQuestion(
-      "Review today's plan, explain the order of work, and tell me what to do first."
-    )
-  }
-  onAskSomethingElse={() => {
-    const questionField = document.getElementById(
-      "workspace-ai-question"
-    );
-
-    questionField?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-
-    questionField?.focus();
-  }}
-/>
-
-{workspaceDirectorPlan && (
-  <Card title={workspaceDirectorPlan.title} className="mt-10">
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <div>
-        <p className="text-sm text-slate-400">Workspace Status</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceDirectorPlan.workspaceStatus}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Next Best Action</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceDirectorPlan.nextBestAction}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Estimated Work</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceDirectorPlan.estimatedMinutes} minutes
-        </p>
-      </div>
-    </div>
-
-    <div className="mt-8 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">Today&apos;s Plan</p>
-
-      <ul className="mt-3 space-y-2">
-        {workspaceDirectorPlan.summary.map((summaryItem) => (
-          <li key={summaryItem} className="text-lg font-semibold">
-            • {summaryItem}
-          </li>
-        ))}
-      </ul>
-    </div>
-
-  </Card>
-)}
-
-{workspaceForecast && (
-  <Card title={workspaceForecast.title} className="mt-10">
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-4">
-      <div>
-        <p className="text-sm text-slate-400">Current Health</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceForecast.currentHealth}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Projected Health</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceForecast.projectedHealth}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Projected Progress</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceForecast.projectedProgress}%
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Confidence</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceForecast.confidence}
-        </p>
-      </div>
-    </div>
-
-    <div className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-3">
-  <div>
-    <p className="text-sm text-slate-400">Current Progress</p>
-    <p className="mt-2 text-xl font-bold">
-      {workspaceForecast.currentProgress}%
-    </p>
-  </div>
-
-  <div>
-    <p className="text-sm text-slate-400">Expected Gain</p>
-    <p className="mt-2 text-xl font-bold">
-      +{workspaceForecast.progressGain}%
-    </p>
-  </div>
-
-  <div>
-    <p className="text-sm text-slate-400">
-      Projected Resolved Actions
-    </p>
-    <p className="mt-2 text-xl font-bold">
-      {workspaceForecast.projectedResolvedActions}
-    </p>
-  </div>
-</div>
-
-    <div className="mt-8 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">Forecast</p>
-      <p className="mt-2 text-lg font-semibold">
-        {workspaceForecast.prediction}
-      </p>
-    </div>
-
-    <p className="mt-4 text-sm text-slate-500">
-      This is a rule-based projection, not a guaranteed outcome.
-    </p>
-  </Card>
-)}
-
-{workspaceStrategy && (
-  <Card title={workspaceStrategy.title} className="mt-10">
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div>
-        <p className="text-sm text-slate-400">Strategic Focus</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceStrategy.strategicFocus}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Strategy Confidence</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceStrategy.strategyConfidence}
-        </p>
-      </div>
-    </div>
-
-    <div className="mt-8 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">Execution Order</p>
-
-      <ol className="mt-3 space-y-2">
-        {workspaceStrategy.executionOrder.map((step, index) => (
-          <li key={`${step}-${index}`} className="text-lg font-semibold">
-            {index + 1}. {step}
-          </li>
-        ))}
-      </ol>
-    </div>
-
-    <div className="mt-6 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">What Should Wait</p>
-
-      <ul className="mt-3 space-y-2">
-        {workspaceStrategy.delayActions.map((action, index) => (
-          <li key={`${action}-${index}`} className="text-lg font-semibold">
-            • {action}
-          </li>
-        ))}
-      </ul>
-    </div>
-
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="rounded-lg border border-slate-800 p-4">
-        <p className="text-sm text-slate-400">
-          Bottleneck Explanation
-        </p>
-
-        <p className="mt-2 text-lg font-semibold">
-          {workspaceStrategy.bottleneckExplanation}
-        </p>
-      </div>
-
-      <div className="rounded-lg border border-slate-800 p-4">
-        <p className="text-sm text-slate-400">
-          Tradeoff Explanation
-        </p>
-
-        <p className="mt-2 text-lg font-semibold">
-          {workspaceStrategy.tradeoffExplanation}
-        </p>
-      </div>
-    </div>
-  </Card>
-)}
-
-{workspaceRisk && (
-  <Card title={workspaceRisk.title} className="mt-10">
-    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
-      <div>
-        <p className="text-sm text-slate-400">Overall Risk</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceRisk.overallRisk}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Risk Score</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceRisk.riskScore}/100
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">Assessment Confidence</p>
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceRisk.confidence}
-        </p>
-      </div>
-    </div>
-
-    <div className="mt-8 rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">Primary Risk</p>
-      <p className="mt-2 text-lg font-semibold">
-        {workspaceRisk.primaryRisk}
-      </p>
-    </div>
-
-    <div className="mt-6 grid grid-cols-1 gap-6 md:grid-cols-2">
-      <div className="rounded-lg border border-slate-800 p-4">
-        <p className="text-sm text-slate-400">Risk Factors</p>
-
-        <ul className="mt-3 space-y-2">
-          {workspaceRisk.riskFactors.map((factor, index) => (
-            <li
-              key={`${factor}-${index}`}
-              className="text-lg font-semibold"
-            >
-              • {factor}
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div className="rounded-lg border border-slate-800 p-4">
-        <p className="text-sm text-slate-400">Safeguards</p>
-
-        <ul className="mt-3 space-y-2">
-          {workspaceRisk.safeguards.map((safeguard, index) => (
-            <li
-              key={`${safeguard}-${index}`}
-              className="text-lg font-semibold"
-            >
-              • {safeguard}
-            </li>
-          ))}
-        </ul>
-      </div>
-    </div>
-  </Card>
-)}
-
-{workspaceInsights && (
-  <Card title={workspaceInsights.title} className="mt-10">
-    <div className="rounded-lg border border-slate-800 p-4">
-      <p className="text-sm text-slate-400">Headline</p>
-
-      <p className="mt-2 text-2xl font-bold">
-        {workspaceInsights.headline}
-      </p>
-    </div>
-
-    <div className="mt-6 space-y-4">
-      {workspaceInsights.insights.map((insight, index) => (
-        <div
-          key={`${insight.title}-${index}`}
-          className="rounded-lg border border-slate-800 p-4"
+        <select
+          value={filter}
+          onChange={(event) => setFilter(event.target.value)}
+          className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
         >
-          <div className="flex items-center justify-between gap-4">
-  <div>
-    <p className="text-lg font-semibold">
-      {insight.title}
-    </p>
-  </div>
+          <option value="all">All</option>
+          <option value="analysis">Analyses</option>
+          <option value="report">Reports</option>
+          <option value="job">Jobs</option>
+        </select>
 
-  <div className="flex items-center gap-2">
-    <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300">
-      {insight.severity}
-    </span>
+        <select
+          value={sort}
+          onChange={(event) => setSort(event.target.value)}
+          className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
+        >
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="az">A–Z</option>
+        </select>
+      </Toolbar>
 
-    <StatusBadge status={insight.type} />
-  </div>
-</div>
-
-          <div className="mt-3">
-            <p className="text-sm text-slate-400">
-              {insight.explanation}
-            </p>
-          </div>
-        </div>
-      ))}
-    </div>
-  </Card>
-)}
-
-<Card title="Ask AppStack AI" className="mt-10">
-  <p className="text-sm text-slate-400">
-    Ask a question about the current workspace intelligence, priorities,
-    forecast, strategy, risks, or insights.
-  </p>
-
-  <textarea
-  id="workspace-ai-question"
-    value={workspaceAIQuestion}
-    onChange={(event) =>
-      setWorkspaceAIQuestion(event.target.value)
-    }
-    placeholder="What should I focus on today?"
-    rows={4}
-    className="mt-5 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
-  />
-
-  <div className="mt-4">
-    <Button
-      onClick={askWorkspaceAI}
-      disabled={workspaceAILoading}
-    >
-      {workspaceAILoading ? "Thinking..." : "Ask AppStack AI"}
-    </Button>
-  </div>
-
-  {workspaceAIAnswer && (
-    <div
-      id="workspace-ai-answer"
-      className="mt-6 scroll-mt-6 space-y-5 rounded-lg border border-slate-800 p-4"
-    >
-      <div>
-        <p className="text-sm text-slate-400">
-          Today&apos;s Situation
-        </p>
-
-        <p className="mt-2 text-lg leading-8">
-          {workspaceAIAnswer.summary}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">
-          Today&apos;s Focus
-        </p>
-
-        <p className="mt-2 text-lg font-semibold leading-8">
-          {workspaceAIAnswer.recommendation}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">
-          Why this matters
-        </p>
-
-        <ul className="mt-3 space-y-3">
-          {workspaceAIAnswer.evidence.map((item, index) => (
-            <li
-              key={`${item.source}-${item.claim}-${index}`}
-              className="flex gap-3 text-lg leading-8"
-            >
-              <span aria-hidden="true">✓</span>
-              <span>{item.claim}</span>
-            </li>
-          ))}
-        </ul>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">
-          How certain is this?
-        </p>
-
-        <p className="mt-2 text-lg font-semibold">
-          {workspaceAIAnswer.confidence}
-        </p>
-      </div>
-
-      <div>
-        <p className="text-sm text-slate-400">
-          Do this now
-        </p>
-
-        <p className="mt-2 text-lg font-semibold leading-8">
-          {workspaceAIAnswer.nextStep}
-        </p>
-
-        {workspacePriorityActions[0] && (
-          <RecommendedActionButton
-            label={workspacePriorityActions[0].title}
-            onClick={() =>
-              handlePriorityAction(
-                workspacePriorityActions[0]
-              )
-            }
-          />
-        )}
-      </div>
-    </div>
-  )}
-</Card>
-
-{workspaceAIStale && (
-  <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">
-    <p className="font-semibold text-amber-200">
-      The workspace changed after this advice was generated.
-    </p>
-
-    <p className="mt-2 text-sm text-amber-100/80">
-      Refresh the AI advice so it reflects the current workspace.
-    </p>
-
-    <div className="mt-4">
-      <Button
-        onClick={askWorkspaceAI}
-        disabled={workspaceAILoading}
-      >
-        {workspaceAILoading
-          ? "Refreshing..."
-          : "Refresh Advice"}
-      </Button>
-    </div>
-  </div>
-)}
-
-<Card title="Priority Actions" className="mt-10">
-  <div className="space-y-4">
-    {workspacePriorityActions.length === 0 && (
-      <p className="text-slate-400">
-        No priority actions right now. Workspace is currently healthy.
-      </p>
-    )}
-
-    {workspacePriorityActions.map((action, index) => (
-      <div
-        key={`${action.title}-${action.itemTitle}-${index}`}
-        className="rounded-lg border border-slate-800 p-4"
-      >
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-lg font-semibold">{action.title}</p>
-            <p className="mt-1 text-sm text-slate-400">
-              {action.itemTitle}
-            </p>
-          </div>
-
-          <StatusBadge status={action.priority} />
+      <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Analyses
+          </p>
+          <p className="mt-2 text-2xl font-bold">{analyses.length}</p>
         </div>
 
-        <p className="mt-3 text-sm text-slate-400">{action.reason}</p>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Reports
+          </p>
+          <p className="mt-2 text-2xl font-bold">{reports.length}</p>
+        </div>
 
-<div className="mt-4">
-  <Button onClick={() => handlePriorityAction(action)}>
-    {action.actionType === "generate_report" && "Generate Now"}
-    {action.actionType === "create_job" && "Create Job"}
-    {action.actionType === "review_item" && "Review Item"}
-  </Button>
-</div>
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Jobs
+          </p>
+          <p className="mt-2 text-2xl font-bold">{jobs.length}</p>
+        </div>
+
+        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Progress
+          </p>
+          <p className="mt-2 text-2xl font-bold">
+            {workspaceIntelligence.progressPercent}%
+          </p>
+        </div>
+
+        <div className="col-span-2 rounded-xl border border-slate-800 bg-slate-950/60 p-4 lg:col-span-1">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Health
+          </p>
+          <p className="mt-2 text-2xl font-bold">
+            {workspaceIntelligence.workspaceHealth}
+          </p>
+        </div>
+      </section>
+
+      <div className="mt-8">
+        <MissionControl
+          workspaceHealth={workspaceIntelligence.workspaceHealth}
+          progressPercent={workspaceIntelligence.progressPercent}
+          estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
+          nextBestAction={
+            workspaceDirectorPlan?.nextBestAction ??
+            workspaceIntelligence.recommendedAction
+          }
+          priorityActions={workspacePriorityActions}
+          onAction={handlePriorityAction}
+        />
       </div>
-    ))}
-  </div>
-</Card>
 
-        <Card
-  title="Recent Workspace Items"
-  className="mt-10"
->
-
-          <div className="mt-5 space-y-5">
-  {loading && (
-    <div className="rounded-xl border border-slate-800 p-6 text-slate-400">
-      Loading workspace items...
-    </div>
-  )}
-
-  {!loading && filteredItems.length === 0 && (
-    <div className="rounded-xl border border-slate-800 p-6 text-slate-400">
-      No workspace items found.
-    </div>
-  )}
-
-  {!loading && filteredItems.map((item) => (
-              <div
-  key={item.id}
-  onClick={() => selectWorkspaceItem(item)}
-  className={`cursor-pointer rounded-xl p-5 transition ${
-  selectedItem?.id === item.id
-    ? "border-2 border-blue-500 bg-slate-900"
-    : "border border-slate-800 hover:border-blue-500"
-}`}
->
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm text-slate-400">
-  {getItemIcon(item.type)} {item.type}
-</p>
-
-                    <h3 className="mt-1 text-xl font-semibold">
-                      {item.title}
-                    </h3>
-
-                    {item.address && (
-                      <p className="mt-2 text-slate-400">{item.address}</p>
-                    )}
-                  </div>
-
-                  {item.status && (
-  <StatusBadge status={item.status} />
-)}
-                </div>
-
-                {item.metadata?.maxOffer && (
-                  <p className="mt-3 text-slate-400">
-                    Max Offer: ${item.metadata.maxOffer.toLocaleString()}
-                  </p>
-                )}
-
-                {item.content && (
-                  <p className="mt-3 text-slate-400">
-                    Saved content available.
-                  </p>
-                )}
+      <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)]">
+        <Card title="Recent Work">
+          <div className="space-y-3">
+            {loading && (
+              <div className="rounded-xl border border-slate-800 p-5 text-slate-400">
+                Loading workspace items...
               </div>
+            )}
+
+            {!loading && visibleItems.length === 0 && (
+              <div className="rounded-xl border border-slate-800 p-5 text-slate-400">
+                No workspace items found.
+              </div>
+            )}
+
+            {!loading &&
+              visibleItems.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => selectWorkspaceItem(item)}
+                  className={`w-full rounded-xl border p-4 text-left transition ${
+                    selectedItem?.id === item.id
+                      ? "border-blue-500 bg-slate-900"
+                      : "border-slate-800 hover:border-slate-600 hover:bg-slate-950/70"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="text-xs uppercase tracking-wider text-slate-500">
+                        {getItemIcon(item.type)} {item.type}
+                      </p>
+                      <p className="mt-1 truncate font-semibold">
+                        {item.title}
+                      </p>
+                      {item.address && (
+                        <p className="mt-1 truncate text-sm text-slate-400">
+                          {item.address}
+                        </p>
+                      )}
+                    </div>
+
+                    {item.status && <StatusBadge status={item.status} />}
+                  </div>
+                </button>
+              ))}
+          </div>
+
+          {filteredItems.length > 5 && (
+            <button
+              type="button"
+              onClick={() => setShowAllItems((current) => !current)}
+              className="mt-5 text-sm font-semibold text-blue-400 hover:text-blue-300"
+            >
+              {showAllItems
+                ? "Show only five"
+                : `View all ${filteredItems.length} items`}
+            </button>
+          )}
+        </Card>
+
+        <Card title="Workspace Intelligence">
+          <div className="flex gap-2 overflow-x-auto border-b border-slate-800 pb-3">
+            {intelligenceTabs.map((tab) => (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setActiveIntelligenceTab(tab.id)}
+                className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition ${
+                  activeIntelligenceTab === tab.id
+                    ? "bg-blue-600 text-white"
+                    : "text-slate-400 hover:bg-slate-900 hover:text-white"
+                }`}
+              >
+                {tab.label}
+              </button>
             ))}
           </div>
+
+          <div className="mt-6">
+            {activeIntelligenceTab === "director" && (
+  <DirectorPanel
+    progressPercent={workspaceIntelligence.progressPercent}
+    directorPlan={workspaceDirectorPlan}
+    priorityActions={workspacePriorityActions}
+  />
+)}
+
+            {activeIntelligenceTab === "forecast" && (
+              <>
+                {!workspaceForecast ? (
+                  <p className="text-slate-400">
+                    Forecast intelligence is still loading.
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Current</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceForecast.currentHealth}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Projected</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceForecast.projectedHealth}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Progress</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceForecast.projectedProgress}%
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Confidence</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceForecast.confidence}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 p-5">
+                      <p className="text-sm text-slate-400">Forecast</p>
+                      <p className="mt-2 text-lg font-semibold">
+                        {workspaceForecast.prediction}
+                      </p>
+                      <p className="mt-3 text-sm text-slate-500">
+                        Rule-based projection, not a guaranteed outcome.
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeIntelligenceTab === "strategy" && (
+              <>
+                {!workspaceStrategy ? (
+                  <p className="text-slate-400">
+                    Strategy intelligence is still loading.
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div className="rounded-xl border border-slate-800 p-5">
+                        <p className="text-sm text-slate-400">
+                          Strategic Focus
+                        </p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceStrategy.strategicFocus}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-5">
+                        <p className="text-sm text-slate-400">Confidence</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceStrategy.strategyConfidence}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 p-5">
+                      <p className="text-sm font-semibold uppercase tracking-wider text-slate-500">
+                        Execution Order
+                      </p>
+                      <ol className="mt-4 space-y-3">
+                        {workspaceStrategy.executionOrder.map((step, index) => (
+                          <li key={`${step}-${index}`} className="flex gap-3">
+                            <span className="font-bold">{index + 1}.</span>
+                            <span>{step}</span>
+                          </li>
+                        ))}
+                      </ol>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeIntelligenceTab === "risk" && (
+              <>
+                {!workspaceRisk ? (
+                  <p className="text-slate-400">
+                    Risk intelligence is still loading.
+                  </p>
+                ) : (
+                  <div className="space-y-6">
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Overall Risk</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceRisk.overallRisk}
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Risk Score</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceRisk.riskScore}/100
+                        </p>
+                      </div>
+                      <div className="rounded-xl border border-slate-800 p-4">
+                        <p className="text-sm text-slate-400">Confidence</p>
+                        <p className="mt-2 text-xl font-bold">
+                          {workspaceRisk.confidence}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-xl border border-slate-800 p-5">
+                      <p className="text-sm text-slate-400">Primary Risk</p>
+                      <p className="mt-2 text-lg font-semibold">
+                        {workspaceRisk.primaryRisk}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeIntelligenceTab === "insights" && (
+              <>
+                {!workspaceInsights ? (
+                  <p className="text-slate-400">
+                    Insights are still loading.
+                  </p>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="rounded-xl border border-slate-800 p-5">
+                      <p className="text-sm text-slate-400">Headline</p>
+                      <p className="mt-2 text-xl font-bold">
+                        {workspaceInsights.headline}
+                      </p>
+                    </div>
+
+                    {workspaceInsights.insights.map((insight, index) => (
+                      <div
+                        key={`${insight.title}-${index}`}
+                        className="rounded-xl border border-slate-800 p-5"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div>
+                            <p className="font-semibold">{insight.title}</p>
+                            <p className="mt-2 text-sm leading-6 text-slate-400">
+                              {insight.explanation}
+                            </p>
+                          </div>
+                          <StatusBadge status={insight.type} />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {activeIntelligenceTab === "ai" && (
+              <div>
+                <p className="text-sm leading-6 text-slate-400">
+                  Ask AppStack AI about the current workspace, priorities,
+                  forecast, strategy, risks, or insights.
+                </p>
+
+                <textarea
+                  id="workspace-ai-question"
+                  value={workspaceAIQuestion}
+                  onChange={(event) =>
+                    setWorkspaceAIQuestion(event.target.value)
+                  }
+                  placeholder="What should I focus on today?"
+                  rows={4}
+                  className="mt-5 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+                />
+
+                <div className="mt-4">
+                  <Button
+                    onClick={askWorkspaceAI}
+                    disabled={workspaceAILoading}
+                  >
+                    {workspaceAILoading ? "Thinking..." : "Ask AppStack AI"}
+                  </Button>
+                </div>
+
+                {workspaceAIAnswer && (
+                  <div
+                    id="workspace-ai-answer"
+                    className="mt-6 space-y-5 rounded-xl border border-slate-800 p-5"
+                  >
+                    <div>
+                      <p className="text-sm text-slate-400">
+                        Today&apos;s Situation
+                      </p>
+                      <p className="mt-2 leading-7">
+                        {workspaceAIAnswer.summary}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-slate-400">
+                        Today&apos;s Focus
+                      </p>
+                      <p className="mt-2 font-semibold leading-7">
+                        {workspaceAIAnswer.recommendation}
+                      </p>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-slate-400">Evidence</p>
+                      <ul className="mt-3 space-y-3">
+                        {workspaceAIAnswer.evidence.map((item, index) => (
+                          <li
+                            key={`${item.source}-${item.claim}-${index}`}
+                            className="flex gap-3"
+                          >
+                            <span aria-hidden="true">✓</span>
+                            <span>{item.claim}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+
+                    <div>
+                      <p className="text-sm text-slate-400">Next Step</p>
+                      <p className="mt-2 font-semibold">
+                        {workspaceAIAnswer.nextStep}
+                      </p>
+
+                      {workspacePriorityActions[0] && (
+                        <RecommendedActionButton
+                          label={workspacePriorityActions[0].title}
+                          onClick={() =>
+                            handlePriorityAction(workspacePriorityActions[0])
+                          }
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </Card>
-        {selectedItem && (
-  <Card title="Workspace Item" className="mt-10">
-    <div className="flex items-center justify-between">
-      <h2 className="text-2xl font-bold">Workspace Item</h2>
+      </section>
 
-      <button
-        onClick={() => {
-  setSelectedItem(null);
-  setSelectedItemEvents([]);
-}}
-        className="rounded-lg border border-slate-700 px-4 py-2 hover:bg-slate-800"
-      >
-        Close
-      </button>
-    </div>
+      {selectedItem && (
+        <Card title="Selected Workspace Item" className="mt-8">
+          <div className="flex flex-wrap items-start justify-between gap-4">
+            <div>
+              <p className="text-xs uppercase tracking-wider text-slate-500">
+                {getItemIcon(selectedItem.type)} {selectedItem.type}
+              </p>
+              <h2 className="mt-1 text-2xl font-bold">
+                {selectedItem.title}
+              </h2>
+              {selectedItem.address && (
+                <p className="mt-2 text-slate-400">{selectedItem.address}</p>
+              )}
+            </div>
 
-    <div className="mt-6 space-y-4">
-        
-      <div>
-        <p className="text-sm text-slate-400">Type</p>
-        <p className="text-lg">{selectedItem.type}</p>
-      </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedItem(null);
+                setSelectedItemEvents([]);
+              }}
+              className="rounded-lg border border-slate-700 px-4 py-2 hover:bg-slate-800"
+            >
+              Close
+            </button>
+          </div>
 
-      <div>
-        <p className="text-sm text-slate-400">Title</p>
-        <p className="text-lg font-semibold">{selectedItem.title}</p>
-      </div>
+          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
+            <div className="rounded-xl border border-slate-800 p-5">
+              <h3 className="font-semibold">Analysis</h3>
+              <div className="mt-4 space-y-3 text-sm">
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Stage</span>
+                  <span>{workspaceAnalysis.stage}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Health</span>
+                  <span>{workspaceAnalysis.health}</span>
+                </div>
+                <div className="flex justify-between gap-4">
+                  <span className="text-slate-400">Events</span>
+                  <span>{workspaceAnalysis.eventCount}</span>
+                </div>
+              </div>
+            </div>
 
-      {selectedItem.address && (
-        <div>
-          <p className="text-sm text-slate-400">Address</p>
-          <p>{selectedItem.address}</p>
-        </div>
+            <div className="rounded-xl border border-slate-800 p-5">
+              <h3 className="font-semibold">Recommendation</h3>
+              <p className="mt-4 text-sm text-slate-400">Next Action</p>
+              <p className="mt-1 font-semibold">{recommendation.action}</p>
+              <p className="mt-4 text-sm leading-6 text-slate-400">
+                {recommendation.reason}
+              </p>
+            </div>
+
+            <div className="rounded-xl border border-slate-800 p-5">
+              <h3 className="font-semibold">Activity</h3>
+              <div className="mt-4 max-h-48 space-y-3 overflow-y-auto">
+                {selectedItemEvents.length === 0 && (
+                  <p className="text-sm text-slate-400">No activity yet.</p>
+                )}
+
+                {selectedItemEvents.map((event) => (
+                  <div key={event.id}>
+                    <p className="text-sm font-medium">{event.description}</p>
+                    <p className="mt-1 text-xs text-slate-500">
+                      {new Date(event.created_at).toLocaleString()}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          {selectedItem.content && (
+            <details className="mt-6 rounded-xl border border-slate-800 p-5">
+              <summary className="cursor-pointer font-semibold">
+                View saved content
+              </summary>
+              <pre className="mt-4 whitespace-pre-wrap rounded-lg bg-slate-950 p-4 text-sm">
+                {selectedItem.content}
+              </pre>
+            </details>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            <Button onClick={openSelectedItem}>Open</Button>
+
+            <Button
+              onClick={generateReportFromSelectedItem}
+              disabled={selectedItem.type !== "analysis"}
+            >
+              Generate Report
+            </Button>
+
+            <Button onClick={createJobFromSelectedItem}>Create Job</Button>
+            <Button onClick={duplicateSelectedItem}>Duplicate</Button>
+            <Button onClick={deleteSelectedItem}>Delete</Button>
+          </div>
+        </Card>
       )}
 
-      {selectedItem.status && (
-        <div>
-          <p className="text-sm text-slate-400">Status</p>
-          <p>{selectedItem.status}</p>
+      {workspaceAIStale && (
+        <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">
+          <p className="font-semibold text-amber-200">
+            The workspace changed after this advice was generated.
+          </p>
+          <p className="mt-2 text-sm text-amber-100/80">
+            Refresh the AI advice so it reflects the current workspace.
+          </p>
+          <div className="mt-4">
+            <Button
+              onClick={askWorkspaceAI}
+              disabled={workspaceAILoading}
+            >
+              {workspaceAILoading ? "Refreshing..." : "Refresh Advice"}
+            </Button>
+          </div>
         </div>
       )}
-
-      {selectedItem.metadata && (
-  <div>
-    <p className="text-sm text-slate-400 mb-3">Details</p>
-
-    <div className="space-y-3">
-
-      {selectedItem.metadata.purchasePrice && (
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span>Purchase Price</span>
-          <span>
-            ${selectedItem.metadata.purchasePrice.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {selectedItem.metadata.arv && (
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span>ARV</span>
-          <span>
-            ${selectedItem.metadata.arv.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {selectedItem.metadata.repairCost && (
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span>Repairs</span>
-          <span>
-            ${selectedItem.metadata.repairCost.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {selectedItem.metadata.maxOffer && (
-        <div className="flex justify-between border-b border-slate-800 pb-2">
-          <span>Maximum Offer</span>
-          <span>
-            ${selectedItem.metadata.maxOffer.toLocaleString()}
-          </span>
-        </div>
-      )}
-
-      {selectedItem.metadata.source && (
-  <div className="border-b border-slate-800 pb-2">
-    <p className="text-sm text-slate-400">Source</p>
-    <p className="mt-1 text-lg font-semibold">
-      {selectedItem.metadata.source}
-    </p>
-  </div>
-)}
-
-    </div>
-  </div>
-)}
-
-<div className="mt-8">
-  <h3 className="text-xl font-semibold">Activity</h3>
-
-  <div className="mt-4 space-y-3">
-    {selectedItemEvents.length === 0 && (
-      <p className="text-sm text-slate-400">No activity yet.</p>
-    )}
-
-    {selectedItemEvents.map((event) => (
-      <div
-        key={event.id}
-        className="rounded-lg border border-slate-800 p-4"
-      >
-        <p className="font-medium">{event.description}</p>
-        <p className="mt-1 text-sm text-slate-400">
-          {new Date(event.created_at).toLocaleString()}
-        </p>
-      </div>
-    ))}
-  </div>
-</div>
-
-<div className="mt-8">
-  <h3 className="text-xl font-semibold">Analysis</h3>
-
-  <div className="mt-4 space-y-3 rounded-lg border border-slate-800 p-4">
-    <div className="flex justify-between">
-      <span>Stage</span>
-      <span>{workspaceAnalysis.stage}</span>
-    </div>
-
-    <div className="flex justify-between">
-      <span>Health</span>
-      <span>{workspaceAnalysis.health}</span>
-    </div>
-
-    <div className="flex justify-between">
-      <span>Events</span>
-      <span>{workspaceAnalysis.eventCount}</span>
-    </div>
-
-    {workspaceAnalysis.missingSteps.length > 0 && (
-      <div>
-        <p className="font-medium">Missing Steps</p>
-
-        <ul className="mt-2 list-disc pl-6 text-sm text-slate-400">
-          {workspaceAnalysis.missingSteps.map((step) => (
-            <li key={step}>{step}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-
-    {workspaceAnalysis.insights.length > 0 && (
-      <div>
-        <p className="font-medium">Insights</p>
-
-        <ul className="mt-2 list-disc pl-6 text-sm text-slate-400">
-          {workspaceAnalysis.insights.map((insight) => (
-            <li key={insight}>{insight}</li>
-          ))}
-        </ul>
-      </div>
-    )}
-  </div>
-</div>
-
-<div className="mt-8">
-  <h3 className="text-xl font-semibold">Recommendation</h3>
-
-  <div className="mt-4 rounded-lg border border-slate-800 p-4 space-y-3">
-    <div className="flex justify-between">
-      <span>Next Action</span>
-      <span>{recommendation.action}</span>
-    </div>
-
-    <div>
-      <p className="font-medium">Reason</p>
-      <p className="mt-1 text-sm text-slate-400">
-        {recommendation.reason}
-      </p>
-    </div>
-
-    <div className="flex justify-between">
-      <span>Priority</span>
-      <span>{recommendation.priority}</span>
-    </div>
-  </div>
-</div>
-
-      {selectedItem.content && (
-        <div>
-          <p className="text-sm text-slate-400">Content</p>
-
-          <pre className="mt-2 whitespace-pre-wrap rounded-lg bg-slate-950 p-4 text-sm">
-            {selectedItem.content}
-          </pre>
-        </div>
-      )}
-<div className="mt-10">
-  <h3 className="text-xl font-semibold">Actions</h3>
-
-  <div className="mt-4 flex flex-wrap gap-3">
-    <Button onClick={openSelectedItem}>
-  Open
-</Button>
-
-    <Button
-  onClick={generateReportFromSelectedItem}
-  disabled={selectedItem?.type !== "analysis"}
->
-  Generate Report
-</Button>
-
-    <Button onClick={createJobFromSelectedItem}>
-  Create Job
-</Button>
-
-    <Button onClick={duplicateSelectedItem}>
-  Duplicate
-</Button>
-
-    <Button onClick={deleteSelectedItem}>
-  Delete
-</Button>
-  </div>
-</div>
-
-    </div>
-    </Card>
-)}
-        </Page>
+    </Page>
   );
 }
