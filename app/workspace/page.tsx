@@ -1,11 +1,6 @@
 "use client";
 
-import DirectorPanel from "../components/workspace/intelligence/DirectorPanel";
-import ForecastPanel from "../components/workspace/intelligence/ForecastPanel";
-import StrategyPanel from "../components/workspace/intelligence/StrategyPanel";
-import RiskPanel from "../components/workspace/intelligence/RiskPanel";
-import InsightsPanel from "../components/workspace/intelligence/InsightsPanel";
-import AIAdvisorPanel from "../components/workspace/intelligence/AIAdvisorPanel";
+import WorkspaceIntelligence from "../components/workspace/intelligence/WorkspaceIntelligence";
 import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
@@ -13,7 +8,6 @@ import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
 import Card from "../components/Card";
 import Button from "../components/Button";
-import { RecommendedActionButton } from "../components/RecommendedActionButton";
 import StatusBadge from "../components/StatusBadge";
 import toast from "react-hot-toast";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
@@ -84,9 +78,6 @@ const [workspaceAIStale, setWorkspaceAIStale] = useState(false);
 
 const [loading, setLoading] = useState(true);
 const [showAllItems, setShowAllItems] = useState(false);
-const [activeIntelligenceTab, setActiveIntelligenceTab] = useState<
-  "director" | "forecast" | "strategy" | "risk" | "insights" | "ai"
->("director");
 
 const router = useRouter();
 const workspaceAnalysis = analyzeWorkspaceEvents(
@@ -498,15 +489,6 @@ async function askWorkspaceAI() {
     ? filteredItems
     : filteredItems.slice(0, 5);
 
-  const intelligenceTabs = [
-    { id: "director", label: "Director" },
-    { id: "forecast", label: "Forecast" },
-    { id: "strategy", label: "Strategy" },
-    { id: "risk", label: "Risk" },
-    { id: "insights", label: "Insights" },
-    { id: "ai", label: "AI" },
-  ] as const;
-
   return (
     <Page
       title="Workspace"
@@ -658,64 +640,22 @@ async function askWorkspaceAI() {
           )}
         </Card>
 
-        <Card title="Workspace Intelligence">
-          <div className="flex gap-2 overflow-x-auto border-b border-slate-800 pb-3">
-            {intelligenceTabs.map((tab) => (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveIntelligenceTab(tab.id)}
-                className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition ${
-                  activeIntelligenceTab === tab.id
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-400 hover:bg-slate-900 hover:text-white"
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
-          </div>
+        <WorkspaceIntelligence
+  progressPercent={workspaceIntelligence.progressPercent}
+  directorPlan={workspaceDirectorPlan}
+  priorityActions={workspacePriorityActions}
+  forecast={workspaceForecast}
+  strategy={workspaceStrategy}
+  risk={workspaceRisk}
+  insights={workspaceInsights}
+  aiQuestion={workspaceAIQuestion}
+  aiAnswer={workspaceAIAnswer}
+  aiLoading={workspaceAILoading}
+  onAIQuestionChange={setWorkspaceAIQuestion}
+  onAskAI={askWorkspaceAI}
+  onPriorityAction={handlePriorityAction}
+/>
 
-          <div className="mt-6">
-            {activeIntelligenceTab === "director" && (
-  <DirectorPanel
-    progressPercent={workspaceIntelligence.progressPercent}
-    directorPlan={workspaceDirectorPlan}
-    priorityActions={workspacePriorityActions}
-  />
-)}
-
-            {activeIntelligenceTab === "forecast" && (
-  <ForecastPanel forecast={workspaceForecast} />
-)}
-
-            {activeIntelligenceTab === "strategy" && (
-  <StrategyPanel strategy={workspaceStrategy} />
-)}
-
-            {activeIntelligenceTab === "risk" && (
-  <RiskPanel risk={workspaceRisk} />
-)}
-
-            {activeIntelligenceTab === "insights" && (
-  <InsightsPanel
-    insights={workspaceInsights}
-  />
-)}
-
-            {activeIntelligenceTab === "ai" && (
-  <AIAdvisorPanel
-    question={workspaceAIQuestion}
-    answer={workspaceAIAnswer}
-    loading={workspaceAILoading}
-    onQuestionChange={setWorkspaceAIQuestion}
-    onAsk={askWorkspaceAI}
-    priorityActions={workspacePriorityActions}
-    onPriorityAction={handlePriorityAction}
-  />
-)}
-          </div>
-        </Card>
       </section>
 
       {selectedItem && (
