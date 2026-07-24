@@ -99,8 +99,11 @@ export default function WorkspaceIntelligence({
         )}
 
         {activeTab === "forecast" && (
-          <ForecastPanel forecast={forecast} />
-        )}
+  <ForecastPanel
+    currentProgress={progressPercent}
+    forecast={forecast}
+  />
+)}
 
         {activeTab === "strategy" && (
           <StrategyPanel strategy={strategy} />
