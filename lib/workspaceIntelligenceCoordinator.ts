@@ -7,8 +7,11 @@ import { buildWorkspaceForecast } from "./workspaceForecastService";
 import { buildWorkspaceRisk } from "./workspaceRiskService";
 import { buildWorkspaceStrategy } from "./workspaceStrategyService";
 import { buildWorkspaceInsights } from "./workspaceInsightsService";
+import { buildExecutiveWorkspaceIntelligence } from "./executiveWorkspaceIntelligence";
 
-export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
+export async function buildWorkspaceIntelligence(
+  workspaceItems: any[]
+) {
   const { data: events, error } = await getAllEvents();
 
   if (error) {
@@ -32,7 +35,10 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
 
     return {
       item,
-      analysis: analyzeWorkspaceEvents(item.type, relatedEvents),
+      analysis: analyzeWorkspaceEvents(
+        item.type,
+        relatedEvents
+      ),
     };
   });
 
@@ -40,7 +46,9 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
     (record) => record.analysis
   );
 
-  const intelligence = analyzeWorkspace(workspaceAnalyses);
+  const intelligence = analyzeWorkspace(
+    workspaceAnalyses
+  );
 
   const priorityActions = buildWorkspacePriorities(
     workspaceAnalysisRecords
@@ -52,40 +60,52 @@ export async function buildWorkspaceIntelligence(workspaceItems: any[]) {
   );
 
   const forecast = buildWorkspaceForecast(
-  intelligence,
-  priorityActions,
-  directorPlan
-);
+    intelligence,
+    priorityActions,
+    directorPlan
+  );
 
-const strategy = buildWorkspaceStrategy(
-  intelligence,
-  priorityActions,
-  directorPlan,
-  forecast
-);
-
-const risk = buildWorkspaceRisk(
-  intelligence,
-  priorityActions,
-  forecast,
-  strategy
-);
-
-const insights = buildWorkspaceInsights(
-  intelligence,
-  priorityActions
-);
-
-  return {
-  data: {
+  const strategy = buildWorkspaceStrategy(
     intelligence,
     priorityActions,
     directorPlan,
+    forecast
+  );
+
+  const risk = buildWorkspaceRisk(
+    intelligence,
+    priorityActions,
     forecast,
-    strategy,
-    risk,
-    insights,
-  },
-  error: null,
-};
+    strategy
+  );
+
+  const insights = buildWorkspaceInsights(
+    intelligence,
+    priorityActions
+  );
+
+  const executiveIntelligence =
+    buildExecutiveWorkspaceIntelligence({
+      intelligence,
+      priorities: priorityActions,
+      director: directorPlan,
+      forecast,
+      risk,
+      strategy,
+      insights,
+    });
+
+  return {
+    data: {
+      intelligence,
+      priorityActions,
+      directorPlan,
+      forecast,
+      strategy,
+      risk,
+      insights,
+      executiveIntelligence,
+    },
+    error: null,
+  };
 }
