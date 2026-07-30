@@ -1,6 +1,5 @@
 "use client";
 
-import WorkspaceIntelligence from "../components/workspace/intelligence/WorkspaceIntelligence";
 import MissionControl from "../components/workspace/MissionControl";
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
@@ -27,14 +26,6 @@ import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
-import type { WorkspaceForecast } from "../../lib/workspaceForecastService";
-import type { WorkspaceRisk } from "../../lib/workspaceRiskService";
-import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
-import type { WorkspaceInsights } from "../../lib/workspaceInsightsService";
-import type { WorkspaceAIResponse } from "../../lib/workspaceAIResponse";
-import type { WorkspaceHistory } from "../../lib/workspaceHistoryService";
-import type { WorkspaceMetrics } from "../../lib/workspaceMetricsService";
-import type { WorkspaceKnowledge } from "../../lib/workspaceKnowledgeService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -60,33 +51,6 @@ const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
 
 const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
   useState<WorkspaceDirectorPlan | null>(null);
-
-  const [workspaceHistory, setWorkspaceHistory] =
-  useState<WorkspaceHistory | null>(null);
-
-const [workspaceMetrics, setWorkspaceMetrics] =
-  useState<WorkspaceMetrics | null>(null);
-
-  const [workspaceKnowledge, setWorkspaceKnowledge] =
-  useState<WorkspaceKnowledge | null>(null);
-
-const [workspaceForecast, setWorkspaceForecast] =
-  useState<WorkspaceForecast | null>(null);
-
-const [workspaceStrategy, setWorkspaceStrategy] =
-  useState<WorkspaceStrategy | null>(null);
-
-const [workspaceRisk, setWorkspaceRisk] =
-  useState<WorkspaceRisk | null>(null);
-
-const [workspaceInsights, setWorkspaceInsights] =
-  useState<WorkspaceInsights | null>(null);
-
-  const [workspaceAIQuestion, setWorkspaceAIQuestion] = useState("");
-const [workspaceAIAnswer, setWorkspaceAIAnswer] =
-  useState<WorkspaceAIResponse | null>(null);
-const [workspaceAILoading, setWorkspaceAILoading] = useState(false);
-const [workspaceAIStale, setWorkspaceAIStale] = useState(false);
 
 const [loading, setLoading] = useState(true);
 const [showAllItems, setShowAllItems] = useState(false);
@@ -134,17 +98,10 @@ const recommendation =
   }
 
   if (intelligence) {
-  setWorkspaceIntelligence(intelligence.intelligence);
-  setWorkspaceHistory(intelligence.history);
-  setWorkspaceMetrics(intelligence.metrics);
-  setWorkspaceKnowledge(intelligence.knowledge);
-  setWorkspacePriorityActions(intelligence.priorityActions);
-  setWorkspaceDirectorPlan(intelligence.directorPlan);
-  setWorkspaceForecast(intelligence.forecast);
-  setWorkspaceStrategy(intelligence.strategy);
-  setWorkspaceRisk(intelligence.risk);
-  setWorkspaceInsights(intelligence.insights);
-}
+    setWorkspaceIntelligence(intelligence.intelligence);
+    setWorkspacePriorityActions(intelligence.priorityActions);
+    setWorkspaceDirectorPlan(intelligence.directorPlan);
+  }
 
   setLoading(false);
 }
@@ -359,9 +316,6 @@ async function handlePriorityAction(action: WorkspacePriorityAction) {
   if (action.actionType === "generate_report") {
   await generateReportFromItem(item);
 
-  if (workspaceAIAnswer) {
-    setWorkspaceAIStale(true);
-  }
 
   toast.success("Report generated from priority action.");
   return;
@@ -370,23 +324,12 @@ async function handlePriorityAction(action: WorkspacePriorityAction) {
   if (action.actionType === "create_job") {
   await createJobFromItem(item);
 
-  if (workspaceAIAnswer) {
-    setWorkspaceAIStale(true);
-  }
 
   toast.success("Job created from priority action.");
   return;
 }
 
   setSelectedItem(item);
-}
-
-function formatHistoryDate(date: string | null) {
-  if (!date) {
-    return "No activity";
-  }
-
-  return new Date(date).toLocaleString();
 }
 
 function getItemIcon(type: string) {
@@ -438,76 +381,6 @@ function openSelectedItem() {
   }
 }
 
-async function askWorkspaceAI() {
-  const question = workspaceAIQuestion.trim();
-
-  if (!question) {
-    toast.error("Enter a workspace question.");
-    return;
-  }
-
-  if (
-    !workspaceDirectorPlan ||
-    !workspaceForecast ||
-    !workspaceStrategy ||
-    !workspaceRisk ||
-    !workspaceInsights
-  ) {
-    toast.error("Workspace intelligence is still loading.");
-    return;
-  }
-
-  setWorkspaceAILoading(true);
-
-  try {
-    const response = await fetch("/api/workspace-ai", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        workspace: workspaceIntelligence,
-        priorities: workspacePriorityActions,
-        director: workspaceDirectorPlan,
-        forecast: workspaceForecast,
-        strategy: workspaceStrategy,
-        risk: workspaceRisk,
-        insights: workspaceInsights,
-        question,
-      }),
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(
-        result.error || "The workspace AI request failed."
-      );
-    }
-
-    setWorkspaceAIAnswer(result.answer);
-    setWorkspaceAIStale(false);
-
-    window.setTimeout(() => {
-      document
-        .getElementById("workspace-ai-answer")
-        ?.scrollIntoView({
-          behavior: "smooth",
-          block: "start",
-        });
-    }, 100);
-  } catch (error) {
-    const message =
-      error instanceof Error
-        ? error.message
-        : "The workspace AI request failed.";
-
-    toast.error(message);
-  } finally {
-    setWorkspaceAILoading(false);
-  }
-}
-
   const visibleItems = showAllItems
     ? filteredItems
     : filteredItems.slice(0, 5);
@@ -546,6 +419,20 @@ async function askWorkspaceAI() {
           <option value="az">A–Z</option>
         </select>
       </Toolbar>
+
+      <div className="mt-8">
+        <MissionControl
+          workspaceHealth={workspaceIntelligence.workspaceHealth}
+          progressPercent={workspaceIntelligence.progressPercent}
+          estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
+          nextBestAction={
+            workspaceDirectorPlan?.nextBestAction ??
+            workspaceIntelligence.recommendedAction
+          }
+          priorityActions={workspacePriorityActions}
+          onAction={handlePriorityAction}
+        />
+      </div>
 
       <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
@@ -588,235 +475,7 @@ async function askWorkspaceAI() {
         </div>
       </section>
 
-      <Card title="Workspace History" className="mt-8">
-        {!workspaceHistory ? (
-          <p className="text-sm text-slate-400">
-            Workspace history is loading...
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div>
-                <p className="text-sm text-slate-400">Total Events</p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceHistory.totalEvents}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Days Active</p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceHistory.daysActive}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Trend</p>
-                <p className="mt-1 text-xl font-semibold capitalize">
-                  {workspaceHistory.activityTrend.replace("_", " ")}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Last Activity</p>
-                <p className="mt-1 font-medium">
-                  {formatHistoryDate(workspaceHistory.lastEventAt)}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-800 pt-6 sm:grid-cols-3 lg:grid-cols-5">
-              <div>
-                <p className="text-sm text-slate-400">Analyses Created</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceHistory.analysesCreated}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Reports Generated</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceHistory.reportsGenerated}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Jobs Created</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceHistory.jobsCreated}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Items Duplicated</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceHistory.itemsDuplicated}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">Items Deleted</p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceHistory.itemsDeleted}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-      </Card>
-
-            <Card title="Workspace Metrics" className="mt-8">
-        {!workspaceMetrics ? (
-          <p className="text-sm text-slate-400">
-            Workspace metrics are loading...
-          </p>
-        ) : (
-          <>
-            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
-              <div>
-                <p className="text-sm text-slate-400">
-                  Events Per Day
-                </p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceMetrics.eventsPerDay}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Analyses Per Day
-                </p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceMetrics.analysesPerDay}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Reports Per Day
-                </p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceMetrics.reportsPerDay}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Jobs Per Day
-                </p>
-                <p className="mt-1 text-2xl font-bold">
-                  {workspaceMetrics.jobsPerDay}
-                </p>
-              </div>
-            </div>
-
-            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-800 pt-6 md:grid-cols-4">
-              <div>
-                <p className="text-sm text-slate-400">
-                  Reports Per Analysis
-                </p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceMetrics.reportToAnalysisRatio}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Jobs Per Report
-                </p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceMetrics.jobToReportRatio}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Recent Activity
-                </p>
-                <p className="mt-1 text-lg font-semibold">
-                  {Math.round(
-                    workspaceMetrics.recentActivityShare * 100
-                  )}
-                  %
-                </p>
-              </div>
-
-              <div>
-                <p className="text-sm text-slate-400">
-                  Workspace Velocity
-                </p>
-                <p className="mt-1 text-lg font-semibold">
-                  {workspaceMetrics.workspaceVelocity}
-                </p>
-              </div>
-            </div>
-          </>
-        )}
-      </Card>
-
-      <Card title="Workspace Memory" className="mt-8">
-  {!workspaceKnowledge ? (
-    <p className="text-sm text-slate-400">
-      Workspace memory is loading...
-    </p>
-  ) : (
-    <div className="space-y-6">
-      <div>
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Primary Focus
-        </p>
-
-        <p className="mt-2 text-2xl font-bold">
-          {workspaceKnowledge.focus}
-        </p>
-      </div>
-
-      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
-        <p className="text-sm leading-7 text-slate-300">
-          {workspaceKnowledge.summary}
-        </p>
-      </div>
-
-      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-800 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Production Pattern
-          </p>
-
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            {workspaceKnowledge.productionStatus}
-          </p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Execution Pattern
-          </p>
-
-          <p className="mt-3 text-sm leading-6 text-slate-300">
-            {workspaceKnowledge.executionStatus}
-          </p>
-        </div>
-      </div>
-    </div>
-  )}
-</Card>
-
-      <div className="mt-8">
-        <MissionControl
-          workspaceHealth={workspaceIntelligence.workspaceHealth}
-          progressPercent={workspaceIntelligence.progressPercent}
-          estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
-          nextBestAction={
-            workspaceDirectorPlan?.nextBestAction ??
-            workspaceIntelligence.recommendedAction
-          }
-          priorityActions={workspacePriorityActions}
-          onAction={handlePriorityAction}
-        />
-      </div>
-
-      <section className="mt-8 grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,0.85fr)_minmax(0,1.65fr)]">
+      <section className="mt-8">
         <Card title="Recent Work">
           <div className="space-y-3">
             {loading && (
@@ -877,21 +536,7 @@ async function askWorkspaceAI() {
           )}
         </Card>
 
-        <WorkspaceIntelligence
-  progressPercent={workspaceIntelligence.progressPercent}
-  directorPlan={workspaceDirectorPlan}
-  priorityActions={workspacePriorityActions}
-  forecast={workspaceForecast}
-  strategy={workspaceStrategy}
-  risk={workspaceRisk}
-  insights={workspaceInsights}
-  aiQuestion={workspaceAIQuestion}
-  aiAnswer={workspaceAIAnswer}
-  aiLoading={workspaceAILoading}
-  onAIQuestionChange={setWorkspaceAIQuestion}
-  onAskAI={askWorkspaceAI}
-  onPriorityAction={handlePriorityAction}
-/>
+
 
       </section>
 
@@ -997,24 +642,7 @@ async function askWorkspaceAI() {
         </Card>
       )}
 
-      {workspaceAIStale && (
-        <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">
-          <p className="font-semibold text-amber-200">
-            The workspace changed after this advice was generated.
-          </p>
-          <p className="mt-2 text-sm text-amber-100/80">
-            Refresh the AI advice so it reflects the current workspace.
-          </p>
-          <div className="mt-4">
-            <Button
-              onClick={askWorkspaceAI}
-              disabled={workspaceAILoading}
-            >
-              {workspaceAILoading ? "Refreshing..." : "Refresh Advice"}
-            </Button>
-          </div>
-        </div>
-      )}
+
     </Page>
   );
 }
