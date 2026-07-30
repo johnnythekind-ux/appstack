@@ -1,6 +1,7 @@
-import { WorkspaceDirectorPlan } from "./workspaceDirectorService";
-import { WorkspaceIntelligence } from "./workspaceIntelligenceService";
-import { WorkspacePriorityAction } from "./workspacePriorityService";
+import type { WorkspaceDirectorPlan } from "./workspaceDirectorService";
+import type { WorkspaceIntelligence } from "./workspaceIntelligenceService";
+import type { WorkspaceKnowledge } from "./workspaceKnowledgeService";
+import type { WorkspacePriorityAction } from "./workspacePriorityService";
 
 export type ForecastConfidence = "High" | "Moderate" | "Low";
 
@@ -16,10 +17,90 @@ export type WorkspaceForecast = {
   prediction: string;
 };
 
+function determineForecastConfidence(
+  priorityActions: WorkspacePriorityAction[],
+  reviewActionCount: number,
+  knowledge?: WorkspaceKnowledge
+): ForecastConfidence {
+  if (priorityActions.length === 0) {
+    return "High";
+  }
+
+  if (reviewActionCount > 0) {
+    return "Low";
+  }
+
+  const allActionsAreExecutable = priorityActions.every(
+    (action) =>
+      action.actionType === "generate_report" ||
+      action.actionType === "create_job"
+  );
+
+  if (!allActionsAreExecutable) {
+    return "Moderate";
+  }
+
+  if (
+    knowledge &&
+    knowledge.recentActivityStatus ===
+      "There has been no recent workspace activity."
+  ) {
+    return "Moderate";
+  }
+
+  return "High";
+}
+
+function buildForecastPrediction({
+  priorityActionCount,
+  reportActionCount,
+  reviewActionCount,
+  projectedHealth,
+  estimatedMinutes,
+  knowledge,
+}: {
+  priorityActionCount: number;
+  reportActionCount: number;
+  reviewActionCount: number;
+  projectedHealth: WorkspaceIntelligence["workspaceHealth"];
+  estimatedMinutes: number;
+  knowledge?: WorkspaceKnowledge;
+}): string {
+  if (priorityActionCount === 0) {
+    return "No immediate improvement is required because the workspace is currently stable.";
+  }
+
+  if (projectedHealth === "Healthy") {
+    return "Completing today's visible actions is expected to move the workspace into a healthy state.";
+  }
+
+  if (reportActionCount > 0) {
+    return "Generating the visible reports will advance analyzed items, but follow-up jobs will still be required.";
+  }
+
+  if (reviewActionCount > 0) {
+    return "Completing the visible plan may improve progress, but reviewed items could require additional decisions.";
+  }
+
+  if (
+    knowledge?.focus === "Execution" &&
+    estimatedMinutes > 0
+  ) {
+    return "The workspace is execution-focused. Completing the visible job actions should increase healthy items and reduce the current backlog.";
+  }
+
+  if (estimatedMinutes > 0) {
+    return "Completing the visible job actions should increase healthy workspace items and reduce the current execution backlog.";
+  }
+
+  return "Completing today's visible actions should improve workspace progress.";
+}
+
 export function buildWorkspaceForecast(
   intelligence: WorkspaceIntelligence,
   priorityActions: WorkspacePriorityAction[],
-  directorPlan: WorkspaceDirectorPlan
+  directorPlan: WorkspaceDirectorPlan,
+  knowledge?: WorkspaceKnowledge
 ): WorkspaceForecast {
   const reportActions = priorityActions.filter(
     (action) => action.actionType === "generate_report"
@@ -66,51 +147,33 @@ export function buildWorkspaceForecast(
   let projectedHealth: WorkspaceIntelligence["workspaceHealth"] =
     intelligence.workspaceHealth;
 
-  if (
-    intelligence.totalItems > 0 &&
+  if (intelligence.totalItems === 0) {
+    projectedHealth = "Unknown";
+  } else if (
     intelligence.unknownItems === 0 &&
     remainingReports === 0 &&
     remainingJobs === 0 &&
     reportActions.length === 0
   ) {
     projectedHealth = "Healthy";
-  } else if (intelligence.totalItems === 0) {
-    projectedHealth = "Unknown";
   } else {
     projectedHealth = "Needs Attention";
   }
 
-  let confidence: ForecastConfidence = "Moderate";
+  const confidence = determineForecastConfidence(
+    priorityActions,
+    reviewActions.length,
+    knowledge
+  );
 
-  if (priorityActions.length === 0) {
-    confidence = "High";
-  } else if (reviewActions.length > 0) {
-    confidence = "Low";
-  } else if (
-    reportActions.length + jobActions.length === priorityActions.length
-  ) {
-    confidence = "High";
-  }
-
-  let prediction =
-    "Completing today's visible actions should improve workspace progress.";
-
-  if (priorityActions.length === 0) {
-    prediction =
-      "No immediate improvement is required because the workspace is currently stable.";
-  } else if (projectedHealth === "Healthy") {
-    prediction =
-      "Completing today's visible actions is expected to move the workspace into a healthy state.";
-  } else if (reportActions.length > 0) {
-    prediction =
-      "Generating the visible reports will advance analyzed items, but follow-up jobs will still be required.";
-  } else if (reviewActions.length > 0) {
-    prediction =
-      "Completing the visible plan may improve progress, but reviewed items could require additional decisions.";
-  } else if (directorPlan.estimatedMinutes > 0) {
-    prediction =
-      "Completing the visible job actions should increase healthy workspace items and reduce the current execution backlog.";
-  }
+  const prediction = buildForecastPrediction({
+    priorityActionCount: priorityActions.length,
+    reportActionCount: reportActions.length,
+    reviewActionCount: reviewActions.length,
+    projectedHealth,
+    estimatedMinutes: directorPlan.estimatedMinutes,
+    knowledge,
+  });
 
   return {
     title: "Workspace Forecast",

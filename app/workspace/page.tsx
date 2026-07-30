@@ -32,6 +32,9 @@ import type { WorkspaceRisk } from "../../lib/workspaceRiskService";
 import type { WorkspaceStrategy } from "../../lib/workspaceStrategyService";
 import type { WorkspaceInsights } from "../../lib/workspaceInsightsService";
 import type { WorkspaceAIResponse } from "../../lib/workspaceAIResponse";
+import type { WorkspaceHistory } from "../../lib/workspaceHistoryService";
+import type { WorkspaceMetrics } from "../../lib/workspaceMetricsService";
+import type { WorkspaceKnowledge } from "../../lib/workspaceKnowledgeService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
@@ -57,6 +60,15 @@ const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
 
 const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
   useState<WorkspaceDirectorPlan | null>(null);
+
+  const [workspaceHistory, setWorkspaceHistory] =
+  useState<WorkspaceHistory | null>(null);
+
+const [workspaceMetrics, setWorkspaceMetrics] =
+  useState<WorkspaceMetrics | null>(null);
+
+  const [workspaceKnowledge, setWorkspaceKnowledge] =
+  useState<WorkspaceKnowledge | null>(null);
 
 const [workspaceForecast, setWorkspaceForecast] =
   useState<WorkspaceForecast | null>(null);
@@ -123,6 +135,9 @@ const recommendation =
 
   if (intelligence) {
   setWorkspaceIntelligence(intelligence.intelligence);
+  setWorkspaceHistory(intelligence.history);
+  setWorkspaceMetrics(intelligence.metrics);
+  setWorkspaceKnowledge(intelligence.knowledge);
   setWorkspacePriorityActions(intelligence.priorityActions);
   setWorkspaceDirectorPlan(intelligence.directorPlan);
   setWorkspaceForecast(intelligence.forecast);
@@ -366,6 +381,14 @@ async function handlePriorityAction(action: WorkspacePriorityAction) {
   setSelectedItem(item);
 }
 
+function formatHistoryDate(date: string | null) {
+  if (!date) {
+    return "No activity";
+  }
+
+  return new Date(date).toLocaleString();
+}
+
 function getItemIcon(type: string) {
   switch (type) {
     case "analysis":
@@ -564,6 +587,220 @@ async function askWorkspaceAI() {
           </p>
         </div>
       </section>
+
+      <Card title="Workspace History" className="mt-8">
+        {!workspaceHistory ? (
+          <p className="text-sm text-slate-400">
+            Workspace history is loading...
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+              <div>
+                <p className="text-sm text-slate-400">Total Events</p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceHistory.totalEvents}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Days Active</p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceHistory.daysActive}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Trend</p>
+                <p className="mt-1 text-xl font-semibold capitalize">
+                  {workspaceHistory.activityTrend.replace("_", " ")}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Last Activity</p>
+                <p className="mt-1 font-medium">
+                  {formatHistoryDate(workspaceHistory.lastEventAt)}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-800 pt-6 sm:grid-cols-3 lg:grid-cols-5">
+              <div>
+                <p className="text-sm text-slate-400">Analyses Created</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceHistory.analysesCreated}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Reports Generated</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceHistory.reportsGenerated}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Jobs Created</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceHistory.jobsCreated}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Items Duplicated</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceHistory.itemsDuplicated}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">Items Deleted</p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceHistory.itemsDeleted}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+
+            <Card title="Workspace Metrics" className="mt-8">
+        {!workspaceMetrics ? (
+          <p className="text-sm text-slate-400">
+            Workspace metrics are loading...
+          </p>
+        ) : (
+          <>
+            <div className="grid grid-cols-2 gap-6 md:grid-cols-4">
+              <div>
+                <p className="text-sm text-slate-400">
+                  Events Per Day
+                </p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceMetrics.eventsPerDay}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Analyses Per Day
+                </p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceMetrics.analysesPerDay}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Reports Per Day
+                </p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceMetrics.reportsPerDay}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Jobs Per Day
+                </p>
+                <p className="mt-1 text-2xl font-bold">
+                  {workspaceMetrics.jobsPerDay}
+                </p>
+              </div>
+            </div>
+
+            <div className="mt-6 grid grid-cols-2 gap-4 border-t border-slate-800 pt-6 md:grid-cols-4">
+              <div>
+                <p className="text-sm text-slate-400">
+                  Reports Per Analysis
+                </p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceMetrics.reportToAnalysisRatio}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Jobs Per Report
+                </p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceMetrics.jobToReportRatio}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Recent Activity
+                </p>
+                <p className="mt-1 text-lg font-semibold">
+                  {Math.round(
+                    workspaceMetrics.recentActivityShare * 100
+                  )}
+                  %
+                </p>
+              </div>
+
+              <div>
+                <p className="text-sm text-slate-400">
+                  Workspace Velocity
+                </p>
+                <p className="mt-1 text-lg font-semibold">
+                  {workspaceMetrics.workspaceVelocity}
+                </p>
+              </div>
+            </div>
+          </>
+        )}
+      </Card>
+
+      <Card title="Workspace Memory" className="mt-8">
+  {!workspaceKnowledge ? (
+    <p className="text-sm text-slate-400">
+      Workspace memory is loading...
+    </p>
+  ) : (
+    <div className="space-y-6">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          Primary Focus
+        </p>
+
+        <p className="mt-2 text-2xl font-bold">
+          {workspaceKnowledge.focus}
+        </p>
+      </div>
+
+      <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-5">
+        <p className="text-sm leading-7 text-slate-300">
+          {workspaceKnowledge.summary}
+        </p>
+      </div>
+
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+        <div className="rounded-xl border border-slate-800 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Production Pattern
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {workspaceKnowledge.productionStatus}
+          </p>
+        </div>
+
+        <div className="rounded-xl border border-slate-800 p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            Execution Pattern
+          </p>
+
+          <p className="mt-3 text-sm leading-6 text-slate-300">
+            {workspaceKnowledge.executionStatus}
+          </p>
+        </div>
+      </div>
+    </div>
+  )}
+</Card>
 
       <div className="mt-8">
         <MissionControl

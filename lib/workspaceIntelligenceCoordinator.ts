@@ -1,5 +1,8 @@
 import { analyzeWorkspaceEvents } from "./analysisService";
 import { getAllEvents } from "./eventService";
+import { buildWorkspaceHistory } from "./workspaceHistoryService";
+import { buildWorkspaceMetrics } from "./workspaceMetricsService";
+import { buildWorkspaceKnowledge } from "./workspaceKnowledgeService";
 import { analyzeWorkspace } from "./workspaceIntelligenceService";
 import { buildWorkspacePriorities } from "./workspacePriorityService";
 import { buildWorkspaceDirectorPlan } from "./workspaceDirectorService";
@@ -20,6 +23,10 @@ export async function buildWorkspaceIntelligence(
       error,
     };
   }
+
+    const history = buildWorkspaceHistory(events || []);
+    const metrics = buildWorkspaceMetrics(history);
+    const knowledge = buildWorkspaceKnowledge(history, metrics);
 
   const workspaceAnalysisRecords = workspaceItems.map((item) => {
     const relatedEvents = (events || []).filter((event: any) => {
@@ -60,10 +67,11 @@ export async function buildWorkspaceIntelligence(
   );
 
   const forecast = buildWorkspaceForecast(
-    intelligence,
-    priorityActions,
-    directorPlan
-  );
+  intelligence,
+  priorityActions,
+  directorPlan,
+  knowledge
+);
 
   const strategy = buildWorkspaceStrategy(
     intelligence,
@@ -97,6 +105,9 @@ export async function buildWorkspaceIntelligence(
 
   return {
     data: {
+      history,
+      metrics,
+      knowledge,
       intelligence,
       priorityActions,
       directorPlan,
