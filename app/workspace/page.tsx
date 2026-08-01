@@ -1,14 +1,19 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+
 import MissionControl from "../components/workspace/MissionControl";
-import { getWorkspaceRecommendation } from "../../lib/recommendationService";
-import { analyzeWorkspaceEvents } from "../../lib/analysisService";
+import WorkspaceStats from "../components/workspace/WorkspaceStats";
+import RecentWork from "../components/workspace/RecentWork";
+import SelectedWorkspaceItem from "../components/workspace/SelectedWorkspaceItem";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
-import Card from "../components/Card";
-import Button from "../components/Button";
-import StatusBadge from "../components/StatusBadge";
-import toast from "react-hot-toast";
+import SearchBar from "../components/SearchBar";
+
+import { getWorkspaceRecommendation } from "../../lib/recommendationService";
+import { analyzeWorkspaceEvents } from "../../lib/analysisService";
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
 import {
   createEvent,
@@ -20,99 +25,96 @@ import {
   duplicateWorkspaceItem,
   createWorkspaceReport,
 } from "../../lib/workspaceService";
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
-import SearchBar from "../components/SearchBar";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
+
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
 import type { WorkspaceDirectorPlan } from "../../lib/workspaceDirectorService";
 
 export default function WorkspacePage() {
   const [items, setItems] = useState<any[]>([]);
-const [search, setSearch] = useState("");
-const [filter, setFilter] = useState("all");
-const [sort, setSort] = useState("newest");
-const [selectedItem, setSelectedItem] = useState<any | null>(null);
-const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
-const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
-  totalItems: 0,
-  needsReports: 0,
-  needsJobs: 0,
-  healthyItems: 0,
-  unknownItems: 0,
-  workspaceHealth: "Unknown",
-  primaryBottleneck: "No workspace data",
-  recommendedAction: "Load workspace intelligence.",
-  progressPercent: 0,
-});
-const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
-  WorkspacePriorityAction[]
->([]);
+  const [search, setSearch] = useState("");
+  const [filter, setFilter] = useState("all");
+  const [sort, setSort] = useState("newest");
+  const [selectedItem, setSelectedItem] = useState<any | null>(null);
+  const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
 
-const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
-  useState<WorkspaceDirectorPlan | null>(null);
+  const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
+    totalItems: 0,
+    needsReports: 0,
+    needsJobs: 0,
+    healthyItems: 0,
+    unknownItems: 0,
+    workspaceHealth: "Unknown",
+    primaryBottleneck: "No workspace data",
+    recommendedAction: "Load workspace intelligence.",
+    progressPercent: 0,
+  });
 
-const [loading, setLoading] = useState(true);
-const [showAllItems, setShowAllItems] = useState(false);
+  const [workspacePriorityActions, setWorkspacePriorityActions] = useState<
+    WorkspacePriorityAction[]
+  >([]);
 
-const router = useRouter();
-const workspaceAnalysis = analyzeWorkspaceEvents(
-  selectedItem?.type ?? "analysis",
-  selectedItemEvents
-);
-const recommendation =
-  getWorkspaceRecommendation(workspaceAnalysis);
+  const [workspaceDirectorPlan, setWorkspaceDirectorPlan] =
+    useState<WorkspaceDirectorPlan | null>(null);
+
+  const [loading, setLoading] = useState(true);
+  const [showAllItems, setShowAllItems] = useState(false);
+
+  const router = useRouter();
+
+  const workspaceAnalysis = analyzeWorkspaceEvents(
+    selectedItem?.type ?? "analysis",
+    selectedItemEvents
+  );
+
+  const recommendation = getWorkspaceRecommendation(workspaceAnalysis);
 
   useEffect(() => {
     async function loadItems() {
-  const { data, error } = await getWorkspaceItems();
+      const { data, error } = await getWorkspaceItems();
 
-  if (error) {
-  console.log("Workspace item load error:", {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-  });
+      if (error) {
+        console.log("Workspace item load error:", {
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+          code: error.code,
+        });
 
-  toast.error(
-    error.message || "Failed to load workspace items."
-  );
+        toast.error(error.message || "Failed to load workspace items.");
+        setLoading(false);
+        return;
+      }
 
-  setLoading(false);
-  return;
-}
+      const workspaceItems = data || [];
+      setItems(workspaceItems);
 
-  const workspaceItems = data || [];
+      const {
+        data: intelligence,
+        error: intelligenceError,
+      } = await buildWorkspaceIntelligence(workspaceItems);
 
-  setItems(workspaceItems);
+      if (intelligenceError) {
+        console.error(intelligenceError);
+        toast.error("Failed to load workspace intelligence.");
+      }
 
-  const {
-    data: intelligence,
-    error: intelligenceError,
-  } = await buildWorkspaceIntelligence(workspaceItems);
+      if (intelligence) {
+        setWorkspaceIntelligence(intelligence.intelligence);
+        setWorkspacePriorityActions(intelligence.priorityActions);
+        setWorkspaceDirectorPlan(intelligence.directorPlan);
+      }
 
-  if (intelligenceError) {
-    console.error(intelligenceError);
-    toast.error("Failed to load workspace intelligence.");
-  }
-
-  if (intelligence) {
-    setWorkspaceIntelligence(intelligence.intelligence);
-    setWorkspacePriorityActions(intelligence.priorityActions);
-    setWorkspaceDirectorPlan(intelligence.directorPlan);
-  }
-
-  setLoading(false);
-}
+      setLoading(false);
+    }
 
     loadItems();
 
-const interval = setInterval(() => {
-  loadItems();
-}, 2000);
+    const interval = setInterval(() => {
+      loadItems();
+    }, 2000);
 
-return () => clearInterval(interval);
+    return () => clearInterval(interval);
   }, []);
 
   const analyses = items.filter((item) => item.type === "analysis");
@@ -120,70 +122,78 @@ return () => clearInterval(interval);
   const jobs = items.filter((item) => item.type === "job");
 
   const filteredItems = items
-  .filter((item) => {
-    const searchText = search.toLowerCase();
+    .filter((item) => {
+      const searchText = search.toLowerCase();
 
-    const matchesSearch =
-      item.title?.toLowerCase().includes(searchText) ||
-      item.address?.toLowerCase().includes(searchText);
+      const matchesSearch =
+        item.title?.toLowerCase().includes(searchText) ||
+        item.address?.toLowerCase().includes(searchText);
 
-    const matchesFilter = filter === "all" || item.type === filter;
+      const matchesFilter = filter === "all" || item.type === filter;
 
-    return matchesSearch && matchesFilter;
-  })
-  .sort((a, b) => {
-    if (sort === "oldest") {
+      return matchesSearch && matchesFilter;
+    })
+    .sort((a, b) => {
+      if (sort === "oldest") {
+        return (
+          new Date(a.created_at).getTime() -
+          new Date(b.created_at).getTime()
+        );
+      }
+
+      if (sort === "az") {
+        return a.title.localeCompare(b.title);
+      }
+
       return (
-        new Date(a.created_at).getTime() -
-        new Date(b.created_at).getTime()
+        new Date(b.created_at).getTime() -
+        new Date(a.created_at).getTime()
       );
-    }
-
-    if (sort === "az") {
-      return a.title.localeCompare(b.title);
-    }
-
-    return (
-      new Date(b.created_at).getTime() -
-      new Date(a.created_at).getTime()
-    );
-  });
+    });
 
   async function deleteSelectedItem() {
-  if (!selectedItem) return;
+    if (!selectedItem) {
+      return;
+    }
 
-  const { error } = await deleteWorkspaceItem(selectedItem.id);
+    const { error } = await deleteWorkspaceItem(selectedItem.id);
 
-  if (error) {
-    console.error(error);
-    toast.error("Delete failed.");
-    return;
+    if (error) {
+      console.error(error);
+      toast.error("Delete failed.");
+      return;
+    }
+
+    const { error: eventError } = await createEvent({
+      workspace_item_id: null,
+      event_type: "item_deleted",
+      description: `Item deleted: ${selectedItem.title}`,
+      source: "Workspace",
+      metadata: {
+        deleted_item_id: selectedItem.id,
+        deleted_title: selectedItem.title,
+      },
+    });
+
+    if (eventError) {
+      toast.error("Event tracking failed.");
+    }
+
+    setItems((currentItems) =>
+      currentItems.filter((item) => item.id !== selectedItem.id)
+    );
+
+    setSelectedItem(null);
+    setSelectedItemEvents([]);
+    toast.success("Item deleted successfully.");
   }
 
-  const { error: eventError } = await createEvent({
-  workspace_item_id: null,
-  event_type: "item_deleted",
-  description: `Item deleted: ${selectedItem.title}`,
-  source: "Workspace",
-  metadata: {
-    deleted_item_id: selectedItem.id,
-    deleted_title: selectedItem.title,
-  },
-});
+  async function generateReportFromItem(item: any) {
+    if (!item || item.type !== "analysis") {
+      return null;
+    }
 
-if (eventError) {
-  toast.error("Event tracking failed.");
-}
-
-setItems(items.filter((item) => item.id !== selectedItem.id));
-setSelectedItem(null);
-setSelectedItemEvents([]);
-}
-
-async function generateReportFromItem(item: any) {
-  if (!item || item.type !== "analysis") return;
-
-  const generatedReport = `Investor Report
+    const generatedReport = `Investor Report
 
 Property:
 ${item.title}
@@ -201,185 +211,193 @@ ${item.status}
 Interpretation:
 Based on the 70% rule, this deal currently receives a ${item.status} recommendation.`;
 
-  const { data, error } = await createWorkspaceReport({
-    title: `${item.title} Investor Report`,
-    address: item.address,
-    status: "Saved",
-    content: generatedReport,
-  });
+    const { data, error } = await createWorkspaceReport({
+      title: `${item.title} Investor Report`,
+      address: item.address,
+      status: "Saved",
+      content: generatedReport,
+    });
 
-  if (error) {
-    console.error(error);
-    toast.error("Report generation failed.");
-    return;
+    if (error) {
+      console.error(error);
+      toast.error("Report generation failed.");
+      return null;
+    }
+
+    const { error: eventError } = await createEvent({
+      workspace_item_id: data.id,
+      event_type: "report_generated",
+      description: `Report generated for ${item.title}`,
+      source: "Workspace",
+      metadata: {
+        original_item_id: item.id,
+        report_title: data.title,
+      },
+    });
+
+    if (eventError) {
+      toast.error("Event tracking failed.");
+    }
+
+    setItems((currentItems) => [data, ...currentItems]);
+    setSelectedItem(data);
+
+    return data;
   }
 
-  const { error: eventError } = await createEvent({
-    workspace_item_id: data.id,
-    event_type: "report_generated",
-    description: `Report generated for ${item.title}`,
-    source: "Workspace",
-    metadata: {
-      original_item_id: item.id,
-      report_title: data.title,
-    },
-  });
+  async function generateReportFromSelectedItem() {
+    const report = await generateReportFromItem(selectedItem);
 
-  if (eventError) {
-    toast.error("Event tracking failed.");
+    if (report) {
+      toast.success("Report generated successfully.");
+    }
   }
 
-  setItems([data, ...items]);
-  setSelectedItem(data);
-}
+  async function createJobFromItem(item: any) {
+    if (!item) {
+      return null;
+    }
 
-async function generateReportFromSelectedItem() {
-  await generateReportFromItem(selectedItem);
-}
+    const { data, error } = await createWorkspaceJob({
+      title: `${item.title} Processing Job`,
+      status: "Completed",
+      source: "Workspace",
+    });
 
-async function createJobFromItem(item: any) {
-  if (!item) return;
+    if (error) {
+      console.error(error);
+      toast.error("Job creation failed.");
+      return null;
+    }
 
-  const { data, error } = await createWorkspaceJob({
-    title: `${item.title} Processing Job`,
-    status: "Completed",
-    source: "Workspace",
-  });
+    const { error: eventError } = await createEvent({
+      workspace_item_id: data.id,
+      event_type: "job_created",
+      description: `Job created for ${item.title}`,
+      source: "Workspace",
+      metadata: {
+        original_item_id: item.id,
+        job_title: data.title,
+      },
+    });
 
-  if (error) {
-    console.error(error);
-    toast.error("Job creation failed.");
-    return;
+    if (eventError) {
+      toast.error("Event tracking failed.");
+    }
+
+    setItems((currentItems) => [data, ...currentItems]);
+    setSelectedItem(data);
+
+    return data;
   }
 
-  const { error: eventError } = await createEvent({
-    workspace_item_id: data.id,
-    event_type: "job_created",
-    description: `Job created for ${item.title}`,
-    source: "Workspace",
-    metadata: {
-      original_item_id: item.id,
-      job_title: data.title,
-    },
-  });
+  async function createJobFromSelectedItem() {
+    const job = await createJobFromItem(selectedItem);
 
-  if (eventError) {
-    toast.error("Event tracking failed.");
+    if (job) {
+      toast.success("Job created successfully.");
+    }
   }
 
-  setItems([data, ...items]);
-  setSelectedItem(data);
-}
+  async function duplicateSelectedItem() {
+    if (!selectedItem) {
+      return;
+    }
 
-async function createJobFromSelectedItem() {
-  await createJobFromItem(selectedItem);
-}
+    const { data, error } = await duplicateWorkspaceItem(selectedItem);
 
-async function duplicateSelectedItem() {
-  if (!selectedItem) return;
+    if (error) {
+      console.error(error);
+      toast.error("Duplicate failed.");
+      return;
+    }
 
-  const { data, error } = await duplicateWorkspaceItem(selectedItem);
+    const { error: eventError } = await createEvent({
+      workspace_item_id: data.id,
+      event_type: "item_duplicated",
+      description: `Item duplicated from ${selectedItem.title}`,
+      source: "Workspace",
+      metadata: {
+        original_item_id: selectedItem.id,
+        duplicated_title: data.title,
+      },
+    });
 
-  if (error) {
-    console.error(error);
-    toast.error("Duplicate failed.");
-    return;
+    if (eventError) {
+      toast.error("Event tracking failed.");
+    }
+
+    setItems((currentItems) => [data, ...currentItems]);
+    setSelectedItem(data);
+    toast.success("Item duplicated successfully.");
   }
 
-  const { error: eventError } = await createEvent({
-  workspace_item_id: data.id,
-  event_type: "item_duplicated",
-  description: `Item duplicated from ${selectedItem.title}`,
-  source: "Workspace",
-  metadata: {
-    original_item_id: selectedItem.id,
-    duplicated_title: data.title,
-  },
-});
+  async function handlePriorityAction(action: WorkspacePriorityAction) {
+    const item = items.find(
+      (workspaceItem) => workspaceItem.id === action.itemId
+    );
 
-if (eventError) {
-  toast.error("Event tracking failed.");
-}
+    if (!item) {
+      toast.error("Workspace item not found.");
+      return;
+    }
 
-setItems([data, ...items]);
-setSelectedItem(data);
-}
+    if (action.actionType === "generate_report") {
+      const report = await generateReportFromItem(item);
 
-async function handlePriorityAction(action: WorkspacePriorityAction) {
-  const item = items.find((workspaceItem) => workspaceItem.id === action.itemId);
+      if (report) {
+        toast.success("Report generated from priority action.");
+      }
 
-  if (!item) {
-    toast.error("Workspace item not found.");
-    return;
+      return;
+    }
+
+    if (action.actionType === "create_job") {
+      const job = await createJobFromItem(item);
+
+      if (job) {
+        toast.success("Job created from priority action.");
+      }
+
+      return;
+    }
+
+    setSelectedItem(item);
   }
 
-  if (action.actionType === "generate_report") {
-  await generateReportFromItem(item);
+  async function selectWorkspaceItem(item: any) {
+    setSelectedItem(item);
 
+    const { data, error } = await getEventsForWorkspaceItem(item.id);
 
-  toast.success("Report generated from priority action.");
-  return;
-}
+    if (error) {
+      toast.error("Failed to load activity.");
+      setSelectedItemEvents([]);
+      return;
+    }
 
-  if (action.actionType === "create_job") {
-  await createJobFromItem(item);
-
-
-  toast.success("Job created from priority action.");
-  return;
-}
-
-  setSelectedItem(item);
-}
-
-function getItemIcon(type: string) {
-  switch (type) {
-    case "analysis":
-      return "📊";
-
-    case "report":
-      return "📄";
-
-    case "job":
-      return "⚙️";
-
-    default:
-      return "📁";
-  }
-}
-
-async function selectWorkspaceItem(item: any) {
-  setSelectedItem(item);
-
-  const { data, error } = await getEventsForWorkspaceItem(item.id);
-
-  if (error) {
-    toast.error("Failed to load activity.");
-    setSelectedItemEvents([]);
-    return;
+    setSelectedItemEvents(data || []);
   }
 
-  setSelectedItemEvents(data || []);
-}
+  function openSelectedItem() {
+    if (!selectedItem) {
+      return;
+    }
 
-function openSelectedItem() {
-  if (!selectedItem) return;
+    if (selectedItem.type === "analysis") {
+      router.push("/deal-analyzer");
+      return;
+    }
 
-  if (selectedItem.type === "analysis") {
-    router.push("/deal-analyzer");
-    return;
+    if (selectedItem.type === "report") {
+      router.push("/reportforge");
+      return;
+    }
+
+    if (selectedItem.type === "job") {
+      router.push("/jobs");
+    }
   }
-
-  if (selectedItem.type === "report") {
-    router.push("/reportforge");
-    return;
-  }
-
-  if (selectedItem.type === "job") {
-    router.push("/jobs");
-    return;
-  }
-}
 
   const visibleItems = showAllItems
     ? filteredItems
@@ -434,215 +452,43 @@ function openSelectedItem() {
         />
       </div>
 
-      <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Analyses
-          </p>
-          <p className="mt-2 text-2xl font-bold">{analyses.length}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Reports
-          </p>
-          <p className="mt-2 text-2xl font-bold">{reports.length}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Jobs
-          </p>
-          <p className="mt-2 text-2xl font-bold">{jobs.length}</p>
-        </div>
-
-        <div className="rounded-xl border border-slate-800 bg-slate-950/60 p-4">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Progress
-          </p>
-          <p className="mt-2 text-2xl font-bold">
-            {workspaceIntelligence.progressPercent}%
-          </p>
-        </div>
-
-        <div className="col-span-2 rounded-xl border border-slate-800 bg-slate-950/60 p-4 lg:col-span-1">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-            Health
-          </p>
-          <p className="mt-2 text-2xl font-bold">
-            {workspaceIntelligence.workspaceHealth}
-          </p>
-        </div>
-      </section>
+      <WorkspaceStats
+        analysesCount={analyses.length}
+        reportsCount={reports.length}
+        jobsCount={jobs.length}
+        progressPercent={workspaceIntelligence.progressPercent}
+        workspaceHealth={workspaceIntelligence.workspaceHealth}
+      />
 
       <section className="mt-8">
-        <Card title="Recent Work">
-          <div className="space-y-3">
-            {loading && (
-              <div className="rounded-xl border border-slate-800 p-5 text-slate-400">
-                Loading workspace items...
-              </div>
-            )}
-
-            {!loading && visibleItems.length === 0 && (
-              <div className="rounded-xl border border-slate-800 p-5 text-slate-400">
-                No workspace items found.
-              </div>
-            )}
-
-            {!loading &&
-              visibleItems.map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => selectWorkspaceItem(item)}
-                  className={`w-full rounded-xl border p-4 text-left transition ${
-                    selectedItem?.id === item.id
-                      ? "border-blue-500 bg-slate-900"
-                      : "border-slate-800 hover:border-slate-600 hover:bg-slate-950/70"
-                  }`}
-                >
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="min-w-0">
-                      <p className="text-xs uppercase tracking-wider text-slate-500">
-                        {getItemIcon(item.type)} {item.type}
-                      </p>
-                      <p className="mt-1 truncate font-semibold">
-                        {item.title}
-                      </p>
-                      {item.address && (
-                        <p className="mt-1 truncate text-sm text-slate-400">
-                          {item.address}
-                        </p>
-                      )}
-                    </div>
-
-                    {item.status && <StatusBadge status={item.status} />}
-                  </div>
-                </button>
-              ))}
-          </div>
-
-          {filteredItems.length > 5 && (
-            <button
-              type="button"
-              onClick={() => setShowAllItems((current) => !current)}
-              className="mt-5 text-sm font-semibold text-blue-400 hover:text-blue-300"
-            >
-              {showAllItems
-                ? "Show only five"
-                : `View all ${filteredItems.length} items`}
-            </button>
-          )}
-        </Card>
-
-
-
+        <RecentWork
+          loading={loading}
+          visibleItems={visibleItems}
+          filteredItems={filteredItems}
+          selectedItem={selectedItem}
+          showAllItems={showAllItems}
+          onSelectItem={selectWorkspaceItem}
+          onToggleShowAll={() =>
+            setShowAllItems((current) => !current)
+          }
+        />
       </section>
 
-      {selectedItem && (
-        <Card title="Selected Workspace Item" className="mt-8">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-xs uppercase tracking-wider text-slate-500">
-                {getItemIcon(selectedItem.type)} {selectedItem.type}
-              </p>
-              <h2 className="mt-1 text-2xl font-bold">
-                {selectedItem.title}
-              </h2>
-              {selectedItem.address && (
-                <p className="mt-2 text-slate-400">{selectedItem.address}</p>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedItem(null);
-                setSelectedItemEvents([]);
-              }}
-              className="rounded-lg border border-slate-700 px-4 py-2 hover:bg-slate-800"
-            >
-              Close
-            </button>
-          </div>
-
-          <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-3">
-            <div className="rounded-xl border border-slate-800 p-5">
-              <h3 className="font-semibold">Analysis</h3>
-              <div className="mt-4 space-y-3 text-sm">
-                <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Stage</span>
-                  <span>{workspaceAnalysis.stage}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Health</span>
-                  <span>{workspaceAnalysis.health}</span>
-                </div>
-                <div className="flex justify-between gap-4">
-                  <span className="text-slate-400">Events</span>
-                  <span>{workspaceAnalysis.eventCount}</span>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-slate-800 p-5">
-              <h3 className="font-semibold">Recommendation</h3>
-              <p className="mt-4 text-sm text-slate-400">Next Action</p>
-              <p className="mt-1 font-semibold">{recommendation.action}</p>
-              <p className="mt-4 text-sm leading-6 text-slate-400">
-                {recommendation.reason}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-800 p-5">
-              <h3 className="font-semibold">Activity</h3>
-              <div className="mt-4 max-h-48 space-y-3 overflow-y-auto">
-                {selectedItemEvents.length === 0 && (
-                  <p className="text-sm text-slate-400">No activity yet.</p>
-                )}
-
-                {selectedItemEvents.map((event) => (
-                  <div key={event.id}>
-                    <p className="text-sm font-medium">{event.description}</p>
-                    <p className="mt-1 text-xs text-slate-500">
-                      {new Date(event.created_at).toLocaleString()}
-                    </p>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {selectedItem.content && (
-            <details className="mt-6 rounded-xl border border-slate-800 p-5">
-              <summary className="cursor-pointer font-semibold">
-                View saved content
-              </summary>
-              <pre className="mt-4 whitespace-pre-wrap rounded-lg bg-slate-950 p-4 text-sm">
-                {selectedItem.content}
-              </pre>
-            </details>
-          )}
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button onClick={openSelectedItem}>Open</Button>
-
-            <Button
-              onClick={generateReportFromSelectedItem}
-              disabled={selectedItem.type !== "analysis"}
-            >
-              Generate Report
-            </Button>
-
-            <Button onClick={createJobFromSelectedItem}>Create Job</Button>
-            <Button onClick={duplicateSelectedItem}>Duplicate</Button>
-            <Button onClick={deleteSelectedItem}>Delete</Button>
-          </div>
-        </Card>
-      )}
-
-
+      <SelectedWorkspaceItem
+        selectedItem={selectedItem}
+        selectedItemEvents={selectedItemEvents}
+        workspaceAnalysis={workspaceAnalysis}
+        recommendation={recommendation}
+        onClose={() => {
+          setSelectedItem(null);
+          setSelectedItemEvents([]);
+        }}
+        onOpen={openSelectedItem}
+        onGenerateReport={generateReportFromSelectedItem}
+        onCreateJob={createJobFromSelectedItem}
+        onDuplicate={duplicateSelectedItem}
+        onDelete={deleteSelectedItem}
+      />
     </Page>
   );
 }
