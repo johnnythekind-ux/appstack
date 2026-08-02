@@ -333,7 +333,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
   return (
     <Page
       title="Intelligence"
-      description="Workspace intelligence, trends, memory, forecasts, strategy, risk, and AI guidance."
+      description="Transform workspace activity into operational intelligence."
     >
       <WorkspaceMemory
         workspaceHistory={workspaceHistory}
@@ -341,8 +341,8 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         workspaceKnowledge={workspaceKnowledge}
       />
 
-      <div className="mt-8">
-        <WorkspaceIntelligence
+      <div className="mt-10">
+  <WorkspaceIntelligence
           progressPercent={workspaceIntelligence.progressPercent}
           directorPlan={workspaceDirectorPlan}
           priorityActions={workspacePriorityActions}

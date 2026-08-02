@@ -13,10 +13,139 @@ type MissionControlProps = {
   onAction: (action: WorkspacePriorityAction) => void;
 };
 
+type MissionBriefing = {
+  headline: string;
+  statusTitle: string;
+  statusMessage: string;
+  displayedHealth: string;
+};
+
 function getActionLabel(action: WorkspacePriorityAction) {
-  if (action.actionType === "generate_report") return "Generate Report";
-  if (action.actionType === "create_job") return "Create Job";
+  if (action.actionType === "generate_report") {
+    return "Generate Report";
+  }
+
+  if (action.actionType === "create_job") {
+    return "Create Job";
+  }
+
   return "Review Item";
+}
+
+function buildMissionBriefing(
+  workspaceHealth: string,
+  progressPercent: number,
+  priorityActions: WorkspacePriorityAction[],
+  nextBestAction: string
+): MissionBriefing {
+  const highPriorityActions = priorityActions.filter(
+    (action) => action.priority === "High"
+  );
+
+  const reviewActions = priorityActions.filter(
+    (action) => action.actionType === "review_item"
+  );
+
+  const reportActions = priorityActions.filter(
+    (action) => action.actionType === "generate_report"
+  );
+
+  const jobActions = priorityActions.filter(
+    (action) => action.actionType === "create_job"
+  );
+
+  if (
+    priorityActions.length === 0 &&
+    progressPercent === 100
+  ) {
+    return {
+      headline: "Workspace is running smoothly.",
+      statusTitle: "Everything is up to date.",
+      statusMessage:
+        "All priority work has been completed. New activity will appear here automatically.",
+      displayedHealth: "Healthy",
+    };
+  }
+
+  if (highPriorityActions.length > 0) {
+    return {
+      headline:
+        highPriorityActions.length === 1
+          ? "One urgent item needs your attention."
+          : `${highPriorityActions.length} urgent items need your attention.`,
+      statusTitle: "Immediate action is recommended.",
+      statusMessage:
+        "Complete the highest-priority work first to prevent additional delays.",
+      displayedHealth: "Needs Attention",
+    };
+  }
+
+  if (reviewActions.length > 0) {
+    return {
+      headline:
+        reviewActions.length === 1
+          ? "One item needs review."
+          : `${reviewActions.length} items need review.`,
+      statusTitle: "Some workspace activity is unresolved.",
+      statusMessage:
+        "Review the unresolved items before moving additional work forward.",
+      displayedHealth: "Needs Attention",
+    };
+  }
+
+  if (reportActions.length > 0) {
+    return {
+      headline:
+        reportActions.length === 1
+          ? "One analysis is ready for reporting."
+          : `${reportActions.length} analyses are ready for reporting.`,
+      statusTitle: "Reporting is the next priority.",
+      statusMessage:
+        "Generate the outstanding reports to continue moving work toward execution.",
+      displayedHealth: "Needs Attention",
+    };
+  }
+
+  if (jobActions.length > 0) {
+    return {
+      headline:
+        jobActions.length === 1
+          ? "One report is ready for execution."
+          : `${jobActions.length} reports are ready for execution.`,
+      statusTitle: "Execution work is waiting.",
+      statusMessage:
+        "Create the outstanding jobs to move completed reports into execution.",
+      displayedHealth: "Needs Attention",
+    };
+  }
+
+  if (progressPercent >= 90) {
+    return {
+      headline: "The workspace is nearly complete.",
+      statusTitle: "Only a small amount of work remains.",
+      statusMessage:
+        "Complete the remaining steps to bring the workspace fully up to date.",
+      displayedHealth: workspaceHealth,
+    };
+  }
+
+  if (progressPercent >= 60) {
+    return {
+      headline: "The workspace is making progress.",
+      statusTitle: "Important work is still underway.",
+      statusMessage:
+        "Continue with the recommended actions to improve the current position.",
+      displayedHealth: workspaceHealth,
+    };
+  }
+
+  return {
+    headline: nextBestAction,
+    statusTitle: "The workspace needs attention.",
+    statusMessage:
+      "Several unfinished steps are limiting progress. Begin with the highest-priority action.",
+    displayedHealth: workspaceHealth,
+  };
 }
 
 export default function MissionControl({
@@ -30,16 +159,23 @@ export default function MissionControl({
   const primaryAction = priorityActions[0];
   const upcomingActions = priorityActions.slice(1, 3);
 
+  const briefing = buildMissionBriefing(
+    workspaceHealth,
+    progressPercent,
+    priorityActions,
+    nextBestAction
+  );
+
   return (
     <Card>
       <div className="flex flex-col gap-4 border-b border-slate-800 pb-6 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.22em] text-blue-400">
-            Today&apos;s Mission
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+            Mission Control
           </p>
 
           <h2 className="mt-3 text-3xl font-bold tracking-tight">
-            {primaryAction?.title ?? nextBestAction}
+            {briefing.headline}
           </h2>
         </div>
 
@@ -47,7 +183,7 @@ export default function MissionControl({
           <span>
             Health:{" "}
             <strong className="font-semibold text-white">
-              {workspaceHealth}
+              {briefing.displayedHealth}
             </strong>
           </span>
 
@@ -77,9 +213,12 @@ export default function MissionControl({
 
       {!primaryAction ? (
         <div className="py-10">
-          <p className="text-lg font-semibold">Workspace clear.</p>
+          <p className="text-lg font-semibold">
+            {briefing.statusTitle}
+          </p>
+
           <p className="mt-2 text-slate-400">
-            There are no priority actions requiring attention right now.
+            {briefing.statusMessage}
           </p>
         </div>
       ) : (
@@ -108,38 +247,30 @@ export default function MissionControl({
                 <span className="rounded-full border border-slate-700 px-3 py-1 text-slate-300">
                   {primaryAction.priority} priority
                 </span>
-
-                <span className="rounded-full border border-slate-700 px-3 py-1 text-slate-300">
-                  {getActionLabel(primaryAction)}
-                </span>
               </div>
             </div>
 
             <div className="lg:min-w-44">
               <Button onClick={() => onAction(primaryAction)}>
-                Start Mission
+                {getActionLabel(primaryAction)}
               </Button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="border-t border-slate-800 pt-6">
-        <div className="flex items-center justify-between gap-4">
-          <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
-            Up Next
-          </h3>
+      {upcomingActions.length > 0 && (
+        <div className="border-t border-slate-800 pt-6">
+          <div className="flex items-center justify-between gap-4">
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
+              Up Next
+            </h3>
 
-          <p className="text-sm text-slate-500">
-            {Math.max(priorityActions.length - 1, 0)} remaining
-          </p>
-        </div>
+            <p className="text-sm text-slate-500">
+              {priorityActions.length - 1} remaining
+            </p>
+          </div>
 
-        {upcomingActions.length === 0 ? (
-          <p className="mt-4 text-sm text-slate-500">
-            No additional actions are queued.
-          </p>
-        ) : (
           <div className="mt-4 divide-y divide-slate-800 rounded-xl border border-slate-800">
             {upcomingActions.map((action) => (
               <div
@@ -147,7 +278,10 @@ export default function MissionControl({
                 className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
-                  <p className="font-semibold">{action.title}</p>
+                  <p className="font-semibold">
+                    {action.title}
+                  </p>
+
                   <p className="mt-1 truncate text-sm text-slate-400">
                     {action.itemTitle}
                   </p>
@@ -163,8 +297,8 @@ export default function MissionControl({
               </div>
             ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </Card>
   );
 }

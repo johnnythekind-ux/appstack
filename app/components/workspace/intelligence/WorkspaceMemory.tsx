@@ -24,7 +24,7 @@ export default function WorkspaceMemory({
 }
 
 return (
-  <Card title="Workspace Memory">
+  <Card title="Workspace Profile">
     {!workspaceKnowledge ? (
       <p className="text-sm text-slate-400">
         Workspace memory is loading...
@@ -34,7 +34,7 @@ return (
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Primary Focus
+              Current State
             </p>
 
             <p className="mt-2 text-2xl font-bold">
@@ -45,7 +45,7 @@ return (
           {workspaceHistory && (
             <div className="text-right">
               <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-                Last Activity
+                Last Updated
               </p>
 
               <p className="mt-2 text-sm font-medium text-slate-300">
@@ -85,7 +85,7 @@ return (
 
         <details className="rounded-xl border border-slate-800">
           <summary className="cursor-pointer px-5 py-4 font-semibold text-blue-400">
-            View detailed history and metrics
+            Explore workspace history
           </summary>
 
           <div className="border-t border-slate-800 p-5">

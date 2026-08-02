@@ -49,7 +49,7 @@ const intelligenceTabs: {
   { id: "strategy", label: "Strategy" },
   { id: "risk", label: "Risk" },
   { id: "insights", label: "Insights" },
-  { id: "ai", label: "AI" },
+  { id: "ai", label: "Advisor" },
 ];
 
 export default function WorkspaceIntelligence({
@@ -71,7 +71,7 @@ export default function WorkspaceIntelligence({
     useState<IntelligenceTab>("director");
 
   return (
-    <Card title="Workspace Intelligence">
+    <Card title="Director">
       <div className="flex gap-2 overflow-x-auto border-b border-slate-800 pb-3">
         {intelligenceTabs.map((tab) => (
           <button

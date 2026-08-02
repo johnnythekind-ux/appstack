@@ -9,6 +9,42 @@ export type WorkspaceDirectorPlan = {
   estimatedMinutes: number;
 };
 
+function determineNextBestAction(
+  intelligence: WorkspaceIntelligence,
+  priorityActions: WorkspacePriorityAction[]
+): string {
+  const primaryAction = priorityActions[0];
+
+  if (primaryAction) {
+    return primaryAction.title;
+  }
+
+  if (
+    intelligence.workspaceHealth === "Healthy" &&
+    intelligence.progressPercent === 100
+  ) {
+    return "Workspace is running smoothly.";
+  }
+
+  if (intelligence.unknownItems > 0) {
+    return "Review unresolved workspace items.";
+  }
+
+  if (intelligence.needsReports > 0) {
+    return "Complete the outstanding reports.";
+  }
+
+  if (intelligence.needsJobs > 0) {
+    return "Move completed reports into execution.";
+  }
+
+  if (intelligence.workspaceHealth === "Needs Attention") {
+    return "The workspace needs your attention.";
+  }
+
+  return "Review the latest workspace activity.";
+}
+
 export function buildWorkspaceDirectorPlan(
   intelligence: WorkspaceIntelligence,
   priorityActions: WorkspacePriorityAction[]
@@ -52,7 +88,20 @@ export function buildWorkspaceDirectorPlan(
   }
 
   if (summary.length === 0) {
-    summary.push("No urgent workspace actions are required.");
+    if (
+      intelligence.workspaceHealth === "Healthy" &&
+      intelligence.progressPercent === 100
+    ) {
+      summary.push("All priority work has been completed.");
+    } else if (intelligence.workspaceHealth === "Needs Attention") {
+      summary.push(
+        "The workspace still contains unfinished or unresolved work."
+      );
+    } else {
+      summary.push(
+        "No immediate actions are currently available."
+      );
+    }
   }
 
   const estimatedMinutes =
@@ -60,14 +109,14 @@ export function buildWorkspaceDirectorPlan(
     jobActions.length * 3 +
     reviewActions.length * 5;
 
-  const nextBestAction =
-    priorityActions[0]?.title || "Continue monitoring the workspace.";
-
   return {
     title: "Today's Workspace Plan",
     workspaceStatus: intelligence.workspaceHealth,
     summary,
-    nextBestAction,
+    nextBestAction: determineNextBestAction(
+      intelligence,
+      priorityActions
+    ),
     estimatedMinutes,
   };
 }

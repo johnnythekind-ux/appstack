@@ -405,9 +405,9 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
 
   return (
     <Page
-      title="Workspace"
-      description="Your operational command center for analyses, reports, jobs, and intelligence."
-    >
+  title="Workspace"
+  description="Manage active work, complete priority actions, and keep every item moving."
+>
       <Toolbar>
         <SearchBar
           value={search}

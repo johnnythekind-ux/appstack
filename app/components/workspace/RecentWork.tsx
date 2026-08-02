@@ -37,7 +37,7 @@ export default function RecentWork({
   onToggleShowAll,
 }: RecentWorkProps) {
   return (
-    <Card title="Recent Work">
+    <Card title="Active Work">
       <div className="space-y-3">
         {loading && (
           <div className="rounded-xl border border-slate-800 p-5 text-slate-400">
@@ -52,9 +52,9 @@ export default function RecentWork({
         )}
 
         {!loading &&
-          visibleItems.map((item) => (
-            <button
-              key={item.id}
+          visibleItems.map((item, index) => (
+  <button
+    key={`${item.type}-${item.id}-${item.created_at ?? "no-date"}-${index}`}
               type="button"
               onClick={() => onSelectItem(item)}
               className={`w-full rounded-xl border p-4 text-left transition ${
