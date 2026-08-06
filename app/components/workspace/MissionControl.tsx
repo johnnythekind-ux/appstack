@@ -17,7 +17,6 @@ type MissionBriefing = {
   headline: string;
   statusTitle: string;
   statusMessage: string;
-  displayedHealth: string;
 };
 
 function getActionLabel(action: WorkspacePriorityAction) {
@@ -30,6 +29,18 @@ function getActionLabel(action: WorkspacePriorityAction) {
   }
 
   return "Review Item";
+}
+
+function getActionStatusLabel(action: WorkspacePriorityAction) {
+  if (action.actionType === "generate_report") {
+    return "Report required";
+  }
+
+  if (action.actionType === "create_job") {
+    return "Job required";
+  }
+
+  return "Review required";
 }
 
 function buildMissionBriefing(
@@ -56,14 +67,14 @@ function buildMissionBriefing(
 
   if (
     priorityActions.length === 0 &&
-    progressPercent === 100
+    progressPercent === 100 &&
+    workspaceHealth === "Healthy"
   ) {
     return {
       headline: "Workspace is running smoothly.",
       statusTitle: "Everything is up to date.",
       statusMessage:
         "All priority work has been completed. New activity will appear here automatically.",
-      displayedHealth: "Healthy",
     };
   }
 
@@ -76,7 +87,6 @@ function buildMissionBriefing(
       statusTitle: "Immediate action is recommended.",
       statusMessage:
         "Complete the highest-priority work first to prevent additional delays.",
-      displayedHealth: "Needs Attention",
     };
   }
 
@@ -89,7 +99,6 @@ function buildMissionBriefing(
       statusTitle: "Some workspace activity is unresolved.",
       statusMessage:
         "Review the unresolved items before moving additional work forward.",
-      displayedHealth: "Needs Attention",
     };
   }
 
@@ -102,7 +111,6 @@ function buildMissionBriefing(
       statusTitle: "Reporting is the next priority.",
       statusMessage:
         "Generate the outstanding reports to continue moving work toward execution.",
-      displayedHealth: "Needs Attention",
     };
   }
 
@@ -115,7 +123,6 @@ function buildMissionBriefing(
       statusTitle: "Execution work is waiting.",
       statusMessage:
         "Create the outstanding jobs to move completed reports into execution.",
-      displayedHealth: "Needs Attention",
     };
   }
 
@@ -125,7 +132,6 @@ function buildMissionBriefing(
       statusTitle: "Only a small amount of work remains.",
       statusMessage:
         "Complete the remaining steps to bring the workspace fully up to date.",
-      displayedHealth: workspaceHealth,
     };
   }
 
@@ -135,7 +141,6 @@ function buildMissionBriefing(
       statusTitle: "Important work is still underway.",
       statusMessage:
         "Continue with the recommended actions to improve the current position.",
-      displayedHealth: workspaceHealth,
     };
   }
 
@@ -144,7 +149,6 @@ function buildMissionBriefing(
     statusTitle: "The workspace needs attention.",
     statusMessage:
       "Several unfinished steps are limiting progress. Begin with the highest-priority action.",
-    displayedHealth: workspaceHealth,
   };
 }
 
@@ -168,13 +172,13 @@ export default function MissionControl({
 
   return (
     <Card>
-      <div className="flex flex-col gap-4 border-b border-slate-800 pb-6 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
             Mission Control
           </p>
 
-          <h2 className="mt-3 text-3xl font-bold tracking-tight">
+          <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
             {briefing.headline}
           </h2>
         </div>
@@ -183,7 +187,7 @@ export default function MissionControl({
           <span>
             Health:{" "}
             <strong className="font-semibold text-white">
-              {briefing.displayedHealth}
+              {workspaceHealth}
             </strong>
           </span>
 
@@ -212,7 +216,7 @@ export default function MissionControl({
       </div>
 
       {!primaryAction ? (
-        <div className="py-10">
+        <div className="py-4">
           <p className="text-lg font-semibold">
             {briefing.statusTitle}
           </p>
@@ -222,35 +226,39 @@ export default function MissionControl({
           </p>
         </div>
       ) : (
-        <div className="py-8">
-          <div className="grid grid-cols-1 gap-8 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-end">
+        <div className="py-4">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
-                Primary Objective
-              </p>
+              <div className="flex flex-wrap items-center gap-3">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                  Primary Objective
+                </p>
 
-              <h3 className="mt-3 text-2xl font-bold">
+                <span
+                  className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300"
+                  title={`${primaryAction.priority} priority`}
+                >
+                  {getActionStatusLabel(primaryAction)}
+                </span>
+              </div>
+
+              <h3 className="mt-2 text-xl font-bold sm:text-2xl">
                 {primaryAction.itemTitle}
               </h3>
 
-              <div className="mt-6 max-w-3xl">
+              <div className="mt-3 max-w-3xl">
                 <p className="text-sm font-semibold text-slate-300">
                   Why this matters
                 </p>
 
-                <p className="mt-2 text-base leading-7 text-slate-400">
+                <p className="mt-1 text-sm leading-6 text-slate-400 sm:text-base">
                   {primaryAction.reason}
                 </p>
               </div>
 
-              <div className="mt-6 flex flex-wrap gap-3 text-sm">
-                <span className="rounded-full border border-slate-700 px-3 py-1 text-slate-300">
-                  {primaryAction.priority} priority
-                </span>
-              </div>
             </div>
 
-            <div className="lg:min-w-44">
+            <div className="lg:min-w-40">
               <Button onClick={() => onAction(primaryAction)}>
                 {getActionLabel(primaryAction)}
               </Button>
@@ -260,7 +268,7 @@ export default function MissionControl({
       )}
 
       {upcomingActions.length > 0 && (
-        <div className="border-t border-slate-800 pt-6">
+        <div className="border-t border-slate-800 pt-4">
           <div className="flex items-center justify-between gap-4">
             <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
               Up Next
@@ -271,11 +279,11 @@ export default function MissionControl({
             </p>
           </div>
 
-          <div className="mt-4 divide-y divide-slate-800 rounded-xl border border-slate-800">
+          <div className="mt-3 divide-y divide-slate-800 rounded-xl border border-slate-800">
             {upcomingActions.map((action) => (
               <div
                 key={`${action.itemId}-${action.actionType}`}
-                className="flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="font-semibold">

@@ -11,14 +11,31 @@ import StatusBadge from "../components/StatusBadge";
 import { supabase } from "../../lib/supabase";
 import { createEvent } from "../../lib/eventService";
 
+type SavedAnalysis = {
+  id: string;
+  name: string;
+  address: string;
+  purchasePrice: number;
+  arv: number;
+  repairCost: number;
+  maxOffer: number;
+  recommendation: string;
+};
+
 export default function DealAnalyzerPage() {
-  const [analysisName, setAnalysisName] = useState("");
-  const [propertyAddress, setPropertyAddress] = useState("");
-  const [purchasePrice, setPurchasePrice] = useState("");
+  const [analysisName, setAnalysisName] =
+    useState("");
+  const [propertyAddress, setPropertyAddress] =
+    useState("");
+  const [purchasePrice, setPurchasePrice] =
+    useState("");
   const [arv, setArv] = useState("");
-  const [repairCost, setRepairCost] = useState("");
-  const [result, setResult] = useState<string | null>(null);
+  const [repairCost, setRepairCost] =
+    useState("");
+  const [result, setResult] =
+    useState<string | null>(null);
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const maxOffer =
     Number(arv) * 0.7 - Number(repairCost);
@@ -55,14 +72,25 @@ export default function DealAnalyzerPage() {
 
   async function saveAnalysis() {
     if (!result) {
-      toast.error("Analyze the deal before saving it.");
+      toast.error(
+        "Analyze the deal before saving it."
+      );
       return;
     }
 
-    const savedAnalysis = {
-      name: analysisName || "Untitled Analysis",
+    if (saving || saved) {
+      return;
+    }
+
+    setSaving(true);
+
+    const analysisData = {
+      name:
+        analysisName.trim() ||
+        "Untitled Analysis",
       address:
-        propertyAddress || "No address entered",
+        propertyAddress.trim() ||
+        "No address entered",
       purchasePrice: Number(purchasePrice),
       arv: Number(arv),
       repairCost: Number(repairCost),
@@ -70,24 +98,20 @@ export default function DealAnalyzerPage() {
       recommendation: result,
     };
 
-    localStorage.setItem(
-      "appstack_saved_analysis",
-      JSON.stringify(savedAnalysis)
-    );
-
     const { data, error } = await supabase
       .from("workspace_items")
       .insert({
         type: "analysis",
-        title: savedAnalysis.name,
-        address: savedAnalysis.address,
-        status: savedAnalysis.recommendation,
+        title: analysisData.name,
+        address: analysisData.address,
+        status: analysisData.recommendation,
         metadata: {
           purchasePrice:
-            savedAnalysis.purchasePrice,
-          arv: savedAnalysis.arv,
-          repairCost: savedAnalysis.repairCost,
-          maxOffer: savedAnalysis.maxOffer,
+            analysisData.purchasePrice,
+          arv: analysisData.arv,
+          repairCost:
+            analysisData.repairCost,
+          maxOffer: analysisData.maxOffer,
         },
       })
       .select()
@@ -98,8 +122,19 @@ export default function DealAnalyzerPage() {
       toast.error(
         "The analysis could not be saved."
       );
+      setSaving(false);
       return;
     }
+
+    const savedAnalysis: SavedAnalysis = {
+      id: data.id,
+      ...analysisData,
+    };
+
+    localStorage.setItem(
+      "appstack_saved_analysis",
+      JSON.stringify(savedAnalysis)
+    );
 
     const { error: eventError } =
       await createEvent({
@@ -122,7 +157,10 @@ export default function DealAnalyzerPage() {
     }
 
     setSaved(true);
-    toast.success("Analysis saved successfully.");
+    setSaving(false);
+    toast.success(
+      "Analysis saved successfully."
+    );
   }
 
   function runAnotherAnalysis() {
@@ -133,6 +171,7 @@ export default function DealAnalyzerPage() {
     setRepairCost("");
     setResult(null);
     setSaved(false);
+    setSaving(false);
 
     window.scrollTo({
       top: 0,
@@ -158,7 +197,9 @@ export default function DealAnalyzerPage() {
             <input
               value={analysisName}
               onChange={(event) =>
-                setAnalysisName(event.target.value)
+                setAnalysisName(
+                  event.target.value
+                )
               }
               className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
               placeholder="Houston Flip Test"
@@ -251,8 +292,12 @@ export default function DealAnalyzerPage() {
           className="mt-8"
         >
           <StatusBadge
-  status={result === "PASS" ? "PASS ON DEAL" : result}
-/>
+            status={
+              result === "PASS"
+                ? "PASS ON DEAL"
+                : result
+            }
+          />
 
           <div className="mt-4">
             <h3 className="text-xl font-semibold">
@@ -324,11 +369,13 @@ export default function DealAnalyzerPage() {
             <Button
               onClick={saveAnalysis}
               variant="secondary"
-              disabled={saved}
+              disabled={saved || saving}
             >
-              {saved
-                ? "Analysis Saved"
-                : "Save Analysis"}
+              {saving
+                ? "Saving Analysis..."
+                : saved
+                  ? "Analysis Saved"
+                  : "Save Analysis"}
             </Button>
 
             <Button

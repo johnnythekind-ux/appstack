@@ -5,6 +5,11 @@ type StatusBadgeProps = {
 export default function StatusBadge({
   status,
 }: StatusBadgeProps) {
+  const normalizedStatus =
+    status === "PASS ON DEAL"
+      ? "PASS"
+      : status;
+
   const colors: Record<string, string> = {
     BUY: "bg-green-600 text-white",
     PASS: "bg-red-600 text-white",
@@ -19,8 +24,8 @@ export default function StatusBadge({
 
   return (
     <span
-      className={`rounded-full px-3 py-1 text-sm font-medium ${
-        colors[status] ??
+      className={`inline-flex items-center rounded-full px-3 py-1 text-sm font-medium ${
+        colors[normalizedStatus] ??
         "bg-slate-700 text-white"
       }`}
     >

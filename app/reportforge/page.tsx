@@ -12,34 +12,90 @@ import ExpandableList from "../components/ExpandableList";
 
 import {
   createWorkspaceReport,
+  getWorkspaceReportByAnalysisId,
   getWorkspaceReports,
+  updateWorkspaceReport,
+  type WorkspaceItem,
 } from "../../lib/workspaceService";
 
+type SavedAnalysis = {
+  id?: string;
+  name: string;
+  address: string;
+  purchasePrice: number;
+  arv: number;
+  repairCost: number;
+  maxOffer: number;
+  recommendation: string;
+};
+
 export default function ReportForgePage() {
-  const [analysis, setAnalysis] = useState<any>(null);
+  const [analysis, setAnalysis] =
+    useState<SavedAnalysis | null>(null);
   const [report, setReport] = useState("");
+  const [existingReport, setExistingReport] =
+    useState<WorkspaceItem | null>(null);
+  const [draftChanged, setDraftChanged] =
+    useState(false);
   const [saved, setSaved] = useState(false);
-  const [savedReports, setSavedReports] = useState<any[]>([]);
-  const [loadingReports, setLoadingReports] = useState(true);
+  const [savedReports, setSavedReports] =
+    useState<WorkspaceItem[]>([]);
+  const [loadingReports, setLoadingReports] =
+    useState(true);
+  const [loadingCurrentReport, setLoadingCurrentReport] =
+    useState(false);
+  const [savingReport, setSavingReport] =
+    useState(false);
 
   async function loadReports() {
-    const { data, error } = await getWorkspaceReports();
+    const { data, error } =
+      await getWorkspaceReports();
 
     if (error) {
       console.error(error);
-      toast.error("Saved reports could not be loaded.");
+      toast.error(
+        "Saved reports could not be loaded."
+      );
       setLoadingReports(false);
       return;
     }
 
-    const sortedReports = [...(data || [])].sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() -
-        new Date(a.created_at).getTime()
-    );
-
-    setSavedReports(sortedReports);
+    setSavedReports(data || []);
     setLoadingReports(false);
+  }
+
+  async function loadExistingReport(
+    analysisId: string
+  ) {
+    setLoadingCurrentReport(true);
+
+    const { data, error } =
+      await getWorkspaceReportByAnalysisId(
+        analysisId
+      );
+
+    if (error) {
+      console.error(error);
+      toast.error(
+        "The existing report status could not be checked."
+      );
+      setLoadingCurrentReport(false);
+      return;
+    }
+
+    if (data) {
+      setExistingReport(data);
+      setReport(data.content || "");
+      setDraftChanged(false);
+      setSaved(true);
+    } else {
+      setExistingReport(null);
+      setReport("");
+      setDraftChanged(false);
+      setSaved(false);
+    }
+
+    setLoadingCurrentReport(false);
   }
 
   useEffect(() => {
@@ -49,7 +105,16 @@ export default function ReportForgePage() {
 
     if (storedAnalysis) {
       try {
-        setAnalysis(JSON.parse(storedAnalysis));
+        const parsedAnalysis: SavedAnalysis =
+          JSON.parse(storedAnalysis);
+
+        setAnalysis(parsedAnalysis);
+
+        if (parsedAnalysis.id) {
+          loadExistingReport(
+            parsedAnalysis.id
+          );
+        }
       } catch (error) {
         console.error(
           "Saved analysis could not be read:",
@@ -81,8 +146,17 @@ export default function ReportForgePage() {
       return;
     }
 
+    if (!analysis.id) {
+      toast.error(
+        "This analysis was saved before report tracking was added. Save a new analysis before generating its report."
+      );
+      return;
+    }
+
     const displayedRecommendation =
-      formatRecommendation(analysis.recommendation);
+      formatRecommendation(
+        analysis.recommendation
+      );
 
     const generatedReport = `Investor Report
 
@@ -103,15 +177,21 @@ Interpretation:
 Based on the 70% rule, the purchase price ${
       analysis.recommendation === "BUY"
         ? "falls within"
-        : analysis.recommendation === "NEGOTIATE"
+        : analysis.recommendation ===
+            "NEGOTIATE"
           ? "is slightly above"
           : "exceeds"
     } the calculated maximum allowable offer.`;
 
     setReport(generatedReport);
+    setDraftChanged(true);
     setSaved(false);
 
-    toast.success("Investor report generated.");
+    toast.success(
+      existingReport
+        ? "Revised investor report generated."
+        : "Investor report generated."
+    );
   }
 
   async function saveReport() {
@@ -122,34 +202,92 @@ Based on the 70% rule, the purchase price ${
       return;
     }
 
-    const savedReport = {
+    if (!analysis.id) {
+      toast.error(
+        "This analysis does not have a report-tracking ID. Save a new analysis first."
+      );
+      return;
+    }
+
+    if (savingReport) {
+      return;
+    }
+
+    setSavingReport(true);
+
+    const reportInput = {
       title: `${analysis.name} Investor Report`,
       address: analysis.address,
+      status: "Saved",
       content: report,
+      analysisId: analysis.id,
     };
+
+    const response = existingReport
+      ? await updateWorkspaceReport(
+          existingReport.id,
+          reportInput
+        )
+      : await createWorkspaceReport(
+          reportInput
+        );
+
+    if (response.error) {
+      console.error(response.error);
+      toast.error(
+        existingReport
+          ? "The existing report could not be updated."
+          : "The report could not be saved."
+      );
+      setSavingReport(false);
+      return;
+    }
+
+    const savedReport =
+      response.data as WorkspaceItem;
+
+    setExistingReport(savedReport);
+    setReport(savedReport.content || report);
+    setDraftChanged(false);
+    setSaved(true);
+    setSavingReport(false);
 
     localStorage.setItem(
       "appstack_saved_report",
       JSON.stringify(savedReport)
     );
 
-    const { error } = await createWorkspaceReport({
-      title: savedReport.title,
-      address: savedReport.address,
-      status: "Saved",
-      content: savedReport.content,
-    });
-
-    if (error) {
-      console.error(error);
-      toast.error("The report could not be saved.");
-      return;
-    }
-
-    setSaved(true);
-    toast.success("Report saved successfully.");
+    toast.success(
+      existingReport
+        ? "Report updated successfully."
+        : "Report saved successfully."
+    );
 
     await loadReports();
+  }
+
+  function getReportStatusMessage() {
+    if (loadingCurrentReport) {
+      return "Checking for an existing report...";
+    }
+
+    if (!analysis?.id) {
+      return "This older analysis is not connected to report tracking. Save a new analysis to begin.";
+    }
+
+    if (draftChanged && existingReport) {
+      return "A revised report has been generated. Save it to update the existing report.";
+    }
+
+    if (draftChanged) {
+      return "A report has been generated but has not been saved yet.";
+    }
+
+    if (existingReport) {
+      return "A saved investor report already exists for this analysis.";
+    }
+
+    return "No report has been generated for this analysis yet.";
   }
 
   return (
@@ -168,8 +306,9 @@ Based on the 70% rule, the purchase price ${
             </p>
 
             <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-400">
-              ReportForge uses the most recently saved
-              analysis to prepare an investor report.
+              ReportForge uses the most recently
+              saved analysis to prepare an investor
+              report.
             </p>
 
             <div className="mt-5 flex flex-wrap justify-center gap-3">
@@ -193,7 +332,7 @@ Based on the 70% rule, the purchase price ${
 
       {analysis && (
         <Card
-          title="Analysis Ready for Reporting"
+          title="Current Analysis"
           className="mt-10"
         >
           <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
@@ -263,9 +402,25 @@ Based on the 70% rule, the purchase price ${
             </div>
           </div>
 
+          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-4">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Report Status
+            </p>
+
+            <p className="mt-2 text-sm text-slate-300">
+              {getReportStatusMessage()}
+            </p>
+          </div>
+
           <div className="mt-6 flex flex-wrap gap-3">
-            <Button onClick={generateReport}>
-              {report
+            <Button
+              onClick={generateReport}
+              disabled={
+                loadingCurrentReport ||
+                !analysis.id
+              }
+            >
+              {existingReport || report
                 ? "Regenerate Investor Report"
                 : "Generate Investor Report"}
             </Button>
@@ -282,7 +437,11 @@ Based on the 70% rule, the purchase price ${
 
       {report && (
         <Card
-          title="Generated Investor Report"
+          title={
+            existingReport && !draftChanged
+              ? "Saved Investor Report"
+              : "Generated Investor Report"
+          }
           className="mt-8"
         >
           <pre className="whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
@@ -293,9 +452,20 @@ Based on the 70% rule, the purchase price ${
             <Button
               onClick={saveReport}
               variant="success"
-              disabled={saved}
+              disabled={
+                savingReport ||
+                (!draftChanged &&
+                  Boolean(existingReport))
+              }
             >
-              {saved ? "Report Saved" : "Save Report"}
+              {savingReport
+                ? "Saving Report..."
+                : existingReport &&
+                    !draftChanged
+                  ? "Report Saved"
+                  : existingReport
+                    ? "Update Report"
+                    : "Save Report"}
             </Button>
 
             <Button
@@ -306,9 +476,10 @@ Based on the 70% rule, the purchase price ${
             </Button>
           </div>
 
-          {saved && (
+          {saved && !draftChanged && (
             <p className="mt-4 text-sm text-green-400">
-              Report saved successfully.
+              This report is saved and connected to
+              the current analysis.
             </p>
           )}
         </Card>
@@ -332,8 +503,8 @@ Based on the 70% rule, the purchase price ${
               </p>
 
               <p className="mt-2 text-sm text-slate-400">
-                Generated reports will appear here after
-                they are saved.
+                Generated reports will appear here
+                after they are saved.
               </p>
             </div>
           )}
@@ -341,46 +512,46 @@ Based on the 70% rule, the purchase price ${
         {!loadingReports &&
           savedReports.length > 0 && (
             <ExpandableList
-  items={savedReports}
-  initialCount={5}
->
-  {(item: any, index: number) => (
-    <div
-      key={`${item.id}-${item.created_at ?? "no-date"}-${index}`}
-      className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Investor Report
-        </p>
+              items={savedReports}
+              initialCount={5}
+            >
+              {(item, index) => (
+                <div
+                  key={`${item.id}-${item.created_at ?? "no-date"}-${index}`}
+                  className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      Investor Report
+                    </p>
 
-        <h3 className="mt-1 truncate font-semibold">
-          {item.title}
-        </h3>
+                    <h3 className="mt-1 truncate font-semibold">
+                      {item.title}
+                    </h3>
 
-        {item.address && (
-          <p className="mt-1 truncate text-sm text-slate-400">
-            {item.address}
-          </p>
-        )}
-      </div>
+                    {item.address && (
+                      <p className="mt-1 truncate text-sm text-slate-400">
+                        {item.address}
+                      </p>
+                    )}
+                  </div>
 
-      <div className="shrink-0 text-left sm:text-right">
-        <p className="text-sm font-medium text-slate-300">
-          {item.status || "Saved"}
-        </p>
+                  <div className="shrink-0 text-left sm:text-right">
+                    <p className="text-sm font-medium text-slate-300">
+                      {item.status || "Saved"}
+                    </p>
 
-        {item.created_at && (
-          <p className="mt-1 text-xs text-slate-500">
-            {new Date(
-              item.created_at
-            ).toLocaleString()}
-          </p>
-        )}
-      </div>
-    </div>
-  )}
-</ExpandableList>
+                    {item.created_at && (
+                      <p className="mt-1 text-xs text-slate-500">
+                        {new Date(
+                          item.created_at
+                        ).toLocaleString()}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              )}
+            </ExpandableList>
           )}
       </Card>
     </Page>

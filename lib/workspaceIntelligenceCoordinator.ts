@@ -44,7 +44,8 @@ export async function buildWorkspaceIntelligence(
       item,
       analysis: analyzeWorkspaceEvents(
         item.type,
-        relatedEvents
+        relatedEvents,
+        item.status
       ),
     };
   });

@@ -7,12 +7,93 @@ import toast from "react-hot-toast";
 import ExpandableList from "../components/ExpandableList";
 import Page from "../components/Page";
 import Card from "../components/Card";
-
 import ExecutiveBriefing, {
   type ExecutiveBriefingModel,
 } from "../components/platform/ExecutiveBriefing";
 
 import { getWorkspaceItems } from "../../lib/workspaceService";
+
+const engineeringConcepts = [
+  "Modular architecture",
+  "Shared services",
+  "CRUD operations",
+  "Event tracking",
+  "Background processing",
+  "Deterministic business rules",
+  "Platform intelligence",
+];
+
+const walkthroughSteps = [
+  {
+    number: 1,
+    title: "Analyze Your First Deal",
+    description:
+      "Open Deal Analyzer, enter sample property data, and run the evaluation.",
+    href: "/deal-analyzer",
+  },
+  {
+    number: 2,
+    title: "Save Your Analysis",
+    description:
+      "Save the completed analysis so the other modules can use it.",
+    href: "/deal-analyzer",
+  },
+  {
+    number: 3,
+    title: "Generate Your First Report",
+    description:
+      "Open ReportForge and generate a report from the saved analysis.",
+    href: "/reportforge",
+  },
+  {
+    number: 4,
+    title: "Create Your First Job",
+    description:
+      "Open Jobs and create simulated work that progresses through its lifecycle.",
+    href: "/jobs",
+  },
+  {
+    number: 5,
+    title: "Review Your Workspace",
+    description:
+      "Open Workspace to inspect the objects, history, and recommended next actions.",
+    href: "/workspace",
+  },
+  {
+    number: 6,
+    title: "Explore Platform Intelligence",
+    description:
+      "Finish in Intelligence to review the conclusions produced from platform activity.",
+    href: "/intelligence",
+  },
+];
+
+const architectureSteps = [
+  {
+    step: "Step 1",
+    title: "Analyze",
+    description:
+      "Deterministic business rules convert structured input into a repeatable decision.",
+  },
+  {
+    step: "Step 2",
+    title: "Persist",
+    description:
+      "The saved record becomes a shared source of truth for services and modules.",
+  },
+  {
+    step: "Step 3",
+    title: "Generate",
+    description:
+      "A reporting service transforms persisted data into a reusable artifact.",
+  },
+  {
+    step: "Step 4",
+    title: "Execute",
+    description:
+      "A job workflow represents asynchronous processing and observable state transitions.",
+  },
+];
 
 export default function DashboardPage() {
   const [items, setItems] = useState<any[]>([]);
@@ -69,6 +150,7 @@ export default function DashboardPage() {
   );
 
   const recentItems = sortedItems.slice(0, 8);
+
   const latestAnalysis = analyses
     .slice()
     .sort(
@@ -77,40 +159,33 @@ export default function DashboardPage() {
         new Date(a.created_at).getTime()
     )[0];
 
-    const platformStatus: ExecutiveBriefingModel = {
-  health:
-    activeJobs.length > 0
-      ? "Active"
-      : "Healthy",
-
-  mission:
-    activeJobs.length > 0
-      ? "Complete active processing jobs."
-      : "Review your latest workspace activity.",
-
-  priorityCount: activeJobs.length,
-
-  progress:
-    jobs.length === 0
-      ? 100
-      : Math.round(
-          (completedJobs.length / jobs.length) * 100
-        ),
-
-  lastUpdated: new Date().toLocaleTimeString(),
-};
+  const platformStatus: ExecutiveBriefingModel = {
+    health:
+      activeJobs.length > 0
+        ? "Active"
+        : "Healthy",
+    mission:
+      activeJobs.length > 0
+        ? "Welcome to the AppStack architecture demonstration."
+        : "Complete the guided architectural walkthrough.",
+    priorityCount: activeJobs.length,
+    progress:
+      jobs.length === 0
+        ? 100
+        : Math.round(
+            (completedJobs.length / jobs.length) * 100
+          ),
+    lastUpdated: new Date().toLocaleTimeString(),
+  };
 
   function getItemIcon(type: string) {
     switch (type) {
       case "analysis":
         return "📊";
-
       case "report":
         return "📄";
-
       case "job":
         return "⚙️";
-
       default:
         return "📁";
     }
@@ -126,12 +201,138 @@ export default function DashboardPage() {
   return (
     <Page
       title="Dashboard"
-      description="See what changed, review platform activity, and continue your work."
+      description="Explore a modern SaaS architecture by following a guided workflow that demonstrates business rules, shared services, reporting, background processing, and platform intelligence."
     >
+      <ExecutiveBriefing status={platformStatus} />
 
-<ExecutiveBriefing status={platformStatus} />
+      <section className="grid grid-cols-1 items-start gap-6 lg:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.65fr)]">
+        <div className="rounded-2xl border border-slate-800 bg-slate-950 p-6">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+            About AppStack
+          </p>
 
-      <section className="mt-10 grid grid-cols-2 gap-4 lg:grid-cols-4">
+          <h2 className="mt-3 text-3xl font-bold tracking-tight">
+            Modern SaaS architecture, demonstrated through one connected application.
+          </h2>
+
+          <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
+            AppStack is a portfolio platform that demonstrates how production
+            software moves structured data through deterministic business rules,
+            persistence, reusable reporting, operational processing, event history,
+            and platform intelligence.
+          </p>
+
+          <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-500">
+            The real-estate example provides context. The architecture, services,
+            workflows, and engineering decisions are the primary demonstration.
+          </p>
+
+          <div className="mt-10 border-t border-slate-800 pt-8">
+  <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">
+    How AppStack Works
+  </p>
+
+  <div className="mt-6 space-y-4">
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Structured Input
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        User enters deterministic business data.
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Business Rules
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        Services evaluate the data using repeatable logic.
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Persistence
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        Results become a shared source of truth.
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Reporting
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        Reports transform stored information into reusable artifacts.
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Operational Work
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        Jobs simulate asynchronous background processing.
+      </div>
+    </div>
+
+    <div className="flex items-center gap-4">
+      <div className="w-36 text-slate-300 font-medium">
+        Intelligence
+      </div>
+
+      <div className="text-slate-500">→</div>
+
+      <div className="text-slate-400">
+        Platform services produce recommendations and architectural insight.
+      </div>
+    </div>
+  </div>
+</div>
+
+        </div>
+
+        <Card title="Engineering Capabilities Demonstrated">
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-1">
+            {engineeringConcepts.map((concept) => (
+              <div
+                key={concept}
+                className="flex items-center gap-3 rounded-lg border border-slate-800 px-4 py-3"
+              >
+                <span
+                  aria-hidden="true"
+                  className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600/20 text-sm font-bold text-blue-400"
+                >
+                  ✓
+                </span>
+
+                <span className="text-sm font-medium text-slate-300">
+                  {concept}
+                </span>
+              </div>
+            ))}
+          </div>
+        </Card>
+      </section>
+
+      <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
             Total Items
@@ -184,7 +385,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="mt-2 text-sm text-slate-400">
-            Jobs still moving through execution.
+            Simulated work still moving through execution.
           </p>
         </Card>
 
@@ -198,7 +399,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="mt-2 text-sm text-slate-400">
-            Execution work completed successfully.
+            Operational workflows that reached their final state.
           </p>
         </Card>
 
@@ -215,7 +416,7 @@ export default function DashboardPage() {
 
           <p className="mt-2 text-sm text-slate-400">
             {latestAnalysis?.address ||
-              "Your latest saved deal will appear here."}
+              "Your latest saved analysis will appear here."}
           </p>
         </Card>
       </section>
@@ -234,7 +435,7 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Review active items and complete priority actions.
+            Review stored objects, events, recommendations, and priority actions.
           </p>
         </Link>
 
@@ -251,7 +452,7 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Explore patterns, forecasts, risks, and recommendations.
+            Explore deterministic insights, forecasts, risks, and recommendations.
           </p>
         </Link>
 
@@ -260,7 +461,7 @@ export default function DashboardPage() {
           className="rounded-2xl border border-slate-800 bg-slate-950 p-5 transition hover:border-blue-500 hover:bg-slate-900"
         >
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-            Start New Work
+            Start a New Analysis
           </p>
 
           <h2 className="mt-2 text-xl font-bold">
@@ -268,13 +469,64 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Evaluate another property and save it to the workspace.
+            Create structured input, apply business rules, and persist the result.
           </p>
         </Link>
       </section>
 
       <Card
-        title="Recent Activity"
+        title="Guided Walkthrough"
+        className="mt-8"
+      >
+        <p className="mb-5 max-w-3xl text-sm leading-6 text-slate-400">
+          Follow this guided sequence to experience how modern SaaS applications process, persist, transform, and orchestrate structured business information.
+        </p>
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
+          {walkthroughSteps.map((step) => (
+            <Link
+              key={step.number}
+              href={step.href}
+              className="group rounded-xl border border-slate-800 p-5 transition hover:border-blue-500 hover:bg-slate-900"
+            >
+              <div className="flex items-start gap-4">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+                  {step.number}
+                </span>
+
+                <div>
+                  <h3 className="font-semibold transition group-hover:text-blue-300">
+                    {step.title}
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-slate-400">
+                    {step.description}
+                  </p>
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+
+        <div className="mt-6 flex flex-wrap gap-3 border-t border-slate-800 pt-6">
+          <Link
+            href="/deal-analyzer"
+            className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+          >
+            Start the Guided Walkthrough
+          </Link>
+
+          <Link
+            href="/workspace"
+            className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+          >
+            Open Existing Workspace
+          </Link>
+        </div>
+      </Card>
+
+      <Card
+        title="Platform Activity"
         className="mt-8"
       >
         {loading && (
@@ -286,119 +538,98 @@ export default function DashboardPage() {
         {!loading && recentItems.length === 0 && (
           <div className="rounded-xl border border-dashed border-slate-700 p-8 text-center">
             <p className="font-semibold">
-              No activity yet
+              No activity has been recorded yet
             </p>
 
             <p className="mt-2 text-sm text-slate-400">
-              Analyze a deal to begin building your workspace history.
+              Analyze and save a deal to begin generating platform history.
             </p>
 
             <Link
               href="/deal-analyzer"
               className="mt-4 inline-block text-sm font-semibold text-blue-400 hover:text-blue-300"
             >
-              Analyze your first deal
+              Start your first analysis
             </Link>
           </div>
         )}
 
         {!loading && recentItems.length > 0 && (
           <ExpandableList
-  items={recentItems}
-  initialCount={5}
->
-  {(item: any, index: number) => (
-    <div
-      key={`${item.type}-${item.id}-${item.created_at ?? "no-date"}-${index}`}
-      className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"
-    >
-      <div className="min-w-0">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          {getItemIcon(item.type)}{" "}
-          {formatItemType(item.type)}
-        </p>
+            items={recentItems}
+            initialCount={5}
+          >
+            {(item: any, index: number) => (
+              <div
+                key={`${item.type}-${item.id}-${item.created_at ?? "no-date"}-${index}`}
+                className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    {getItemIcon(item.type)}{" "}
+                    {formatItemType(item.type)}
+                  </p>
 
-        <h3 className="mt-1 truncate font-semibold">
-          {item.title}
-        </h3>
+                  <h3 className="mt-1 truncate font-semibold">
+                    {item.title}
+                  </h3>
 
-        {item.address && (
-          <p className="mt-1 truncate text-sm text-slate-400">
-            {item.address}
-          </p>
-        )}
-      </div>
+                  {item.address && (
+                    <p className="mt-1 truncate text-sm text-slate-400">
+                      {item.address}
+                    </p>
+                  )}
+                </div>
 
-      <div className="shrink-0 text-left sm:text-right">
-        <p className="text-sm font-medium text-slate-300">
-          {item.status || "Saved"}
-        </p>
+                <div className="shrink-0 text-left sm:text-right">
+                  <p className="text-sm font-medium text-slate-300">
+                    {item.status || "Saved"}
+                  </p>
 
-        <p className="mt-1 text-xs text-slate-500">
-          {new Date(item.created_at).toLocaleString()}
-        </p>
-      </div>
-    </div>
-  )}
-</ExpandableList>
+                  <p className="mt-1 text-xs text-slate-500">
+                    {new Date(item.created_at).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            )}
+          </ExpandableList>
         )}
       </Card>
 
       <section className="mt-8 rounded-2xl border border-slate-800 bg-slate-950 p-6">
         <div>
           <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
-            Platform Workflow
+            Architectural Workflow
           </p>
 
           <h2 className="mt-2 text-2xl font-bold">
-            From property analysis to completed work
+            From structured input to operational intelligence
           </h2>
 
-          <p className="mt-2 text-sm text-slate-400">
-            AppStack keeps each step connected as work moves through the platform.
+          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+            Behind the scenes, every analysis moves through these architectural stages. Together they demonstrate how modern SaaS systems transform structured input into operational intelligence.
           </p>
         </div>
 
-        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Step 1
-            </p>
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
+          {architectureSteps.map((step) => (
+            <div
+              key={step.step}
+              className="rounded-xl border border-slate-800 p-5"
+            >
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                {step.step}
+              </p>
 
-            <h3 className="mt-2 font-semibold">
-              Analyze Deal
-            </h3>
-          </div>
+              <h3 className="mt-2 text-lg font-semibold">
+                {step.title}
+              </h3>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Step 2
-            </p>
-
-            <h3 className="mt-2 font-semibold">
-              Save to Workspace
-            </h3>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Step 3
-            </p>
-
-            <h3 className="mt-2 font-semibold">
-              Generate Report
-            </h3>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-              Step 4
-            </p>
-
-            <h3 className="mt-2 font-semibold">
-              Complete Job
-            </h3>
-          </div>
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                {step.description}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
     </Page>

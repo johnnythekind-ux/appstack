@@ -6,9 +6,16 @@ export type WorkspaceStatus =
   | "completed"
   | "buy"
   | "negotiate"
-  | "pass";
+  | "pass"
+  | "Queued"
+  | "Running"
+  | "Completed"
+  | "BUY"
+  | "NEGOTIATE"
+  | "PASS"
+  | "Saved";
 
-  export type WorkspaceItemType =
+export type WorkspaceItemType =
   | "analysis"
   | "report"
   | "job";
@@ -25,6 +32,22 @@ export type WorkspaceItem = {
   updated_at?: string;
 };
 
+type CreateWorkspaceReportInput = {
+  title: string;
+  address?: string;
+  status: string;
+  content: string;
+  analysisId?: string;
+};
+
+type UpdateWorkspaceReportInput = {
+  title: string;
+  address?: string;
+  status: string;
+  content: string;
+  analysisId: string;
+};
+
 export async function getWorkspaceItems() {
   return await supabase
     .from("workspace_items")
@@ -39,7 +62,9 @@ export async function deleteWorkspaceItem(id: string) {
     .eq("id", id);
 }
 
-export async function duplicateWorkspaceItem(item: WorkspaceItem) {
+export async function duplicateWorkspaceItem(
+  item: WorkspaceItem
+) {
   return await supabase
     .from("workspace_items")
     .insert({
@@ -54,12 +79,9 @@ export async function duplicateWorkspaceItem(item: WorkspaceItem) {
     .single();
 }
 
-export async function createWorkspaceReport(report: {
-  title: string;
-  address?: string;
-  status: string;
-  content: string;
-}) {
+export async function createWorkspaceReport(
+  report: CreateWorkspaceReportInput
+) {
   return await supabase
     .from("workspace_items")
     .insert({
@@ -68,7 +90,33 @@ export async function createWorkspaceReport(report: {
       address: report.address,
       status: report.status,
       content: report.content,
+      metadata: report.analysisId
+        ? {
+            analysis_id: report.analysisId,
+          }
+        : null,
     })
+    .select()
+    .single();
+}
+
+export async function updateWorkspaceReport(
+  reportId: string,
+  report: UpdateWorkspaceReportInput
+) {
+  return await supabase
+    .from("workspace_items")
+    .update({
+      title: report.title,
+      address: report.address,
+      status: report.status,
+      content: report.content,
+      metadata: {
+        analysis_id: report.analysisId,
+      },
+      updated_at: new Date().toISOString(),
+    })
+    .eq("id", reportId)
     .select()
     .single();
 }
@@ -79,4 +127,17 @@ export async function getWorkspaceReports() {
     .select("*")
     .eq("type", "report")
     .order("created_at", { ascending: false });
+}
+
+export async function getWorkspaceReportByAnalysisId(
+  analysisId: string
+) {
+  return await supabase
+    .from("workspace_items")
+    .select("*")
+    .eq("type", "report")
+    .eq("metadata->>analysis_id", analysisId)
+    .order("created_at", { ascending: false })
+    .limit(1)
+    .maybeSingle();
 }

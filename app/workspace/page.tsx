@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
@@ -37,6 +37,7 @@ export default function WorkspacePage() {
   const [sort, setSort] = useState("newest");
   const [selectedItem, setSelectedItem] = useState<any | null>(null);
   const [selectedItemEvents, setSelectedItemEvents] = useState<any[]>([]);
+  const [selectionHighlighted, setSelectionHighlighted] = useState(false);
 
   const [workspaceIntelligence, setWorkspaceIntelligence] = useState({
     totalItems: 0,
@@ -60,6 +61,7 @@ export default function WorkspacePage() {
   const [loading, setLoading] = useState(true);
   const [showAllItems, setShowAllItems] = useState(false);
 
+  const currentSelectionRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
   const workspaceAnalysis = analyzeWorkspaceEvents(
@@ -110,11 +112,11 @@ export default function WorkspacePage() {
 
     loadItems();
 
-    const interval = setInterval(() => {
+    const interval = window.setInterval(() => {
       loadItems();
     }, 2000);
 
-    return () => clearInterval(interval);
+    return () => window.clearInterval(interval);
   }, []);
 
   const analyses = items.filter((item) => item.type === "analysis");
@@ -150,6 +152,38 @@ export default function WorkspacePage() {
         new Date(a.created_at).getTime()
       );
     });
+
+  function revealCurrentSelection() {
+    window.setTimeout(() => {
+      currentSelectionRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+
+      setSelectionHighlighted(true);
+
+      window.setTimeout(() => {
+        setSelectionHighlighted(false);
+      }, 1200);
+    }, 100);
+  }
+
+  async function loadSelectedItem(item: any, shouldReveal = false) {
+    setSelectedItem(item);
+
+    const { data, error } = await getEventsForWorkspaceItem(item.id);
+
+    if (error) {
+      toast.error("Failed to load activity.");
+      setSelectedItemEvents([]);
+    } else {
+      setSelectedItemEvents(data || []);
+    }
+
+    if (shouldReveal) {
+      revealCurrentSelection();
+    }
+  }
 
   async function deleteSelectedItem() {
     if (!selectedItem) {
@@ -216,6 +250,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
       address: item.address,
       status: "Saved",
       content: generatedReport,
+      analysisId: item.id,
     });
 
     if (error) {
@@ -362,21 +397,11 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
       return;
     }
 
-    setSelectedItem(item);
+    await loadSelectedItem(item, true);
   }
 
   async function selectWorkspaceItem(item: any) {
-    setSelectedItem(item);
-
-    const { data, error } = await getEventsForWorkspaceItem(item.id);
-
-    if (error) {
-      toast.error("Failed to load activity.");
-      setSelectedItemEvents([]);
-      return;
-    }
-
-    setSelectedItemEvents(data || []);
+    await loadSelectedItem(item, false);
   }
 
   function openSelectedItem() {
@@ -405,9 +430,9 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
 
   return (
     <Page
-  title="Workspace"
-  description="Manage active work, complete priority actions, and keep every item moving."
->
+      title="Workspace"
+      description="Manage active work, complete priority actions, and keep every item moving."
+    >
       <Toolbar>
         <SearchBar
           value={search}
@@ -474,21 +499,30 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         />
       </section>
 
-      <SelectedWorkspaceItem
-        selectedItem={selectedItem}
-        selectedItemEvents={selectedItemEvents}
-        workspaceAnalysis={workspaceAnalysis}
-        recommendation={recommendation}
-        onClose={() => {
-          setSelectedItem(null);
-          setSelectedItemEvents([]);
-        }}
-        onOpen={openSelectedItem}
-        onGenerateReport={generateReportFromSelectedItem}
-        onCreateJob={createJobFromSelectedItem}
-        onDuplicate={duplicateSelectedItem}
-        onDelete={deleteSelectedItem}
-      />
+      <div
+        ref={currentSelectionRef}
+        className={`scroll-mt-8 rounded-2xl transition-all duration-500 ${
+          selectionHighlighted
+            ? "ring-2 ring-blue-500 ring-offset-4 ring-offset-slate-950"
+            : ""
+        }`}
+      >
+        <SelectedWorkspaceItem
+          selectedItem={selectedItem}
+          selectedItemEvents={selectedItemEvents}
+          workspaceAnalysis={workspaceAnalysis}
+          recommendation={recommendation}
+          onClose={() => {
+            setSelectedItem(null);
+            setSelectedItemEvents([]);
+          }}
+          onOpen={openSelectedItem}
+          onGenerateReport={generateReportFromSelectedItem}
+          onCreateJob={createJobFromSelectedItem}
+          onDuplicate={duplicateSelectedItem}
+          onDelete={deleteSelectedItem}
+        />
+      </div>
     </Page>
   );
 }

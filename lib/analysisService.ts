@@ -31,7 +31,8 @@ export type WorkspaceAnalysis = {
 
 export function analyzeWorkspaceEvents(
   itemType: WorkspaceItemType,
-  events: Event[]
+  events: Event[],
+  itemStatus?: string
 ): WorkspaceAnalysis {
   const eventTypes = events.map((event) => event.event_type);
 
@@ -50,6 +51,9 @@ export function analyzeWorkspaceEvents(
     stage = "Archived";
     health = "Archived";
   } else if (itemType === "analysis") {
+    const hasPersistedAnalysis =
+      hasAnalysis || Boolean(itemStatus);
+
     if (hasReport) {
       stage = "Reporting";
       health = "Healthy";
@@ -57,13 +61,19 @@ export function analyzeWorkspaceEvents(
       insights.push(
         "This analysis has progressed to a generated report."
       );
-    } else if (hasAnalysis) {
+    } else if (hasPersistedAnalysis) {
       stage = "Analysis";
       health = "Needs Attention";
 
       missingSteps.push("No report generated yet.");
+      insights.push(
+        "This saved analysis is ready for report generation."
+      );
     }
   } else if (itemType === "report") {
+    const hasPersistedReport =
+      hasReport || Boolean(itemStatus);
+
     if (hasJob) {
       stage = "Execution";
       health = "Healthy";
@@ -71,19 +81,40 @@ export function analyzeWorkspaceEvents(
       insights.push(
         "This report has progressed to an execution job."
       );
-    } else if (hasReport) {
+    } else if (hasPersistedReport) {
       stage = "Reporting";
       health = "Needs Attention";
 
       missingSteps.push("No follow-up job created yet.");
       insights.push(
-        "This report does not have an execution step."
+        "This saved report is ready for an execution job."
       );
     }
   } else if (itemType === "job") {
-    if (hasJob) {
+    const normalizedStatus = itemStatus?.toLowerCase();
+
+    if (
+      hasJob ||
+      normalizedStatus === "completed" ||
+      normalizedStatus === "running" ||
+      normalizedStatus === "queued"
+    ) {
       stage = "Execution";
       health = "Healthy";
+
+      if (normalizedStatus === "completed") {
+        insights.push(
+          "This job completed its operational workflow."
+        );
+      } else if (normalizedStatus === "running") {
+        insights.push(
+          "This job is currently moving through execution."
+        );
+      } else if (normalizedStatus === "queued") {
+        insights.push(
+          "This job is queued for execution."
+        );
+      }
     }
   }
 

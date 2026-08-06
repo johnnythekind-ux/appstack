@@ -49,7 +49,7 @@ export default function SelectedWorkspaceItem({
   }
 
   return (
-    <Card title="Work Details" className="mt-8">
+    <Card title="Current Selection" className="mt-8">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <p className="text-xs uppercase tracking-wider text-slate-500">
@@ -164,11 +164,11 @@ export default function SelectedWorkspaceItem({
         </Button>
 
         <Button
-  onClick={onCreateJob}
-  disabled={selectedItem.type === "job"}
->
-  Create Job
-</Button>
+          onClick={onCreateJob}
+          disabled={selectedItem.type === "job"}
+        >
+          Create Job
+        </Button>
 
         <Button onClick={onDuplicate}>
           Duplicate

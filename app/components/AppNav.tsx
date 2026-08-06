@@ -19,7 +19,7 @@ export default function AppNav() {
 
   return (
     <nav className="border-b border-slate-800 bg-slate-950 text-white">
-      <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
+      <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
         <Link
           href="/"
           className="text-xl font-bold tracking-wide hover:text-blue-400 transition"
