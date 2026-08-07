@@ -467,11 +467,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         <MissionControl
           workspaceHealth={workspaceIntelligence.workspaceHealth}
           progressPercent={workspaceIntelligence.progressPercent}
-          estimatedMinutes={workspaceDirectorPlan?.estimatedMinutes ?? 15}
-          nextBestAction={
-            workspaceDirectorPlan?.nextBestAction ??
-            workspaceIntelligence.recommendedAction
-          }
+          directorPlan={workspaceDirectorPlan}
           priorityActions={workspacePriorityActions}
           onAction={handlePriorityAction}
         />

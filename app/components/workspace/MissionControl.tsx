@@ -3,20 +3,14 @@
 import Card from "../Card";
 import Button from "../Button";
 import type { WorkspacePriorityAction } from "../../../lib/workspacePriorityService";
+import type { WorkspaceDirectorPlan } from "../../../lib/workspaceDirectorService";
 
 type MissionControlProps = {
   workspaceHealth: string;
   progressPercent: number;
-  estimatedMinutes: number;
-  nextBestAction: string;
+  directorPlan: WorkspaceDirectorPlan | null;
   priorityActions: WorkspacePriorityAction[];
   onAction: (action: WorkspacePriorityAction) => void;
-};
-
-type MissionBriefing = {
-  headline: string;
-  statusTitle: string;
-  statusMessage: string;
 };
 
 function getActionLabel(action: WorkspacePriorityAction) {
@@ -43,132 +37,28 @@ function getActionStatusLabel(action: WorkspacePriorityAction) {
   return "Review required";
 }
 
-function buildMissionBriefing(
-  workspaceHealth: string,
-  progressPercent: number,
-  priorityActions: WorkspacePriorityAction[],
-  nextBestAction: string
-): MissionBriefing {
-  const highPriorityActions = priorityActions.filter(
-    (action) => action.priority === "High"
-  );
-
-  const reviewActions = priorityActions.filter(
-    (action) => action.actionType === "review_item"
-  );
-
-  const reportActions = priorityActions.filter(
-    (action) => action.actionType === "generate_report"
-  );
-
-  const jobActions = priorityActions.filter(
-    (action) => action.actionType === "create_job"
-  );
-
-  if (
-    priorityActions.length === 0 &&
-    progressPercent === 100 &&
-    workspaceHealth === "Healthy"
-  ) {
-    return {
-      headline: "Workspace is running smoothly.",
-      statusTitle: "Everything is up to date.",
-      statusMessage:
-        "All priority work has been completed. New activity will appear here automatically.",
-    };
-  }
-
-  if (highPriorityActions.length > 0) {
-    return {
-      headline:
-        highPriorityActions.length === 1
-          ? "One urgent item needs your attention."
-          : `${highPriorityActions.length} urgent items need your attention.`,
-      statusTitle: "Immediate action is recommended.",
-      statusMessage:
-        "Complete the highest-priority work first to prevent additional delays.",
-    };
-  }
-
-  if (reviewActions.length > 0) {
-    return {
-      headline:
-        reviewActions.length === 1
-          ? "One item needs review."
-          : `${reviewActions.length} items need review.`,
-      statusTitle: "Some workspace activity is unresolved.",
-      statusMessage:
-        "Review the unresolved items before moving additional work forward.",
-    };
-  }
-
-  if (reportActions.length > 0) {
-    return {
-      headline:
-        reportActions.length === 1
-          ? "One analysis is ready for reporting."
-          : `${reportActions.length} analyses are ready for reporting.`,
-      statusTitle: "Reporting is the next priority.",
-      statusMessage:
-        "Generate the outstanding reports to continue moving work toward execution.",
-    };
-  }
-
-  if (jobActions.length > 0) {
-    return {
-      headline:
-        jobActions.length === 1
-          ? "One report is ready for execution."
-          : `${jobActions.length} reports are ready for execution.`,
-      statusTitle: "Execution work is waiting.",
-      statusMessage:
-        "Create the outstanding jobs to move completed reports into execution.",
-    };
-  }
-
-  if (progressPercent >= 90) {
-    return {
-      headline: "The workspace is nearly complete.",
-      statusTitle: "Only a small amount of work remains.",
-      statusMessage:
-        "Complete the remaining steps to bring the workspace fully up to date.",
-    };
-  }
-
-  if (progressPercent >= 60) {
-    return {
-      headline: "The workspace is making progress.",
-      statusTitle: "Important work is still underway.",
-      statusMessage:
-        "Continue with the recommended actions to improve the current position.",
-    };
-  }
-
-  return {
-    headline: nextBestAction,
-    statusTitle: "The workspace needs attention.",
-    statusMessage:
-      "Several unfinished steps are limiting progress. Begin with the highest-priority action.",
-  };
-}
-
 export default function MissionControl({
   workspaceHealth,
   progressPercent,
-  estimatedMinutes,
-  nextBestAction,
+  directorPlan,
   priorityActions,
   onAction,
 }: MissionControlProps) {
   const primaryAction = priorityActions[0];
   const upcomingActions = priorityActions.slice(1, 3);
 
-  const briefing = buildMissionBriefing(
-    workspaceHealth,
-    progressPercent,
-    priorityActions,
-    nextBestAction
-  );
+  const headline =
+    directorPlan?.headline ?? "Loading workspace status.";
+
+  const statusTitle =
+    directorPlan?.statusTitle ?? "Workspace status is being prepared.";
+
+  const statusMessage =
+    directorPlan?.statusMessage ??
+    "Current workspace guidance will appear here shortly.";
+
+  const estimatedMinutes =
+    directorPlan?.estimatedMinutes ?? 0;
 
   return (
     <Card>
@@ -179,7 +69,7 @@ export default function MissionControl({
           </p>
 
           <h2 className="mt-2 text-2xl font-bold tracking-tight sm:text-3xl">
-            {briefing.headline}
+            {headline}
           </h2>
         </div>
 
@@ -218,11 +108,11 @@ export default function MissionControl({
       {!primaryAction ? (
         <div className="py-4">
           <p className="text-lg font-semibold">
-            {briefing.statusTitle}
+            {statusTitle}
           </p>
 
           <p className="mt-2 text-slate-400">
-            {briefing.statusMessage}
+            {statusMessage}
           </p>
         </div>
       ) : (
@@ -255,7 +145,6 @@ export default function MissionControl({
                   {primaryAction.reason}
                 </p>
               </div>
-
             </div>
 
             <div className="lg:min-w-40">
