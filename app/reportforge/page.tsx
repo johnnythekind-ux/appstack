@@ -138,6 +138,27 @@ export default function ReportForgePage() {
       : recommendation;
   }
 
+  function getReportSections() {
+    if (!analysis) {
+      return null;
+    }
+
+    const displayedRecommendation =
+      formatRecommendation(analysis.recommendation);
+
+    const interpretation =
+      analysis.recommendation === "BUY"
+        ? "The purchase price falls within the calculated maximum allowable offer."
+        : analysis.recommendation === "NEGOTIATE"
+          ? "The purchase price is slightly above the calculated maximum allowable offer."
+          : "The purchase price exceeds the calculated maximum allowable offer.";
+
+    return {
+      displayedRecommendation,
+      interpretation,
+    };
+  }
+
   function generateReport() {
     if (!analysis) {
       toast.error(
@@ -293,7 +314,7 @@ Based on the 70% rule, the purchase price ${
   return (
     <Page
       title="ReportForge"
-      description="Turn completed deal analyses into clear, reusable investor reports."
+      description="Transform persisted deal analyses into reusable investor reports that can move into execution."
     >
       {!analysis && (
         <Card
@@ -444,9 +465,66 @@ Based on the 70% rule, the purchase price ${
           }
           className="mt-8"
         >
-          <pre className="whitespace-pre-wrap rounded-xl border border-slate-800 bg-slate-950/60 p-5 text-sm leading-7 text-slate-300">
-            {report}
-          </pre>
+          {analysis && getReportSections() && (
+            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
+              <div className="border-b border-slate-800 p-6">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
+                  Investor Report
+                </p>
+                <h3 className="mt-2 text-2xl font-bold">
+                  {analysis.name}
+                </h3>
+                <p className="mt-2 text-slate-400">
+                  {analysis.address}
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-px bg-slate-800 md:grid-cols-2">
+                <div className="bg-slate-950 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Deal Summary
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                    Purchase price ${analysis.purchasePrice.toLocaleString()},
+                    ARV ${analysis.arv.toLocaleString()}, with estimated repairs
+                    of ${analysis.repairCost.toLocaleString()}.
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Maximum Allowable Offer
+                  </p>
+                  <p className="mt-3 text-2xl font-bold">
+                    ${analysis.maxOffer.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="bg-slate-950 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Recommendation
+                  </p>
+                  <div className="mt-3">
+                    <StatusBadge
+                      status={
+                        getReportSections()!
+                          .displayedRecommendation
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="bg-slate-950 p-6">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    Interpretation
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                    {getReportSections()!.interpretation}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div className="mt-6 flex flex-wrap items-center gap-3">
             <Button
@@ -477,13 +555,75 @@ Based on the 70% rule, the purchase price ${
           </div>
 
           {saved && !draftChanged && (
-            <p className="mt-4 text-sm text-green-400">
-              This report is saved and connected to
-              the current analysis.
-            </p>
+            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
+              <p className="text-sm text-green-400">
+                This report is saved and connected to the current analysis.
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                The persisted report is now available to Workspace and can move
+                into the execution stage as a processing job.
+              </p>
+
+              <Link
+                href="/workspace"
+                className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+              >
+                Continue to Workspace
+              </Link>
+            </div>
           )}
         </Card>
       )}
+
+      <Card
+        title="How this fits AppStack"
+        className="mt-8"
+      >
+        <p className="max-w-3xl text-sm leading-6 text-slate-400">
+          ReportForge transforms a persisted Deal Analyzer result into a reusable
+          reporting artifact. The report stays linked to its source analysis so
+          downstream workflow stages can operate on shared application state.
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">
+              1. Persisted input
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              ReportForge loads the saved analysis instead of recreating deal data.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">
+              2. Transformation
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              ReportForge transforms the saved analysis using deterministic application logic—not an AI model—so the report remains grounded in the calculated source data.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">
+              3. Linked persistence
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              The saved report remains connected to the analysis that produced it.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">
+              4. Execution handoff
+            </p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Workspace can recognize the report and advance it toward job execution.
+            </p>
+          </div>
+        </div>
+      </Card>
 
       <Card
         title="Saved Reports"

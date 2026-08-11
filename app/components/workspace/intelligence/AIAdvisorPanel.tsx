@@ -11,13 +11,21 @@ type AIAdvisorPanelProps = {
   onAsk: () => void;
   priorityActions: WorkspacePriorityAction[];
   onPriorityAction: (action: WorkspacePriorityAction) => void;
+  isAdviceStale: boolean;
 };
 
-const suggestedQuestions = [
+const activeWorkQuestions = [
   "What should I focus on today?",
   "What is the biggest risk in this workspace?",
   "What is slowing down progress?",
   "What should happen next?",
+];
+
+const caughtUpQuestions = [
+  "What does the workspace tell me right now?",
+  "Are there any risks I should monitor?",
+  "What patterns stand out?",
+  "What should I watch for next?",
 ];
 
 export default function AIAdvisorPanel({
@@ -28,8 +36,18 @@ export default function AIAdvisorPanel({
   onAsk,
   priorityActions,
   onPriorityAction,
+  isAdviceStale,
 }: AIAdvisorPanelProps) {
   const recommendedPriorityAction = priorityActions[0];
+  const hasPriorityWork = priorityActions.length > 0;
+
+  const suggestedQuestions = hasPriorityWork
+    ? activeWorkQuestions
+    : caughtUpQuestions;
+
+  const placeholder = hasPriorityWork
+    ? "What should I focus on today?"
+    : "What does the workspace tell me right now?";
 
   return (
     <div className="space-y-6">
@@ -46,21 +64,31 @@ export default function AIAdvisorPanel({
           </div>
 
           <div className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
-            Workspace Grounded
+            Grounded in Workspace Data
           </div>
         </div>
 
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-          AppStack AI answers using the current Workspace Intelligence,
-          priorities, director plan, forecast, strategy, risk assessment,
+          AppStack AI interprets the current Workspace Intelligence layer,
+          including priorities, director guidance, forecast, strategy, risk,
           and insights.
         </p>
       </div>
 
       <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Suggested Questions
-        </p>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              Suggested Questions
+            </p>
+
+            <p className="mt-2 text-sm text-slate-400">
+              {hasPriorityWork
+                ? "Questions are tuned to the workspace's current unfinished work."
+                : "The workspace is caught up, so these questions focus on interpretation, monitoring, and emerging patterns."}
+            </p>
+          </div>
+        </div>
 
         <div className="mt-4 flex flex-wrap gap-2">
           {suggestedQuestions.map((suggestedQuestion) => (
@@ -88,7 +116,7 @@ export default function AIAdvisorPanel({
           id="workspace-ai-question"
           value={question}
           onChange={(event) => onQuestionChange(event.target.value)}
-          placeholder="What should I focus on today?"
+          placeholder={placeholder}
           rows={4}
           className="mt-4 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
         />
@@ -112,8 +140,8 @@ export default function AIAdvisorPanel({
           </p>
 
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            Ask a question above to receive a recommendation supported by
-            the current workspace intelligence pipeline.
+            Ask a question above to receive an interpretation supported by
+            the current Workspace Intelligence pipeline.
           </p>
         </div>
       )}
@@ -130,7 +158,7 @@ export default function AIAdvisorPanel({
               </p>
 
               <h3 className="mt-3 text-xl font-bold">
-                Workspace Recommendation
+                Workspace Advisory
               </h3>
             </div>
 
@@ -173,7 +201,7 @@ export default function AIAdvisorPanel({
                 </p>
 
                 <p className="mt-2 text-sm text-slate-400">
-                  Deterministic facts supporting the recommendation.
+                  Deterministic workspace facts supporting this interpretation.
                 </p>
               </div>
 
@@ -217,7 +245,7 @@ export default function AIAdvisorPanel({
               {answer.nextStep}
             </p>
 
-            {recommendedPriorityAction && (
+            {recommendedPriorityAction && !isAdviceStale && (
               <div className="mt-5">
                 <RecommendedActionButton
                   label={recommendedPriorityAction.title}
@@ -235,9 +263,9 @@ export default function AIAdvisorPanel({
             </p>
 
             <p className="mt-3 text-sm leading-6 text-slate-400">
-              This recommendation interprets AppStack&apos;s deterministic
-              workspace outputs. It does not replace the underlying forecast,
-              strategy, risk, or priority services.
+              This advisory interprets AppStack&apos;s deterministic
+              workspace outputs. It does not replace the underlying director,
+              forecast, strategy, risk, insights, or priority services.
             </p>
           </div>
         </div>

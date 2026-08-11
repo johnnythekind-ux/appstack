@@ -1,5 +1,18 @@
 import { supabase } from "./supabase";
 
+async function getCurrentUserId() {
+  const {
+    data: { user },
+    error,
+  } = await supabase.auth.getUser();
+
+  if (error || !user) {
+    throw new Error("You must be signed in to access workspace data.");
+  }
+
+  return user.id;
+}
+
 export type WorkspaceStatus =
   | "queued"
   | "running"
@@ -28,6 +41,7 @@ export type WorkspaceItem = {
   status: WorkspaceStatus;
   metadata?: Record<string, any> | null;
   content?: string | null;
+  user_id: string;
   created_at?: string;
   updated_at?: string;
 };
@@ -49,22 +63,30 @@ type UpdateWorkspaceReportInput = {
 };
 
 export async function getWorkspaceItems() {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .select("*")
+    .eq("user_id", userId)
     .order("created_at", { ascending: false });
 }
 
 export async function deleteWorkspaceItem(id: string) {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .delete()
-    .eq("id", id);
+    .eq("id", id)
+    .eq("user_id", userId);
 }
 
 export async function duplicateWorkspaceItem(
   item: WorkspaceItem
 ) {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .insert({
@@ -74,6 +96,7 @@ export async function duplicateWorkspaceItem(
       status: item.status,
       metadata: item.metadata,
       content: item.content,
+      user_id: userId,
     })
     .select()
     .single();
@@ -82,6 +105,8 @@ export async function duplicateWorkspaceItem(
 export async function createWorkspaceReport(
   report: CreateWorkspaceReportInput
 ) {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .insert({
@@ -95,6 +120,7 @@ export async function createWorkspaceReport(
             analysis_id: report.analysisId,
           }
         : null,
+      user_id: userId,
     })
     .select()
     .single();
@@ -104,6 +130,8 @@ export async function updateWorkspaceReport(
   reportId: string,
   report: UpdateWorkspaceReportInput
 ) {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .update({
@@ -117,14 +145,18 @@ export async function updateWorkspaceReport(
       updated_at: new Date().toISOString(),
     })
     .eq("id", reportId)
+    .eq("user_id", userId)
     .select()
     .single();
 }
 
 export async function getWorkspaceReports() {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .select("*")
+    .eq("user_id", userId)
     .eq("type", "report")
     .order("created_at", { ascending: false });
 }
@@ -132,9 +164,12 @@ export async function getWorkspaceReports() {
 export async function getWorkspaceReportByAnalysisId(
   analysisId: string
 ) {
+  const userId = await getCurrentUserId();
+
   return await supabase
     .from("workspace_items")
     .select("*")
+    .eq("user_id", userId)
     .eq("type", "report")
     .eq("metadata->>analysis_id", analysisId)
     .order("created_at", { ascending: false })

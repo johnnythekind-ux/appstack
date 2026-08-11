@@ -11,9 +11,11 @@ export default function ForecastPanel({
 }: ForecastPanelProps) {
   if (!forecast) {
     return (
-      <p className="text-slate-400">
-        Forecast intelligence is still loading.
-      </p>
+      <div className="rounded-xl border border-slate-800 p-6">
+        <p className="text-slate-400">
+          Forecast intelligence is still loading.
+        </p>
+      </div>
     );
   }
 
@@ -27,27 +29,49 @@ export default function ForecastPanel({
     projectedProgress - currentProgress
   );
 
+  const isCurrentlyComplete = currentProgress >= 100;
+  const isProjectedComplete = projectedProgress >= 100;
+
+  const isStableComplete =
+    isCurrentlyComplete &&
+    isProjectedComplete &&
+    forecast.currentHealth === forecast.projectedHealth;
+
   const isImproving =
     projectedProgress > currentProgress ||
     forecast.projectedHealth !== forecast.currentHealth;
 
-  const isComplete = projectedProgress >= 100;
+  const headline = isStableComplete
+    ? "The workspace is projected to remain fully caught up."
+    : !isCurrentlyComplete && isProjectedComplete
+      ? "The workspace is projected to reach full completion."
+      : isImproving
+        ? "The workspace is projected to improve."
+        : "The workspace is expected to remain stable.";
+
+  const stepTwoTitle = isStableComplete
+    ? "Current conditions remain stable"
+    : "Recommended work continues";
+
+  const stepTwoMessage = isStableComplete
+    ? "AppStack will continue evaluating new workspace activity for changes in health, completion, and risk."
+    : "AppStack evaluates how the current workspace should change as its unfinished work advances.";
+
+  const projectedStateMessage = isStableComplete
+    ? `Health is expected to remain ${forecast.projectedHealth} at ${projectedProgress}% completion.`
+    : `Health is expected to become ${forecast.projectedHealth} at ${projectedProgress}% completion.`;
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+      <div className="rounded-xl border border-slate-800 p-6">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
             <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
               Workspace Forecast
             </p>
 
             <h3 className="mt-4 text-2xl font-bold">
-              {isComplete
-                ? "The workspace is projected to reach full completion."
-                : isImproving
-                  ? "The workspace is projected to improve."
-                  : "The workspace is expected to remain stable."}
+              {headline}
             </h3>
           </div>
 
@@ -55,6 +79,7 @@ export default function ForecastPanel({
             <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
               Confidence
             </span>
+
             <span className="ml-2 font-bold text-white">
               {forecast.confidence}
             </span>
@@ -74,10 +99,10 @@ export default function ForecastPanel({
             </p>
 
             <p className="mt-2 text-lg font-semibold">
-              {currentProgress}% today
-              <span className="mx-2 text-slate-600">→</span>
-              {projectedProgress}% projected
-            </p>
+  {currentProgress}% current
+  <span className="mx-2 text-slate-600">→</span>
+  {projectedProgress}% expected
+</p>
           </div>
 
           <div className="text-right">
@@ -145,7 +170,10 @@ export default function ForecastPanel({
             </span>
 
             <div>
-              <p className="font-semibold">Current workspace state</p>
+              <p className="font-semibold">
+                Current workspace state
+              </p>
+
               <p className="mt-1 text-sm text-slate-400">
                 Health is {forecast.currentHealth} at {currentProgress}%
                 completion.
@@ -159,10 +187,12 @@ export default function ForecastPanel({
             </span>
 
             <div>
-              <p className="font-semibold">Recommended work continues</p>
+              <p className="font-semibold">
+                {stepTwoTitle}
+              </p>
+
               <p className="mt-1 text-sm text-slate-400">
-                AppStack evaluates how the current workspace should change
-                as its unfinished work advances.
+                {stepTwoMessage}
               </p>
             </div>
           </li>
@@ -173,10 +203,12 @@ export default function ForecastPanel({
             </span>
 
             <div>
-              <p className="font-semibold">Projected workspace state</p>
+              <p className="font-semibold">
+                Projected workspace state
+              </p>
+
               <p className="mt-1 text-sm text-slate-400">
-                Health is expected to become {forecast.projectedHealth} at{" "}
-                {projectedProgress}% completion.
+                {projectedStateMessage}
               </p>
             </div>
           </li>

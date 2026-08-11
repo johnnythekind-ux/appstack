@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import Page from "../components/Page";
@@ -9,8 +10,8 @@ import WorkspaceMemory from "../components/workspace/intelligence/WorkspaceMemor
 import WorkspaceIntelligence from "../components/workspace/intelligence/WorkspaceIntelligence";
 
 import { getWorkspaceItems, createWorkspaceReport } from "../../lib/workspaceService";
-import { createJob as createWorkspaceJob } from "../../lib/jobService";
 import { createEvent } from "../../lib/eventService";
+import { supabase } from "../../lib/supabase";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 
 import type { WorkspacePriorityAction } from "../../lib/workspacePriorityService";
@@ -37,6 +38,7 @@ const emptyWorkspaceIntelligence = {
 };
 
 export default function IntelligencePage() {
+  const router = useRouter();
   const [items, setItems] = useState<any[]>([]);
 
   const [workspaceIntelligence, setWorkspaceIntelligence] = useState(
@@ -125,104 +127,130 @@ export default function IntelligencePage() {
   }
 
   useEffect(() => {
-    loadIntelligence();
+    let mounted = true;
 
-    const interval = window.setInterval(() => {
-      loadIntelligence();
-    }, 2000);
+    async function refreshIntelligence() {
+      if (!mounted) {
+        return;
+      }
 
-    return () => window.clearInterval(interval);
-  }, []);
-
-  async function generateReportFromItem(item: any) {
-    if (!item || item.type !== "analysis") {
-      return;
+      await loadIntelligence();
     }
 
-    const generatedReport = `Investor Report
+    refreshIntelligence();
+
+    const channel = supabase
+      .channel("intelligence-workspace-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_items",
+        },
+        () => {
+          refreshIntelligence();
+
+          if (workspaceAIAnswer) {
+            setWorkspaceAIStale(true);
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
+  }, [workspaceAIAnswer]);
+
+  async function generateReportFromItem(item: any) {
+  if (!item || item.type !== "analysis") {
+    return;
+  }
+
+  const formatCurrency = (value: unknown) => {
+    if (typeof value !== "number" || !Number.isFinite(value)) {
+      return "Not available";
+    }
+
+    return `$${value.toLocaleString()}`;
+  };
+
+  const purchasePrice = formatCurrency(item.metadata?.purchasePrice);
+  const arv = formatCurrency(item.metadata?.arv);
+  const repairCost = formatCurrency(item.metadata?.repairCost);
+  const maxOffer = formatCurrency(item.metadata?.maxOffer);
+
+  const generatedReport = `Investor Report
 
 Property:
 ${item.title}
-${item.address}
+${item.address || "Address not available"}
 
 Deal Summary:
-This deal has a purchase price of $${item.metadata.purchasePrice.toLocaleString()}, an ARV of $${item.metadata.arv.toLocaleString()}, and estimated repairs of $${item.metadata.repairCost.toLocaleString()}.
+This deal has a purchase price of ${purchasePrice}, an ARV of ${arv}, and estimated repairs of ${repairCost}.
 
 Maximum Allowable Offer:
-$${item.metadata.maxOffer.toLocaleString()}
+${maxOffer}
 
 Recommendation:
-${item.status}
+${item.status || "Not available"}
 
 Interpretation:
-Based on the 70% rule, this deal currently receives a ${item.status} recommendation.`;
+Based on the available deal data, this deal currently receives a ${
+    item.status || "Not available"
+  } recommendation.`;
 
-    const { data, error } = await createWorkspaceReport({
-      title: `${item.title} Investor Report`,
-      address: item.address,
-      status: "Saved",
-      content: generatedReport,
-    });
+  const { data, error } = await createWorkspaceReport({
+    title: `${item.title} Investor Report`,
+    address: item.address,
+    status: "Saved",
+    content: generatedReport,
+    analysisId: item.id,
+  });
 
-    if (error) {
-      console.error(error);
-      toast.error("Report generation failed.");
-      return;
-    }
-
-    const { error: eventError } = await createEvent({
-      workspace_item_id: data.id,
-      event_type: "report_generated",
-      description: `Report generated for ${item.title}`,
-      source: "Intelligence",
-      metadata: {
-        original_item_id: item.id,
-        report_title: data.title,
-      },
-    });
-
-    if (eventError) {
-      toast.error("Event tracking failed.");
-    }
-
-    setItems((currentItems) => [data, ...currentItems]);
-    await loadIntelligence();
+  if (error) {
+    console.error(error);
+    toast.error("Report generation failed.");
+    return;
   }
 
-  async function createJobFromItem(item: any) {
-    if (!item) {
-      return;
+  const { error: eventError } = await createEvent({
+    workspace_item_id: data.id,
+    event_type: "report_generated",
+    description: `Report generated for ${item.title}`,
+    source: "Intelligence",
+    metadata: {
+      original_item_id: item.id,
+      report_title: data.title,
+    },
+  });
+
+  if (eventError) {
+    toast.error("Event tracking failed.");
+  }
+
+  setItems((currentItems) => [data, ...currentItems]);
+  await loadIntelligence();
+}
+
+  function openJobCreationForItem(item: any) {
+    if (!item || item.type !== "report") {
+      toast.error("Select a report before creating an execution job.");
+      return false;
     }
 
-    const { data, error } = await createWorkspaceJob({
-      title: `${item.title} Processing Job`,
-      status: "Completed",
-      source: "Intelligence",
-    });
+    localStorage.setItem(
+      "appstack_pending_job_context",
+      JSON.stringify({
+        reportId: item.id,
+        reportTitle: item.title,
+      })
+    );
 
-    if (error) {
-      console.error(error);
-      toast.error("Job creation failed.");
-      return;
-    }
-
-    const { error: eventError } = await createEvent({
-      workspace_item_id: data.id,
-      event_type: "job_created",
-      description: `Job created for ${item.title}`,
-      source: "Intelligence",
-      metadata: {
-        original_item_id: item.id,
-        job_title: data.title,
-      },
-    });
-
-    if (eventError) {
-      toast.error("Event tracking failed.");
-    }
-
-    setItems((currentItems) => [data, ...currentItems]);
-    await loadIntelligence();
+    router.push("/jobs");
+    return true;
   }
 
   async function handlePriorityAction(action: WorkspacePriorityAction) {
@@ -247,13 +275,12 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     }
 
     if (action.actionType === "create_job") {
-      await createJobFromItem(item);
+      const opened = openJobCreationForItem(item);
 
-      if (workspaceAIAnswer) {
+      if (opened && workspaceAIAnswer) {
         setWorkspaceAIStale(true);
       }
 
-      toast.success("Job created from priority action.");
       return;
     }
 
@@ -333,7 +360,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
   return (
     <Page
       title="Intelligence"
-      description="Transform workspace activity into operational intelligence."
+      description="Transform live workspace activity into operational intelligence, priorities, forecasts, risk, and advisory guidance."
     >
       <WorkspaceMemory
         workspaceHistory={workspaceHistory}
@@ -358,6 +385,50 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           onPriorityAction={handlePriorityAction}
         />
       </div>
+
+      <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-950 p-6">
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
+          How this fits AppStack
+        </p>
+
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+          Intelligence consumes authenticated, user-scoped workspace state and
+          derives deterministic operational conclusions before optionally asking
+          AI to synthesize or explain that state. Realtime workspace changes
+          refresh the underlying intelligence, and execution work is handed to
+          Jobs rather than being completed inside this page.
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">1. Live state</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Realtime workspace changes trigger an intelligence refresh.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">2. Deterministic services</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Priorities, forecasts, risk, strategy, history, and insights are derived before AI is called.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">3. AI synthesis</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              AI receives structured workspace intelligence and produces an advisory response rather than replacing source-of-truth logic.
+            </p>
+          </div>
+
+          <div className="rounded-xl border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">4. Execution handoff</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Report execution is handed to Jobs so one canonical server-orchestrated lifecycle owns Queued, Running, and Completed states.
+            </p>
+          </div>
+        </div>
+      </section>
 
       {workspaceAIStale && (
         <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">

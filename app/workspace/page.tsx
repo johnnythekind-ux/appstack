@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
+import { supabase } from "../../lib/supabase";
 import toast from "react-hot-toast";
 
 import MissionControl from "../components/workspace/MissionControl";
@@ -14,7 +15,6 @@ import SearchBar from "../components/SearchBar";
 
 import { getWorkspaceRecommendation } from "../../lib/recommendationService";
 import { analyzeWorkspaceEvents } from "../../lib/analysisService";
-import { createJob as createWorkspaceJob } from "../../lib/jobService";
 import {
   createEvent,
   getEventsForWorkspaceItem,
@@ -72,8 +72,14 @@ export default function WorkspacePage() {
   const recommendation = getWorkspaceRecommendation(workspaceAnalysis);
 
   useEffect(() => {
+    let mounted = true;
+
     async function loadItems() {
       const { data, error } = await getWorkspaceItems();
+
+      if (!mounted) {
+        return;
+      }
 
       if (error) {
         console.log("Workspace item load error:", {
@@ -96,6 +102,10 @@ export default function WorkspacePage() {
         error: intelligenceError,
       } = await buildWorkspaceIntelligence(workspaceItems);
 
+      if (!mounted) {
+        return;
+      }
+
       if (intelligenceError) {
         console.error(intelligenceError);
         toast.error("Failed to load workspace intelligence.");
@@ -112,11 +122,25 @@ export default function WorkspacePage() {
 
     loadItems();
 
-    const interval = window.setInterval(() => {
-      loadItems();
-    }, 2000);
+    const channel = supabase
+      .channel("workspace-items-live")
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "workspace_items",
+        },
+        () => {
+          loadItems();
+        }
+      )
+      .subscribe();
 
-    return () => window.clearInterval(interval);
+    return () => {
+      mounted = false;
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const analyses = items.filter((item) => item.type === "analysis");
@@ -227,6 +251,21 @@ export default function WorkspacePage() {
       return null;
     }
 
+      const metadata = item.metadata ?? {};
+
+  const formatCurrency = (value: unknown) => {
+    if (value === null || value === undefined || value === "") {
+      return "Not available";
+    }
+
+    const numericValue =
+      typeof value === "number" ? value : Number(value);
+
+    return Number.isFinite(numericValue)
+      ? `$${numericValue.toLocaleString()}`
+      : "Not available";
+  };
+
     const generatedReport = `Investor Report
 
 Property:
@@ -234,10 +273,10 @@ ${item.title}
 ${item.address}
 
 Deal Summary:
-This deal has a purchase price of $${item.metadata.purchasePrice.toLocaleString()}, an ARV of $${item.metadata.arv.toLocaleString()}, and estimated repairs of $${item.metadata.repairCost.toLocaleString()}.
+This deal has a purchase price of ${formatCurrency(metadata.purchasePrice)}, an ARV of ${formatCurrency(metadata.arv)}, and estimated repairs of ${formatCurrency(metadata.repairCost)}.
 
 Maximum Allowable Offer:
-$${item.metadata.maxOffer.toLocaleString()}
+${formatCurrency(metadata.maxOffer)}
 
 Recommendation:
 ${item.status}
@@ -288,50 +327,26 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     }
   }
 
-  async function createJobFromItem(item: any) {
-    if (!item) {
-      return null;
+  function openJobCreationForItem(item: any) {
+    if (!item || item.type !== "report") {
+      toast.error("Select a report before creating an execution job.");
+      return false;
     }
 
-    const { data, error } = await createWorkspaceJob({
-      title: `${item.title} Processing Job`,
-      status: "Completed",
-      source: "Workspace",
-    });
+    localStorage.setItem(
+      "appstack_pending_job_context",
+      JSON.stringify({
+        reportId: item.id,
+        reportTitle: item.title,
+      })
+    );
 
-    if (error) {
-      console.error(error);
-      toast.error("Job creation failed.");
-      return null;
-    }
-
-    const { error: eventError } = await createEvent({
-      workspace_item_id: data.id,
-      event_type: "job_created",
-      description: `Job created for ${item.title}`,
-      source: "Workspace",
-      metadata: {
-        original_item_id: item.id,
-        job_title: data.title,
-      },
-    });
-
-    if (eventError) {
-      toast.error("Event tracking failed.");
-    }
-
-    setItems((currentItems) => [data, ...currentItems]);
-    setSelectedItem(data);
-
-    return data;
+    router.push("/jobs");
+    return true;
   }
 
-  async function createJobFromSelectedItem() {
-    const job = await createJobFromItem(selectedItem);
-
-    if (job) {
-      toast.success("Job created successfully.");
-    }
+  function createJobFromSelectedItem() {
+    openJobCreationForItem(selectedItem);
   }
 
   async function duplicateSelectedItem() {
@@ -388,12 +403,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     }
 
     if (action.actionType === "create_job") {
-      const job = await createJobFromItem(item);
-
-      if (job) {
-        toast.success("Job created from priority action.");
-      }
-
+      openJobCreationForItem(item);
       return;
     }
 

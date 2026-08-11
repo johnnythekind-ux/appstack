@@ -15,14 +15,41 @@ export default function RiskPanel({
     );
   }
 
-  const severe = risk.overallRisk === "High";
+  const isZeroRisk = risk.riskScore === 0;
+  const isHighRisk = risk.overallRisk === "High";
+  const isModerateRisk = risk.overallRisk === "Moderate";
 
-  const riskMessage =
-    risk.overallRisk === "High"
-      ? "Significant issues could interfere with successful workspace execution."
-      : risk.overallRisk === "Moderate"
-        ? "The workspace can continue, but unresolved issues require attention."
-        : "No major operational threat is currently preventing progress.";
+  const riskMessage = isZeroRisk
+    ? "No significant operational risks are currently affecting the workspace."
+    : isHighRisk
+      ? "Significant issues could interfere with successful workspace execution and should be addressed promptly."
+      : isModerateRisk
+        ? "The workspace can continue, but unresolved issues are creating meaningful operational exposure."
+        : "Operational exposure is currently limited, but the workspace should continue to be monitored for changes.";
+
+  const positionTitle = isZeroRisk
+    ? "Current Risk Position"
+    : "Greatest Threat";
+
+  const positionMessage = isZeroRisk
+  ? "No significant operational exposure is currently identified by the risk assessment."
+  : "This is the highest-ranked risk currently identified by the deterministic Workspace Intelligence pipeline.";
+
+  const factorsTitle = isZeroRisk
+    ? "Current Safeguards"
+    : "Risk Factors and Safeguards";
+
+  const outlookTitle = isZeroRisk
+    ? "Outlook"
+    : "If Nothing Changes";
+
+  const outlookMessage = isZeroRisk
+    ? "If current conditions continue, operational risk is expected to remain low. New workspace activity will be evaluated for changes in health, completion, dependencies, and exposure."
+    : isHighRisk
+      ? "The identified issues may continue accumulating and could prevent the visible execution plan from producing the expected result."
+      : isModerateRisk
+        ? "If unresolved work continues, operational exposure may increase and begin affecting execution quality or sequencing."
+        : "The workspace should remain relatively stable, although unresolved work may gradually increase operational exposure.";
 
   return (
     <div className="space-y-6">
@@ -65,7 +92,7 @@ export default function RiskPanel({
 
       <div className="rounded-xl border border-slate-800 p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Greatest Threat
+          {positionTitle}
         </p>
 
         <p className="mt-3 text-lg font-semibold">
@@ -73,14 +100,13 @@ export default function RiskPanel({
         </p>
 
         <p className="mt-2 text-sm leading-6 text-slate-400">
-          This is the highest-ranked risk currently identified by the
-          deterministic Workspace Intelligence pipeline.
+          {positionMessage}
         </p>
       </div>
 
       <div className="rounded-xl border border-slate-800 p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          Risk Factors and Safeguards
+          {factorsTitle}
         </p>
 
         <div className="mt-5 space-y-5">
@@ -100,7 +126,7 @@ export default function RiskPanel({
                   </p>
 
                   <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
-                    Safeguard
+                    {isZeroRisk ? "Monitoring Guidance" : "Safeguard"}
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-slate-400">
@@ -116,13 +142,11 @@ export default function RiskPanel({
 
       <div className="rounded-xl border border-slate-800 p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
-          If Nothing Changes
+          {outlookTitle}
         </p>
 
         <p className="mt-4 leading-7 text-slate-400">
-          {severe
-            ? "The identified issues may continue accumulating and could prevent the visible execution plan from producing the expected result."
-            : "The workspace should remain relatively stable, although unresolved work may gradually increase operational exposure."}
+          {outlookMessage}
         </p>
       </div>
 

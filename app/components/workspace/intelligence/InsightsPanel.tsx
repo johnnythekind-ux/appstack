@@ -38,10 +38,10 @@ function getMeaning(
   }
 
   if (insight.type === "Opportunity") {
-    return "The workspace contains favorable conditions that can be used to create immediate progress.";
+    return "This condition strengthens the workspace's operational picture and can support more reliable downstream decisions.";
   }
 
-  return "This recurring pattern helps explain how work is currently moving through the workspace.";
+  return "This recurring pattern helps explain how work is moving through the workspace and provides context for future changes.";
 }
 
 function getRecommendedResponse(
@@ -56,10 +56,16 @@ function getRecommendedResponse(
   }
 
   if (insight.type === "Opportunity") {
-    return "Act on this advantage while the work remains clearly actionable.";
+    return "Maintain this structured workflow state and continue capturing new activity so the intelligence layer can detect meaningful changes.";
   }
 
   return "Continue monitoring this pattern and recalculate intelligence after new workspace activity.";
+}
+
+function shouldShowSeverityBadge(
+  insight: WorkspaceInsight
+) {
+  return getSeverityLabel(insight.severity) !== insight.type;
 }
 
 export default function InsightsPanel({
@@ -88,9 +94,9 @@ export default function InsightsPanel({
         </h3>
 
         <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
-          Workspace Intelligence reviewed current workflow stages,
-          visible priority actions, and operational imbalances to identify
-          the patterns most likely to affect progress.
+          Workspace Intelligence reviewed workflow stages, priority actions,
+          and operational patterns to surface the observations most useful
+          for understanding the workspace's current position.
         </p>
       </div>
 
@@ -108,11 +114,13 @@ export default function InsightsPanel({
             </div>
 
             <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300">
-                {getSeverityLabel(
-                  highestPriorityInsight.severity
-                )}
-              </span>
+              {shouldShowSeverityBadge(highestPriorityInsight) && (
+                <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300">
+                  {getSeverityLabel(
+                    highestPriorityInsight.severity
+                  )}
+                </span>
+              )}
 
               <StatusBadge
                 status={highestPriorityInsight.type}
@@ -198,9 +206,11 @@ export default function InsightsPanel({
                   </div>
 
                   <div className="flex flex-wrap items-center gap-2">
-                    <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-400">
-                      {getSeverityLabel(insight.severity)}
-                    </span>
+                    {shouldShowSeverityBadge(insight) && (
+                      <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-400">
+                        {getSeverityLabel(insight.severity)}
+                      </span>
+                    )}
 
                     <StatusBadge status={insight.type} />
                   </div>
@@ -239,10 +249,10 @@ export default function InsightsPanel({
         </p>
 
         <p className="mt-3 text-sm leading-6 text-slate-400">
-          Constraints and imbalances deserve attention first.
-          Opportunities identify work that can advance immediately.
-          Patterns explain recurring workspace behavior and should be
-          monitored as new events enter the intelligence pipeline.
+          Constraints and imbalances deserve attention first. Opportunities
+          identify favorable operating conditions worth preserving. Patterns
+          explain recurring workspace behavior and should be monitored as new
+          events enter the intelligence pipeline.
         </p>
       </div>
     </div>

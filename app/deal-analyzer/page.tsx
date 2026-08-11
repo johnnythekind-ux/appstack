@@ -22,6 +22,16 @@ type SavedAnalysis = {
   recommendation: string;
 };
 
+function parseCurrencyInput(value: string) {
+  const normalized = value.replace(/[$,\s]/g, "").trim();
+
+  if (!normalized) {
+    return Number.NaN;
+  }
+
+  return Number(normalized);
+}
+
 export default function DealAnalyzerPage() {
   const [analysisName, setAnalysisName] =
     useState("");
@@ -37,21 +47,29 @@ export default function DealAnalyzerPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const arvValue = parseCurrencyInput(arv);
+  const repairValue = parseCurrencyInput(repairCost);
+
   const maxOffer =
-    Number(arv) * 0.7 - Number(repairCost);
+    Number.isFinite(arvValue) && Number.isFinite(repairValue)
+      ? arvValue * 0.7 - repairValue
+      : Number.NaN;
 
   function analyzeDeal() {
-    const price = Number(purchasePrice);
-    const arvValue = Number(arv);
-    const repairValue = Number(repairCost);
+    const price = parseCurrencyInput(purchasePrice);
+    const currentArvValue = parseCurrencyInput(arv);
+    const currentRepairValue = parseCurrencyInput(repairCost);
 
     if (
-      !purchasePrice ||
-      !arv ||
-      !repairCost ||
+      !purchasePrice.trim() ||
+      !arv.trim() ||
+      !repairCost.trim() ||
+      !Number.isFinite(price) ||
+      !Number.isFinite(currentArvValue) ||
+      !Number.isFinite(currentRepairValue) ||
       price <= 0 ||
-      arvValue <= 0 ||
-      repairValue < 0
+      currentArvValue <= 0 ||
+      currentRepairValue < 0
     ) {
       toast.error(
         "Enter a valid purchase price, ARV, and repair cost."
@@ -91,12 +109,25 @@ export default function DealAnalyzerPage() {
       address:
         propertyAddress.trim() ||
         "No address entered",
-      purchasePrice: Number(purchasePrice),
-      arv: Number(arv),
-      repairCost: Number(repairCost),
+      purchasePrice: parseCurrencyInput(purchasePrice),
+      arv: parseCurrencyInput(arv),
+      repairCost: parseCurrencyInput(repairCost),
       maxOffer,
       recommendation: result,
     };
+
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser();
+
+    if (userError || !user) {
+      toast.error(
+        "You must be signed in to save an analysis."
+      );
+      setSaving(false);
+      return;
+    }
 
     const { data, error } = await supabase
       .from("workspace_items")
@@ -113,6 +144,7 @@ export default function DealAnalyzerPage() {
             analysisData.repairCost,
           maxOffer: analysisData.maxOffer,
         },
+        user_id: user.id,
       })
       .select()
       .single();
@@ -163,6 +195,10 @@ export default function DealAnalyzerPage() {
     );
   }
 
+  function continueToReportForge() {
+    window.location.href = "/reportforge";
+  }
+
   function runAnotherAnalysis() {
     setAnalysisName("");
     setPropertyAddress("");
@@ -182,12 +218,18 @@ export default function DealAnalyzerPage() {
   return (
     <Page
       title="Deal Analyzer"
-      description="Analyze investment properties and calculate maximum allowable offers."
+      description="Evaluate a property with deterministic deal rules, then save the result into the AppStack workflow."
     >
       <Card
         title="Analyze Deal"
         className="mt-10"
       >
+        <p className="mb-6 max-w-3xl text-sm leading-6 text-slate-400">
+          Enter the property assumptions AppStack needs to evaluate the deal.
+          The recommendation is calculated from explicit business rules — not AI —
+          so the same inputs always produce the same result.
+        </p>
+
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
             <label className="text-sm text-slate-400">
@@ -311,14 +353,19 @@ export default function DealAnalyzerPage() {
             </p>
           </div>
 
-          <div className="mt-6 grid grid-cols-2 gap-4 md:grid-cols-3">
+          <div className="mt-6">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+              Deterministic result
+            </p>
+
+            <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
             <div className="rounded-lg border border-slate-800 p-4">
               <p className="text-xs text-slate-400">
                 ARV
               </p>
 
               <p className="mt-2 text-xl font-semibold">
-                ${Number(arv).toLocaleString()}
+                ${parseCurrencyInput(arv).toLocaleString()}
               </p>
             </div>
 
@@ -328,10 +375,7 @@ export default function DealAnalyzerPage() {
               </p>
 
               <p className="mt-2 text-xl font-semibold">
-                $
-                {Number(
-                  repairCost
-                ).toLocaleString()}
+                ${parseCurrencyInput(repairCost).toLocaleString()}
               </p>
             </div>
 
@@ -351,13 +395,11 @@ export default function DealAnalyzerPage() {
               </p>
 
               <p className="mt-2 text-xl font-semibold">
-                $
-                {Number(
-                  purchasePrice
-                ).toLocaleString()}
+                ${parseCurrencyInput(purchasePrice).toLocaleString()}
               </p>
             </div>
           </div>
+        </div>
 
           <p className="mt-5 text-slate-400">
             This result is based on a simple
@@ -375,7 +417,7 @@ export default function DealAnalyzerPage() {
                 ? "Saving Analysis..."
                 : saved
                   ? "Analysis Saved"
-                  : "Save Analysis"}
+                  : "Save to Workspace"}
             </Button>
 
             <Button
@@ -386,12 +428,67 @@ export default function DealAnalyzerPage() {
           </div>
 
           {saved && (
-            <p className="mt-4 text-sm text-green-400">
-              Analysis saved successfully.
-            </p>
+            <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/40 p-4">
+              <p className="text-sm text-green-400">
+                Analysis saved to the shared Workspace.
+              </p>
+
+              <p className="mt-2 text-sm leading-6 text-slate-400">
+                The saved analysis is now available as a persisted input for downstream
+                AppStack workflows, including ReportForge.
+              </p>
+
+              <Button
+                onClick={continueToReportForge}
+                className="mt-4"
+              >
+                Continue to ReportForge
+              </Button>
+            </div>
           )}
         </Card>
       )}
+
+      <Card
+        title="How this fits AppStack"
+        className="mt-8"
+      >
+        <p className="max-w-3xl text-sm leading-6 text-slate-400">
+          Deal Analyzer is the entry point into AppStack&apos;s connected workflow.
+          It turns structured property inputs into a deterministic decision, then
+          persists that result so other modules can build on the same shared data.
+        </p>
+
+        <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
+          <div className="rounded-lg border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">1. Structured input</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Property assumptions are captured in a consistent form.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">2. Deterministic logic</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Explicit business rules calculate the maximum offer and recommendation.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">3. Persistence</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              Saving creates a reusable analysis record in the shared workspace.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-slate-800 p-4">
+            <p className="text-sm font-semibold text-white">4. Module handoff</p>
+            <p className="mt-2 text-sm leading-6 text-slate-400">
+              ReportForge and later workflow stages can consume the saved analysis.
+            </p>
+          </div>
+        </div>
+      </Card>
     </Page>
   );
 }
