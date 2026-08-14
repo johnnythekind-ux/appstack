@@ -9,7 +9,7 @@ export default function RiskPanel({
 }: RiskPanelProps) {
   if (!risk) {
     return (
-      <p className="text-slate-400">
+      <p className="text-muted">
         Risk intelligence is still loading.
       </p>
     );
@@ -53,10 +53,10 @@ export default function RiskPanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-red-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-danger">
               Executive Risk Brief
             </p>
 
@@ -65,24 +65,24 @@ export default function RiskPanel({
             </h3>
           </div>
 
-          <div className="rounded-full border border-slate-700 px-4 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-full border border-border bg-surface-muted px-4 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Risk Score
             </span>
 
-            <span className="ml-2 font-bold text-white">
+            <span className="ml-2 font-bold text-foreground">
               {risk.riskScore}/100
             </span>
           </div>
         </div>
 
-        <p className="mt-5 max-w-3xl leading-7 text-slate-400">
+        <p className="mt-5 max-w-3xl leading-7 text-muted">
           {riskMessage}
         </p>
 
-        <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-800">
+        <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-surface-strong">
           <div
-            className="h-full rounded-full bg-red-500 transition-all duration-500"
+            className="h-full rounded-full bg-danger transition-all duration-500"
             style={{
               width: `${Math.min(risk.riskScore, 100)}%`,
             }}
@@ -90,8 +90,8 @@ export default function RiskPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           {positionTitle}
         </p>
 
@@ -99,13 +99,13 @@ export default function RiskPanel({
           {risk.primaryRisk}
         </p>
 
-        <p className="mt-2 text-sm leading-6 text-slate-400">
+        <p className="mt-2 text-sm leading-6 text-muted">
           {positionMessage}
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           {factorsTitle}
         </p>
 
@@ -113,10 +113,10 @@ export default function RiskPanel({
           {risk.riskFactors.map((factor, index) => (
             <div
               key={`${factor}-${index}`}
-              className="rounded-lg border border-slate-800 p-4"
+              className="rounded-lg border border-border bg-surface-muted p-4"
             >
               <div className="flex gap-4">
-                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 text-sm font-bold">
+                <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted">
                   {index + 1}
                 </span>
 
@@ -125,11 +125,11 @@ export default function RiskPanel({
                     {factor}
                   </p>
 
-                  <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-subtle">
                     {isZeroRisk ? "Monitoring Guidance" : "Safeguard"}
                   </p>
 
-                  <p className="mt-1 text-sm leading-6 text-slate-400">
+                  <p className="mt-1 text-sm leading-6 text-muted">
                     {risk.safeguards[index] ??
                       "Continue monitoring the workspace and recalculate risk after new activity."}
                   </p>
@@ -140,24 +140,24 @@ export default function RiskPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           {outlookTitle}
         </p>
 
-        <p className="mt-4 leading-7 text-slate-400">
+        <p className="mt-4 leading-7 text-muted">
           {outlookMessage}
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Assessment Confidence
             </p>
 
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-muted">
               Confidence in the current risk assessment.
             </p>
           </div>

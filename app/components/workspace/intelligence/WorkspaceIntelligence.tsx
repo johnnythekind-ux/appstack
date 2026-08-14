@@ -35,6 +35,7 @@ type WorkspaceIntelligenceProps = {
   aiQuestion: string;
   aiAnswer: WorkspaceAIResponse | null;
   aiLoading: boolean;
+  isAdviceStale: boolean;
   onAIQuestionChange: (value: string) => void;
   onAskAI: () => void;
   onPriorityAction: (action: WorkspacePriorityAction) => void;
@@ -91,26 +92,24 @@ export default function WorkspaceIntelligence({
   aiQuestion,
   aiAnswer,
   aiLoading,
+  isAdviceStale,
   onAIQuestionChange,
   onAskAI,
   onPriorityAction,
 }: WorkspaceIntelligenceProps) {
-  const [activeTab, setActiveTab] =
-    useState<IntelligenceTab>("director");
-
-  const [showHowItWorks, setShowHowItWorks] =
-    useState(false);
+  const [activeTab, setActiveTab] = useState<IntelligenceTab>("director");
+  const [showHowItWorks, setShowHowItWorks] = useState(false);
 
   return (
     <Card>
-      <div className="border-b border-slate-800 pb-5">
+      <div className="border-b border-slate-300 pb-5 dark:border-slate-700">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <h2 className="text-2xl font-bold">
+            <h2 className="text-2xl font-bold text-slate-950 dark:text-slate-50">
               Workspace Intelligence
             </h2>
 
-            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-400">
+            <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-400">
               Operational analysis derived from workspace activity, state,
               dependencies, and execution history.
             </p>
@@ -120,19 +119,19 @@ export default function WorkspaceIntelligence({
             type="button"
             onClick={() => setShowHowItWorks((current) => !current)}
             aria-expanded={showHowItWorks}
-            className="self-start rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-300 transition hover:border-slate-500 hover:bg-slate-900 hover:text-white"
+            className="self-start rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-600 dark:bg-slate-900 dark:text-slate-200 dark:hover:border-slate-500 dark:hover:bg-slate-800"
           >
             {showHowItWorks ? "Hide how it works" : "How it works"}
           </button>
         </div>
 
         {showHowItWorks && (
-          <div className="mt-5 rounded-xl border border-slate-800 bg-slate-950/50 p-5">
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+          <div className="mt-5 rounded-xl border border-slate-300 bg-slate-50 p-5 dark:border-slate-700 dark:bg-slate-900/70">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-600 dark:text-blue-400">
               How Workspace Intelligence Works
             </p>
 
-            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-400">
+            <p className="mt-3 max-w-4xl text-sm leading-6 text-slate-600 dark:text-slate-300">
               This demo turns workspace activity into structured operational
               intelligence using deterministic analysis services, derived
               workspace state, and an AI advisory layer.
@@ -142,13 +141,13 @@ export default function WorkspaceIntelligence({
               {intelligenceCapabilities.map((capability) => (
                 <div
                   key={capability.name}
-                  className="rounded-lg border border-slate-800 p-4"
+                  className="rounded-lg border border-slate-300 bg-white p-4 dark:border-slate-700 dark:bg-slate-950"
                 >
-                  <p className="font-semibold text-white">
+                  <p className="font-semibold text-slate-950 dark:text-slate-50">
                     {capability.name}
                   </p>
 
-                  <p className="mt-1 text-sm leading-6 text-slate-400">
+                  <p className="mt-1 text-sm leading-6 text-slate-600 dark:text-slate-400">
                     {capability.description}
                   </p>
                 </div>
@@ -165,8 +164,8 @@ export default function WorkspaceIntelligence({
               onClick={() => setActiveTab(tab.id)}
               className={`whitespace-nowrap rounded-lg px-4 py-2 text-sm font-semibold transition ${
                 activeTab === tab.id
-                  ? "bg-blue-600 text-white"
-                  : "text-slate-400 hover:bg-slate-900 hover:text-white"
+                  ? "bg-blue-600 text-white hover:bg-blue-700"
+                  : "text-slate-600 hover:bg-slate-100 hover:text-slate-950 dark:text-slate-400 dark:hover:bg-slate-800 dark:hover:text-slate-50"
               }`}
             >
               {tab.label}
@@ -191,23 +190,18 @@ export default function WorkspaceIntelligence({
           />
         )}
 
-        {activeTab === "strategy" && (
-          <StrategyPanel strategy={strategy} />
-        )}
+        {activeTab === "strategy" && <StrategyPanel strategy={strategy} />}
 
-        {activeTab === "risk" && (
-          <RiskPanel risk={risk} />
-        )}
+        {activeTab === "risk" && <RiskPanel risk={risk} />}
 
-        {activeTab === "insights" && (
-          <InsightsPanel insights={insights} />
-        )}
+        {activeTab === "insights" && <InsightsPanel insights={insights} />}
 
         {activeTab === "ai" && (
           <AIAdvisorPanel
             question={aiQuestion}
             answer={aiAnswer}
             loading={aiLoading}
+            isAdviceStale={isAdviceStale}
             onQuestionChange={onAIQuestionChange}
             onAsk={onAskAI}
             priorityActions={priorityActions}

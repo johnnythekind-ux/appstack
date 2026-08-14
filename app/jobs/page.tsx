@@ -234,16 +234,16 @@ export default function JobsPage() {
         className="mt-10"
       >
         {pendingContext && (
-          <div className="mb-6 rounded-xl border border-blue-900/60 bg-blue-950/20 p-5">
-            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
+          <div className="mb-6 rounded-xl border border-border bg-surface-muted p-5">
+            <p className="text-xs font-semibold uppercase tracking-[0.18em] text-accent">
               Source Report
             </p>
 
-            <h2 className="mt-2 text-lg font-semibold text-white">
+            <h2 className="mt-2 text-lg font-semibold text-foreground">
               {pendingContext.reportTitle}
             </h2>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-muted">
               Workspace handed this persisted report into the execution layer.
               The new job retains the source report relationship in metadata.
             </p>
@@ -251,17 +251,17 @@ export default function JobsPage() {
         )}
 
         {!pendingContext && (
-          <p className="mb-6 max-w-3xl text-sm leading-6 text-slate-400">
+          <p className="mb-6 max-w-3xl text-sm leading-6 text-muted">
             Create a standalone processing job, or begin from a report in
             Workspace to preserve the report-to-job relationship.
           </p>
         )}
 
-        <label className="text-sm font-medium text-slate-300">
+        <label className="text-sm font-medium text-foreground">
           Job Name
         </label>
 
-        <p className="mt-1 text-sm text-slate-500">
+        <p className="mt-1 text-sm text-subtle">
           Give the job a clear name so it is easy to identify in the Workspace.
         </p>
 
@@ -271,7 +271,7 @@ export default function JobsPage() {
             setJobName(event.target.value)
           }
           disabled={creating || executing}
-          className="mt-4 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none transition focus:border-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+          className="mt-4 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground placeholder:text-subtle outline-none transition focus:border-accent focus:ring-2 focus:ring-accent/20 disabled:cursor-not-allowed disabled:bg-slate-100 disabled:text-subtle disabled:opacity-70"
           placeholder="Investor Report Processing Job"
         />
 
@@ -295,20 +295,20 @@ export default function JobsPage() {
         >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-blue-400">
+              <p className="text-xs font-semibold uppercase tracking-wider text-accent">
                 Processing Status
               </p>
 
-              <h2 className="mt-2 text-2xl font-bold">
+              <h2 className="mt-2 text-2xl font-bold text-foreground">
                 {currentJob.title}
               </h2>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted">
                 Managed by {currentJob.source}
               </p>
 
               {currentJob.reportTitle && (
-                <p className="mt-2 text-sm text-slate-500">
+                <p className="mt-2 text-sm text-subtle">
                   Source report: {currentJob.reportTitle}
                 </p>
               )}
@@ -321,19 +321,19 @@ export default function JobsPage() {
             <div
               className={`rounded-xl border p-5 ${
                 currentJob.status === "Queued"
-                  ? "border-blue-500 bg-blue-950/20"
-                  : "border-slate-800"
+                  ? "border-accent bg-accent/10"
+                  : "border-border"
               }`}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Step 1
               </p>
 
-              <p className="mt-2 font-semibold">
+              <p className="mt-2 font-semibold text-foreground">
                 Queued
               </p>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted">
                 The job has entered the persisted execution queue state.
               </p>
             </div>
@@ -341,19 +341,19 @@ export default function JobsPage() {
             <div
               className={`rounded-xl border p-5 ${
                 currentJob.status === "Running"
-                  ? "border-blue-500 bg-blue-950/20"
-                  : "border-slate-800"
+                  ? "border-accent bg-accent/10"
+                  : "border-border"
               }`}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Step 2
               </p>
 
-              <p className="mt-2 font-semibold">
+              <p className="mt-2 font-semibold text-foreground">
                 Running
               </p>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted">
                 Server-side execution has started and the persisted job is moving through its lifecycle.
               </p>
             </div>
@@ -361,26 +361,26 @@ export default function JobsPage() {
             <div
               className={`rounded-xl border p-5 ${
                 currentJob.status === "Completed"
-                  ? "border-green-600 bg-green-950/20"
-                  : "border-slate-800"
+                  ? "border-emerald-500 bg-emerald-500/10"
+                  : "border-border"
               }`}
             >
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Step 3
               </p>
 
-              <p className="mt-2 font-semibold">
+              <p className="mt-2 font-semibold text-foreground">
                 Completed
               </p>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted">
                 Processing finished and the final state was persisted successfully.
               </p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-            <p className="text-sm leading-6 text-slate-400">
+          <div className="mt-6 rounded-xl border border-border bg-surface-muted p-4">
+            <p className="text-sm leading-6 text-muted">
               Job lifecycle orchestration now runs through a server route instead
               of browser timers. The request is still a portfolio-scale execution
               boundary; a production deployment would replace the request-bound
@@ -392,7 +392,7 @@ export default function JobsPage() {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/workspace"
-                className="rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
+                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-accent-hover"
               >
                 Continue to Workspace
               </Link>
@@ -412,49 +412,49 @@ export default function JobsPage() {
         title="How this fits AppStack"
         className="mt-8"
       >
-        <p className="max-w-3xl text-sm leading-6 text-slate-400">
+        <p className="max-w-3xl text-sm leading-6 text-muted">
           Jobs is AppStack&apos;s execution layer. It converts workflow work into
           persisted operational jobs and demonstrates how authenticated application
           state moves through a server-orchestrated execution lifecycle.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">
               1. Workflow handoff
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-muted">
               Workspace can hand a specific persisted report into Jobs.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">
               2. Linked persistence
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-muted">
               The job retains the source report ID and title in persisted metadata.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">
               3. Server orchestration
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-muted">
               An authenticated server route advances the persisted job through its execution states.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">
               4. Production boundary
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-muted">
               Durable workers and queue infrastructure are the next production evolution.
             </p>
           </div>

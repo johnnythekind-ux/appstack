@@ -448,13 +448,13 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           value={search}
           onChange={setSearch}
           placeholder="Search title or address..."
-          className="flex-1 bg-slate-900 py-3 text-white"
+          className="flex-1 py-3"
         />
 
         <select
           value={filter}
           onChange={(event) => setFilter(event.target.value)}
-          className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
+          className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         >
           <option value="all">All</option>
           <option value="analysis">Analyses</option>
@@ -465,7 +465,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         <select
           value={sort}
           onChange={(event) => setSort(event.target.value)}
-          className="rounded-lg border border-slate-700 bg-slate-900 px-4 py-3 text-white"
+          className="rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none focus:border-accent focus:ring-2 focus:ring-accent/20"
         >
           <option value="newest">Newest</option>
           <option value="oldest">Oldest</option>
@@ -509,7 +509,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         ref={currentSelectionRef}
         className={`scroll-mt-8 rounded-2xl transition-all duration-500 ${
           selectionHighlighted
-            ? "ring-2 ring-blue-500 ring-offset-4 ring-offset-slate-950"
+            ? "ring-2 ring-accent ring-offset-4 ring-offset-background"
             : ""
         }`}
       >

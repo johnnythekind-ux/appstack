@@ -11,8 +11,8 @@ export default function ForecastPanel({
 }: ForecastPanelProps) {
   if (!forecast) {
     return (
-      <div className="rounded-xl border border-slate-800 p-6">
-        <p className="text-slate-400">
+      <div className="rounded-xl border border-border bg-surface p-6">
+        <p className="text-muted">
           Forecast intelligence is still loading.
         </p>
       </div>
@@ -63,10 +63,10 @@ export default function ForecastPanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-slate-800 p-6">
+      <div className="rounded-xl border border-border bg-surface p-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
               Workspace Forecast
             </p>
 
@@ -75,38 +75,38 @@ export default function ForecastPanel({
             </h3>
           </div>
 
-          <div className="rounded-full border border-slate-700 px-4 py-2">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-full border border-border bg-surface-muted px-4 py-2">
+            <span className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Confidence
             </span>
 
-            <span className="ml-2 font-bold text-white">
+            <span className="ml-2 font-bold text-foreground">
               {forecast.confidence}
             </span>
           </div>
         </div>
 
-        <p className="mt-4 max-w-3xl text-base leading-7 text-slate-400">
+        <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
           {forecast.prediction}
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Completion Outlook
             </p>
 
             <p className="mt-2 text-lg font-semibold">
   {currentProgress}% current
-  <span className="mx-2 text-slate-600">→</span>
+  <span className="mx-2 text-muted">→</span>
   {projectedProgress}% expected
 </p>
           </div>
 
           <div className="text-right">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Expected Change
             </p>
 
@@ -116,9 +116,9 @@ export default function ForecastPanel({
           </div>
         </div>
 
-        <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-slate-800">
+        <div className="mt-5 h-2.5 overflow-hidden rounded-full bg-surface-strong">
           <div
-            className="h-full rounded-full bg-blue-600 transition-all duration-500"
+            className="h-full rounded-full bg-accent transition-all duration-500"
             style={{
               width: `${Math.min(projectedProgress, 100)}%`,
             }}
@@ -127,8 +127,8 @@ export default function ForecastPanel({
       </div>
 
       <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-        <div className="rounded-xl border border-slate-800 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
             Current Position
           </p>
 
@@ -136,14 +136,14 @@ export default function ForecastPanel({
             {forecast.currentHealth}
           </p>
 
-          <p className="mt-2 text-sm leading-6 text-slate-400">
+          <p className="mt-2 text-sm leading-6 text-muted">
             The workspace is currently {currentProgress}% complete.
             This is the starting point used by the forecast.
           </p>
         </div>
 
-        <div className="rounded-xl border border-slate-800 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+        <div className="rounded-xl border border-border bg-surface p-5">
+          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
             Expected Position
           </p>
 
@@ -151,21 +151,21 @@ export default function ForecastPanel({
             {forecast.projectedHealth}
           </p>
 
-          <p className="mt-2 text-sm leading-6 text-slate-400">
+          <p className="mt-2 text-sm leading-6 text-muted">
             The current rule-based projection places the workspace at{" "}
             {projectedProgress}% completion.
           </p>
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           What Happens Next
         </p>
 
         <ol className="mt-5 space-y-4">
           <li className="flex gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 text-sm font-bold">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted">
               1
             </span>
 
@@ -174,7 +174,7 @@ export default function ForecastPanel({
                 Current workspace state
               </p>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 Health is {forecast.currentHealth} at {currentProgress}%
                 completion.
               </p>
@@ -182,7 +182,7 @@ export default function ForecastPanel({
           </li>
 
           <li className="flex gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 text-sm font-bold">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted">
               2
             </span>
 
@@ -191,14 +191,14 @@ export default function ForecastPanel({
                 {stepTwoTitle}
               </p>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 {stepTwoMessage}
               </p>
             </div>
           </li>
 
           <li className="flex gap-4">
-            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-blue-600 text-sm font-bold text-white">
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
               3
             </span>
 
@@ -207,7 +207,7 @@ export default function ForecastPanel({
                 Projected workspace state
               </p>
 
-              <p className="mt-1 text-sm text-slate-400">
+              <p className="mt-1 text-sm text-muted">
                 {projectedStateMessage}
               </p>
             </div>
@@ -215,12 +215,12 @@ export default function ForecastPanel({
         </ol>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           Why We Believe This
         </p>
 
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+        <p className="mt-3 text-sm leading-6 text-muted">
           This outlook is generated from the current Workspace Intelligence
           pipeline and its deterministic forecasting rules. It describes the
           expected direction of the workspace, not a guaranteed outcome.

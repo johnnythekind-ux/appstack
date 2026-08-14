@@ -321,12 +321,12 @@ Based on the 70% rule, the purchase price ${
           title="No Analysis Loaded"
           className="mt-10"
         >
-          <div className="rounded-xl border border-dashed border-slate-700 p-8 text-center">
-            <p className="text-lg font-semibold">
+          <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <p className="text-lg font-semibold text-slate-900 dark:text-slate-100">
               Start with a saved deal analysis.
             </p>
 
-            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-400">
+            <p className="mx-auto mt-2 max-w-2xl text-sm leading-6 text-slate-500 dark:text-slate-400">
               ReportForge uses the most recently
               saved analysis to prepare an investor
               report.
@@ -342,7 +342,7 @@ Based on the 70% rule, the purchase price ${
 
               <Link
                 href="/workspace"
-                className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+                className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
               >
                 Open Workspace
               </Link>
@@ -362,11 +362,11 @@ Based on the 70% rule, the purchase price ${
                 Loaded Analysis
               </p>
 
-              <h2 className="mt-2 text-2xl font-bold">
+              <h2 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                 {analysis.name}
               </h2>
 
-              <p className="mt-2 text-slate-400">
+              <p className="mt-2 text-slate-500 dark:text-slate-400">
                 {analysis.address}
               </p>
             </div>
@@ -379,56 +379,56 @@ Based on the 70% rule, the purchase price ${
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
-            <div className="rounded-xl border border-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Purchase Price
               </p>
 
-              <p className="mt-2 text-xl font-bold">
+              <p className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
                 $
                 {analysis.purchasePrice.toLocaleString()}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 ARV
               </p>
 
-              <p className="mt-2 text-xl font-bold">
+              <p className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
                 ${analysis.arv.toLocaleString()}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Repairs
               </p>
 
-              <p className="mt-2 text-xl font-bold">
+              <p className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
                 $
                 {analysis.repairCost.toLocaleString()}
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-800 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                 Maximum Offer
               </p>
 
-              <p className="mt-2 text-xl font-bold">
+              <p className="mt-2 text-xl font-bold text-slate-900 dark:text-slate-100">
                 $
                 {analysis.maxOffer.toLocaleString()}
               </p>
             </div>
           </div>
 
-          <div className="mt-6 rounded-xl border border-slate-800 bg-slate-900 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="mt-6 rounded-xl border border-slate-300 bg-slate-50 p-4 dark:border-slate-700 dark:bg-slate-950">
+            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
               Report Status
             </p>
 
-            <p className="mt-2 text-sm text-slate-300">
+            <p className="mt-2 text-sm text-slate-700 dark:text-slate-300">
               {getReportStatusMessage()}
             </p>
           </div>
@@ -448,7 +448,7 @@ Based on the 70% rule, the purchase price ${
 
             <Link
               href="/deal-analyzer"
-              className="rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+              className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800"
             >
               Analyze Another Deal
             </Link>
@@ -466,42 +466,42 @@ Based on the 70% rule, the purchase price ${
           className="mt-8"
         >
           {analysis && getReportSections() && (
-            <div className="overflow-hidden rounded-xl border border-slate-800 bg-slate-950/60">
-              <div className="border-b border-slate-800 p-6">
+            <div className="overflow-hidden rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <div className="border-b border-slate-200 p-6 dark:border-slate-700">
                 <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
                   Investor Report
                 </p>
-                <h3 className="mt-2 text-2xl font-bold">
+                <h3 className="mt-2 text-2xl font-bold text-slate-900 dark:text-slate-100">
                   {analysis.name}
                 </h3>
-                <p className="mt-2 text-slate-400">
+                <p className="mt-2 text-slate-500 dark:text-slate-400">
                   {analysis.address}
                 </p>
               </div>
 
-              <div className="grid grid-cols-1 gap-px bg-slate-800 md:grid-cols-2">
-                <div className="bg-slate-950 p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <div className="grid grid-cols-1 gap-px bg-slate-200 md:grid-cols-2 dark:bg-slate-800">
+                <div className="bg-slate-50 p-6 dark:bg-slate-950">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Deal Summary
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                  <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-300">
                     Purchase price ${analysis.purchasePrice.toLocaleString()},
                     ARV ${analysis.arv.toLocaleString()}, with estimated repairs
                     of ${analysis.repairCost.toLocaleString()}.
                   </p>
                 </div>
 
-                <div className="bg-slate-950 p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="bg-slate-50 p-6 dark:bg-slate-950">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Maximum Allowable Offer
                   </p>
-                  <p className="mt-3 text-2xl font-bold">
+                  <p className="mt-3 text-2xl font-bold text-slate-900 dark:text-slate-100">
                     ${analysis.maxOffer.toLocaleString()}
                   </p>
                 </div>
 
-                <div className="bg-slate-950 p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="bg-slate-50 p-6 dark:bg-slate-950">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Recommendation
                   </p>
                   <div className="mt-3">
@@ -514,11 +514,11 @@ Based on the 70% rule, the purchase price ${
                   </div>
                 </div>
 
-                <div className="bg-slate-950 p-6">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <div className="bg-slate-50 p-6 dark:bg-slate-950">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                     Interpretation
                   </p>
-                  <p className="mt-3 text-sm leading-7 text-slate-300">
+                  <p className="mt-3 text-sm leading-7 text-slate-700 dark:text-slate-300">
                     {getReportSections()!.interpretation}
                   </p>
                 </div>
@@ -555,12 +555,12 @@ Based on the 70% rule, the purchase price ${
           </div>
 
           {saved && !draftChanged && (
-            <div className="mt-4 rounded-xl border border-slate-800 bg-slate-950/40 p-4">
-              <p className="text-sm text-green-400">
+            <div className="mt-4 rounded-xl border border-emerald-200 bg-emerald-50 p-4 dark:border-emerald-800 dark:bg-emerald-950/40">
+              <p className="text-sm font-medium text-emerald-700 dark:text-emerald-300">
                 This report is saved and connected to the current analysis.
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
                 The persisted report is now available to Workspace and can move
                 into the execution stage as a processing job.
               </p>
@@ -580,45 +580,45 @@ Based on the 70% rule, the purchase price ${
         title="How this fits AppStack"
         className="mt-8"
       >
-        <p className="max-w-3xl text-sm leading-6 text-slate-400">
+        <p className="max-w-3xl text-sm leading-6 text-slate-500 dark:text-slate-400">
           ReportForge transforms a persisted Deal Analyzer result into a reusable
           reporting artifact. The report stays linked to its source analysis so
           downstream workflow stages can operate on shared application state.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               1. Persisted input
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               ReportForge loads the saved analysis instead of recreating deal data.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               2. Transformation
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               ReportForge transforms the saved analysis using deterministic application logic—not an AI model—so the report remains grounded in the calculated source data.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               3. Linked persistence
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               The saved report remains connected to the analysis that produced it.
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">
+          <div className="rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               4. Execution handoff
             </p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+            <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
               Workspace can recognize the report and advance it toward job execution.
             </p>
           </div>
@@ -630,19 +630,19 @@ Based on the 70% rule, the purchase price ${
         className="mt-10"
       >
         {loadingReports && (
-          <div className="rounded-xl border border-slate-800 p-5 text-sm text-slate-400">
+          <div className="rounded-xl border border-slate-300 p-5 text-sm text-slate-500 dark:text-slate-400">
             Loading saved reports...
           </div>
         )}
 
         {!loadingReports &&
           savedReports.length === 0 && (
-            <div className="rounded-xl border border-dashed border-slate-700 p-8 text-center">
-              <p className="font-semibold">
+            <div className="rounded-xl border border-dashed border-slate-300 bg-white p-8 text-center text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
+              <p className="font-semibold text-slate-900 dark:text-slate-100">
                 No reports saved yet
               </p>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
                 Generated reports will appear here
                 after they are saved.
               </p>
@@ -658,31 +658,31 @@ Based on the 70% rule, the purchase price ${
               {(item, index) => (
                 <div
                   key={`${item.id}-${item.created_at ?? "no-date"}-${index}`}
-                  className="flex flex-col gap-3 rounded-xl border border-slate-800 p-4 sm:flex-row sm:items-center sm:justify-between"
+                  className="flex flex-col gap-3 rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
                       Investor Report
                     </p>
 
-                    <h3 className="mt-1 truncate font-semibold">
+                    <h3 className="mt-1 truncate font-semibold text-slate-900 dark:text-slate-100">
                       {item.title}
                     </h3>
 
                     {item.address && (
-                      <p className="mt-1 truncate text-sm text-slate-400">
+                      <p className="mt-1 truncate text-sm text-slate-500 dark:text-slate-400">
                         {item.address}
                       </p>
                     )}
                   </div>
 
                   <div className="shrink-0 text-left sm:text-right">
-                    <p className="text-sm font-medium text-slate-300">
+                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       {item.status || "Saved"}
                     </p>
 
                     {item.created_at && (
-                      <p className="mt-1 text-xs text-slate-500">
+                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                         {new Date(
                           item.created_at
                         ).toLocaleString()}

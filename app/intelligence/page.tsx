@@ -165,11 +165,11 @@ export default function IntelligencePage() {
   }, [workspaceAIAnswer]);
 
   async function generateReportFromItem(item: any) {
-  if (!item || item.type !== "analysis") {
-    return;
-  }
+    if (!item || item.type !== "analysis") {
+      return;
+    }
 
-  const formatCurrency = (value: unknown) => {
+    const formatCurrency = (value: unknown) => {
     if (typeof value !== "number" || !Number.isFinite(value)) {
       return "Not available";
     }
@@ -369,7 +369,7 @@ Based on the available deal data, this deal currently receives a ${
       />
 
       <div className="mt-10">
-  <WorkspaceIntelligence
+        <WorkspaceIntelligence
           progressPercent={workspaceIntelligence.progressPercent}
           directorPlan={workspaceDirectorPlan}
           priorityActions={workspacePriorityActions}
@@ -380,18 +380,25 @@ Based on the available deal data, this deal currently receives a ${
           aiQuestion={workspaceAIQuestion}
           aiAnswer={workspaceAIAnswer}
           aiLoading={workspaceAILoading}
+          isAdviceStale={workspaceAIStale}
           onAIQuestionChange={setWorkspaceAIQuestion}
           onAskAI={askWorkspaceAI}
           onPriorityAction={handlePriorityAction}
         />
       </div>
 
-      <section className="mt-10 rounded-2xl border border-slate-800 bg-slate-950 p-6">
-        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-400">
+      <section
+        className="
+          mt-10 rounded-2xl border p-6 shadow-sm
+          border-slate-200 bg-white
+          dark:border-slate-800 dark:bg-slate-950
+        "
+      >
+        <p className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-600 dark:text-blue-400">
           How this fits AppStack
         </p>
 
-        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-400">
+        <p className="mt-3 max-w-3xl text-sm leading-6 text-slate-600 dark:text-slate-300">
           Intelligence consumes authenticated, user-scoped workspace state and
           derives deterministic operational conclusions before optionally asking
           AI to synthesize or explain that state. Realtime workspace changes
@@ -400,43 +407,58 @@ Based on the available deal data, this deal currently receives a ${
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">1. Live state</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Realtime workspace changes trigger an intelligence refresh.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">2. Deterministic services</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Priorities, forecasts, risk, strategy, history, and insights are derived before AI is called.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">3. AI synthesis</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              AI receives structured workspace intelligence and produces an advisory response rather than replacing source-of-truth logic.
-            </p>
-          </div>
-
-          <div className="rounded-xl border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">4. Execution handoff</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
-              Report execution is handed to Jobs so one canonical server-orchestrated lifecycle owns Queued, Running, and Completed states.
-            </p>
-          </div>
+          {[
+            {
+              title: "1. Live state",
+              body: "Realtime workspace changes trigger an intelligence refresh.",
+            },
+            {
+              title: "2. Deterministic services",
+              body: "Priorities, forecasts, risk, strategy, history, and insights are derived before AI is called.",
+            },
+            {
+              title: "3. AI synthesis",
+              body: "AI receives structured workspace intelligence and produces an advisory response rather than replacing source-of-truth logic.",
+            },
+            {
+              title: "4. Execution handoff",
+              body: "Report execution is handed to Jobs so one canonical server-orchestrated lifecycle owns Queued, Running, and Completed states.",
+            },
+          ].map((item) => (
+            <div
+              key={item.title}
+              className="
+                rounded-xl border p-4
+                border-slate-200 bg-slate-50
+                dark:border-slate-700 dark:bg-slate-900
+              "
+            >
+              <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+                {item.title}
+              </p>
+              <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-300">
+                {item.body}
+              </p>
+            </div>
+          ))}
         </div>
       </section>
 
       {workspaceAIStale && (
-        <div className="fixed bottom-6 right-6 z-50 w-[min(420px,calc(100vw-3rem))] rounded-xl border border-amber-600 bg-amber-950 p-5 shadow-2xl">
-          <p className="font-semibold text-amber-200">
+        <div
+          className="
+            fixed bottom-6 right-6 z-50
+            w-[min(420px,calc(100vw-3rem))]
+            rounded-xl border p-5 shadow-2xl
+            border-amber-300 bg-amber-50
+            dark:border-amber-700 dark:bg-amber-950
+          "
+        >
+          <p className="font-semibold text-amber-900 dark:text-amber-200">
             The workspace changed after this advice was generated.
           </p>
 
-          <p className="mt-2 text-sm text-amber-100/80">
+          <p className="mt-2 text-sm text-amber-800 dark:text-amber-100/80">
             Refresh the AI advice so it reflects the current workspace.
           </p>
 

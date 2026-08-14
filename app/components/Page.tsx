@@ -10,14 +10,14 @@ export default function Page({
   children,
 }: PageProps) {
   return (
-    <main className="min-h-screen bg-slate-950 text-white p-8">
-      <div className="mx-auto max-w-6xl">
-        <h1 className="text-3xl font-bold">
+    <main className="min-h-[calc(100vh-73px)] bg-background text-foreground">
+      <div className="mx-auto w-full max-w-7xl px-6 py-10">
+        <h1 className="text-3xl font-bold tracking-tight">
           {title}
         </h1>
 
         {description && (
-          <p className="mt-2 text-slate-400">
+          <p className="mt-2 max-w-4xl text-muted">
             {description}
           </p>
         )}

@@ -73,7 +73,7 @@ export default function InsightsPanel({
 }: InsightsPanelProps) {
   if (!insights) {
     return (
-      <p className="text-slate-400">
+      <p className="text-muted">
         Insights are still loading.
       </p>
     );
@@ -84,8 +84,8 @@ export default function InsightsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
-        <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
+        <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
           Executive Insight Brief
         </p>
 
@@ -93,7 +93,7 @@ export default function InsightsPanel({
           {insights.headline}
         </h3>
 
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-muted">
           Workspace Intelligence reviewed workflow stages, priority actions,
           and operational patterns to surface the observations most useful
           for understanding the workspace's current position.
@@ -101,10 +101,10 @@ export default function InsightsPanel({
       </div>
 
       {highestPriorityInsight && (
-        <div className="rounded-2xl border border-slate-700 p-6">
+        <div className="rounded-2xl border border-border bg-surface p-6">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Highest-Priority Observation
               </p>
 
@@ -115,7 +115,7 @@ export default function InsightsPanel({
 
             <div className="flex flex-wrap items-center gap-2">
               {shouldShowSeverityBadge(highestPriorityInsight) && (
-                <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-300">
+                <span className="rounded-full border border-border bg-surface-muted px-3 py-1 text-xs font-semibold text-muted">
                   {getSeverityLabel(
                     highestPriorityInsight.severity
                   )}
@@ -130,31 +130,31 @@ export default function InsightsPanel({
 
           <div className="mt-6 space-y-5">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 What the System Noticed
               </p>
 
-              <p className="mt-2 leading-7 text-slate-300">
+              <p className="mt-2 leading-7 text-muted">
                 {highestPriorityInsight.explanation}
               </p>
             </div>
 
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Why It Matters
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-muted">
                 {getMeaning(highestPriorityInsight)}
               </p>
             </div>
 
-            <div className="rounded-xl bg-slate-900 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-xl border border-border bg-surface-muted p-4">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Recommended Response
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-slate-300">
+              <p className="mt-2 text-sm leading-6 text-muted">
                 {getRecommendedResponse(
                   highestPriorityInsight
                 )}
@@ -165,19 +165,19 @@ export default function InsightsPanel({
       )}
 
       {remainingInsights.length > 0 && (
-        <div className="rounded-xl border border-slate-800 p-5">
+        <div className="rounded-xl border border-border bg-surface p-5">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Ranked Workspace Observations
               </p>
 
-              <p className="mt-2 text-sm text-slate-400">
+              <p className="mt-2 text-sm text-muted">
                 Additional patterns ranked by operational significance.
               </p>
             </div>
 
-            <span className="text-sm font-semibold text-slate-400">
+            <span className="text-sm font-semibold text-muted">
               {remainingInsights.length} additional
             </span>
           </div>
@@ -186,11 +186,11 @@ export default function InsightsPanel({
             {remainingInsights.map((insight, index) => (
               <div
                 key={`${insight.title}-${index}`}
-                className="rounded-xl border border-slate-800 p-5"
+                className="rounded-xl border border-border bg-surface p-5"
               >
                 <div className="flex flex-wrap items-start justify-between gap-4">
                   <div className="flex gap-4">
-                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-slate-700 text-sm font-bold">
+                    <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted">
                       {index + 2}
                     </span>
 
@@ -199,7 +199,7 @@ export default function InsightsPanel({
                         {insight.title}
                       </p>
 
-                      <p className="mt-2 text-sm leading-6 text-slate-400">
+                      <p className="mt-2 text-sm leading-6 text-muted">
                         {insight.explanation}
                       </p>
                     </div>
@@ -207,7 +207,7 @@ export default function InsightsPanel({
 
                   <div className="flex flex-wrap items-center gap-2">
                     {shouldShowSeverityBadge(insight) && (
-                      <span className="rounded-full border border-slate-700 px-3 py-1 text-xs font-semibold text-slate-400">
+                      <span className="rounded-full border border-border-strong px-3 py-1 text-xs font-semibold text-muted">
                         {getSeverityLabel(insight.severity)}
                       </span>
                     )}
@@ -217,22 +217,22 @@ export default function InsightsPanel({
                 </div>
 
                 <div className="mt-5 grid grid-cols-1 gap-4 md:grid-cols-2">
-                  <div className="rounded-lg border border-slate-800 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <div className="rounded-lg border border-border bg-surface-muted p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                       Why It Matters
                     </p>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                    <p className="mt-2 text-sm leading-6 text-muted">
                       {getMeaning(insight)}
                     </p>
                   </div>
 
-                  <div className="rounded-lg border border-slate-800 p-4">
-                    <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                  <div className="rounded-lg border border-border bg-surface-muted p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                       Recommended Response
                     </p>
 
-                    <p className="mt-2 text-sm leading-6 text-slate-400">
+                    <p className="mt-2 text-sm leading-6 text-muted">
                       {getRecommendedResponse(insight)}
                     </p>
                   </div>
@@ -243,12 +243,12 @@ export default function InsightsPanel({
         </div>
       )}
 
-      <div className="rounded-xl border border-slate-800 p-5">
-        <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+      <div className="rounded-xl border border-border bg-surface p-5">
+        <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
           How to Read These Insights
         </p>
 
-        <p className="mt-3 text-sm leading-6 text-slate-400">
+        <p className="mt-3 text-sm leading-6 text-muted">
           Constraints and imbalances deserve attention first. Opportunities
           identify favorable operating conditions worth preserving. Patterns
           explain recurring workspace behavior and should be monitored as new

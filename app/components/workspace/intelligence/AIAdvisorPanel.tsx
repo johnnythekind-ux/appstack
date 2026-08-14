@@ -51,10 +51,10 @@ export default function AIAdvisorPanel({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-2xl border border-slate-800 bg-slate-950/50 p-6">
+      <div className="rounded-2xl border border-border bg-surface p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+            <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
               AI Workspace Advisor
             </p>
 
@@ -63,26 +63,26 @@ export default function AIAdvisorPanel({
             </h3>
           </div>
 
-          <div className="rounded-full border border-slate-700 px-4 py-2 text-xs font-semibold uppercase tracking-wider text-slate-400">
+          <div className="rounded-full border border-border bg-surface-muted px-4 py-2 text-xs font-semibold uppercase tracking-wider text-muted">
             Grounded in Workspace Data
           </div>
         </div>
 
-        <p className="mt-4 max-w-3xl text-sm leading-7 text-slate-400">
+        <p className="mt-4 max-w-3xl text-sm leading-7 text-muted">
           AppStack AI interprets the current Workspace Intelligence layer,
           including priorities, director guidance, forecast, strategy, risk,
           and insights.
         </p>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Suggested Questions
             </p>
 
-            <p className="mt-2 text-sm text-slate-400">
+            <p className="mt-2 text-sm text-muted">
               {hasPriorityWork
                 ? "Questions are tuned to the workspace's current unfinished work."
                 : "The workspace is caught up, so these questions focus on interpretation, monitoring, and emerging patterns."}
@@ -96,7 +96,7 @@ export default function AIAdvisorPanel({
               key={suggestedQuestion}
               type="button"
               onClick={() => onQuestionChange(suggestedQuestion)}
-              className="rounded-full border border-slate-700 px-4 py-2 text-sm text-slate-300 transition hover:border-slate-500 hover:bg-slate-900 hover:text-white"
+              className="rounded-full border border-border bg-surface px-4 py-2 text-sm text-muted transition hover:border-accent hover:bg-accent-soft hover:text-accent"
             >
               {suggestedQuestion}
             </button>
@@ -104,10 +104,10 @@ export default function AIAdvisorPanel({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-800 p-5">
+      <div className="rounded-xl border border-border bg-surface p-5">
         <label
           htmlFor="workspace-ai-question"
-          className="text-xs font-semibold uppercase tracking-wider text-slate-500"
+          className="text-xs font-semibold uppercase tracking-wider text-subtle"
         >
           Ask the Workspace
         </label>
@@ -118,7 +118,7 @@ export default function AIAdvisorPanel({
           onChange={(event) => onQuestionChange(event.target.value)}
           placeholder={placeholder}
           rows={4}
-          className="mt-4 w-full rounded-lg border border-slate-700 bg-slate-900 p-4 text-white outline-none placeholder:text-slate-500 focus:border-blue-500"
+          className="mt-4 w-full rounded-lg border border-border bg-surface p-4 text-foreground outline-none placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent-soft"
         />
 
         <div className="mt-4 flex flex-wrap items-center gap-4">
@@ -126,7 +126,7 @@ export default function AIAdvisorPanel({
             {loading ? "Analyzing Workspace..." : "Ask AppStack AI"}
           </Button>
 
-          <p className="text-sm text-slate-500">
+          <p className="text-sm text-subtle">
             The response will be grounded in current deterministic workspace
             evidence.
           </p>
@@ -134,12 +134,12 @@ export default function AIAdvisorPanel({
       </div>
 
       {!answer && !loading && (
-        <div className="rounded-xl border border-dashed border-slate-800 p-6">
+        <div className="rounded-xl border border-dashed border-border bg-surface-muted p-6">
           <p className="font-semibold">
             No AI briefing generated yet.
           </p>
 
-          <p className="mt-2 text-sm leading-6 text-slate-400">
+          <p className="mt-2 text-sm leading-6 text-muted">
             Ask a question above to receive an interpretation supported by
             the current Workspace Intelligence pipeline.
           </p>
@@ -149,11 +149,11 @@ export default function AIAdvisorPanel({
       {answer && (
         <div
           id="workspace-ai-answer"
-          className="space-y-6 rounded-2xl border border-slate-800 p-6"
+          className="space-y-6 rounded-2xl border border-border bg-surface p-6"
         >
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+              <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
                 AI Advisory Brief
               </p>
 
@@ -162,29 +162,29 @@ export default function AIAdvisorPanel({
               </h3>
             </div>
 
-            <div className="rounded-full border border-slate-700 px-4 py-2">
-              <span className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+            <div className="rounded-full border border-border bg-surface-muted px-4 py-2">
+              <span className="text-xs font-semibold uppercase tracking-wider text-subtle">
                 Confidence
               </span>
 
-              <span className="ml-2 font-bold text-white">
+              <span className="ml-2 font-bold text-foreground">
                 {answer.confidence}
               </span>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Situation
             </p>
 
-            <p className="mt-3 leading-7 text-slate-300">
+            <p className="mt-3 leading-7 text-muted">
               {answer.summary}
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Recommended Focus
             </p>
 
@@ -193,19 +193,19 @@ export default function AIAdvisorPanel({
             </p>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-5">
+          <div className="rounded-xl border border-border bg-surface p-5">
             <div className="flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                   Evidence Used
                 </p>
 
-                <p className="mt-2 text-sm text-slate-400">
+                <p className="mt-2 text-sm text-muted">
                   Deterministic workspace facts supporting this interpretation.
                 </p>
               </div>
 
-              <span className="text-sm font-semibold text-slate-400">
+              <span className="text-sm font-semibold text-muted">
                 {answer.evidence.length} sources
               </span>
             </div>
@@ -214,19 +214,19 @@ export default function AIAdvisorPanel({
               {answer.evidence.map((item, index) => (
                 <div
                   key={`${item.source}-${item.claim}-${index}`}
-                  className="rounded-lg border border-slate-800 p-4"
+                  className="rounded-lg border border-border bg-surface-muted p-4"
                 >
                   <div className="flex gap-4">
-                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-slate-700 text-sm font-bold">
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-border bg-surface text-sm font-bold text-muted">
                       {index + 1}
                     </span>
 
                     <div>
-                      <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+                      <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
                         {item.source}
                       </p>
 
-                      <p className="mt-2 text-sm leading-6 text-slate-300">
+                      <p className="mt-2 text-sm leading-6 text-muted">
                         {item.claim}
                       </p>
                     </div>
@@ -236,8 +236,8 @@ export default function AIAdvisorPanel({
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Immediate Next Step
             </p>
 
@@ -257,12 +257,12 @@ export default function AIAdvisorPanel({
             )}
           </div>
 
-          <div className="rounded-xl border border-slate-800 p-5">
-            <p className="text-xs font-semibold uppercase tracking-wider text-slate-500">
+          <div className="rounded-xl border border-border bg-surface p-5">
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Advisory Boundary
             </p>
 
-            <p className="mt-3 text-sm leading-6 text-slate-400">
+            <p className="mt-3 text-sm leading-6 text-muted">
               This advisory interprets AppStack&apos;s deterministic
               workspace outputs. It does not replace the underlying director,
               forecast, strategy, risk, insights, or priority services.

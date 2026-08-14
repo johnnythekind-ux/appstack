@@ -224,7 +224,7 @@ export default function DealAnalyzerPage() {
         title="Analyze Deal"
         className="mt-10"
       >
-        <p className="mb-6 max-w-3xl text-sm leading-6 text-slate-400">
+        <p className="mb-6 max-w-3xl text-sm leading-6 text-muted">
           Enter the property assumptions AppStack needs to evaluate the deal.
           The recommendation is calculated from explicit business rules — not AI —
           so the same inputs always produce the same result.
@@ -232,7 +232,7 @@ export default function DealAnalyzerPage() {
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
           <div>
-            <label className="text-sm text-slate-400">
+            <label className="text-sm text-muted">
               Analysis Name
             </label>
 
@@ -243,13 +243,13 @@ export default function DealAnalyzerPage() {
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="Houston Flip Test"
             />
           </div>
 
           <div>
-            <label className="text-sm text-slate-400">
+            <label className="text-sm text-muted">
               Property Address
             </label>
 
@@ -260,7 +260,7 @@ export default function DealAnalyzerPage() {
                   event.target.value
                 )
               }
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="123 Main St, Houston, TX"
             />
           </div>
@@ -268,7 +268,7 @@ export default function DealAnalyzerPage() {
 
         <div className="mt-5 grid grid-cols-1 gap-5 md:grid-cols-3">
           <div>
-            <label className="text-sm text-slate-400">
+            <label className="text-sm text-muted">
               Purchase Price
             </label>
 
@@ -280,13 +280,13 @@ export default function DealAnalyzerPage() {
                 )
               }
               inputMode="decimal"
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="150000"
             />
           </div>
 
           <div>
-            <label className="text-sm text-slate-400">
+            <label className="text-sm text-muted">
               ARV
             </label>
 
@@ -296,13 +296,13 @@ export default function DealAnalyzerPage() {
                 setArv(event.target.value)
               }
               inputMode="decimal"
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="250000"
             />
           </div>
 
           <div>
-            <label className="text-sm text-slate-400">
+            <label className="text-sm text-muted">
               Repair Cost
             </label>
 
@@ -314,7 +314,7 @@ export default function DealAnalyzerPage() {
                 )
               }
               inputMode="decimal"
-              className="mt-2 w-full rounded-lg border border-slate-800 bg-slate-900 px-4 py-3 text-white outline-none"
+              className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               placeholder="30000"
             />
           </div>
@@ -347,20 +347,20 @@ export default function DealAnalyzerPage() {
                 "Untitled Analysis"}
             </h3>
 
-            <p className="mt-1 text-slate-400">
+            <p className="mt-1 text-muted">
               {propertyAddress ||
                 "No property address entered"}
             </p>
           </div>
 
           <div className="mt-6">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-slate-500">
+            <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
               Deterministic result
             </p>
 
             <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-slate-800 p-4">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-xs text-muted">
                 ARV
               </p>
 
@@ -369,8 +369,8 @@ export default function DealAnalyzerPage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-800 p-4">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-xs text-muted">
                 Repairs
               </p>
 
@@ -379,8 +379,8 @@ export default function DealAnalyzerPage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-800 p-4">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-xs text-muted">
                 Maximum Offer
               </p>
 
@@ -389,8 +389,8 @@ export default function DealAnalyzerPage() {
               </p>
             </div>
 
-            <div className="rounded-lg border border-slate-800 p-4">
-              <p className="text-xs text-slate-400">
+            <div className="rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-xs text-muted">
                 Purchase Price
               </p>
 
@@ -401,7 +401,7 @@ export default function DealAnalyzerPage() {
           </div>
         </div>
 
-          <p className="mt-5 text-slate-400">
+          <p className="mt-5 text-muted">
             This result is based on a simple
             maximum-offer rule: ARV × 70% minus
             repairs.
@@ -428,12 +428,12 @@ export default function DealAnalyzerPage() {
           </div>
 
           {saved && (
-            <div className="mt-4 rounded-lg border border-slate-800 bg-slate-950/40 p-4">
-              <p className="text-sm text-green-400">
+            <div className="mt-4 rounded-lg border border-border bg-surface-muted p-4">
+              <p className="text-sm font-medium text-success">
                 Analysis saved to the shared Workspace.
               </p>
 
-              <p className="mt-2 text-sm leading-6 text-slate-400">
+              <p className="mt-2 text-sm leading-6 text-muted">
                 The saved analysis is now available as a persisted input for downstream
                 AppStack workflows, including ReportForge.
               </p>
@@ -453,37 +453,37 @@ export default function DealAnalyzerPage() {
         title="How this fits AppStack"
         className="mt-8"
       >
-        <p className="max-w-3xl text-sm leading-6 text-slate-400">
+        <p className="max-w-3xl text-sm leading-6 text-muted">
           Deal Analyzer is the entry point into AppStack&apos;s connected workflow.
           It turns structured property inputs into a deterministic decision, then
           persists that result so other modules can build on the same shared data.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
-          <div className="rounded-lg border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">1. Structured input</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">1. Structured input</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
               Property assumptions are captured in a consistent form.
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">2. Deterministic logic</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">2. Deterministic logic</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
               Explicit business rules calculate the maximum offer and recommendation.
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">3. Persistence</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">3. Persistence</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
               Saving creates a reusable analysis record in the shared workspace.
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-800 p-4">
-            <p className="text-sm font-semibold text-white">4. Module handoff</p>
-            <p className="mt-2 text-sm leading-6 text-slate-400">
+          <div className="rounded-lg border border-border bg-surface-muted p-4">
+            <p className="text-sm font-semibold text-foreground">4. Module handoff</p>
+            <p className="mt-2 text-sm leading-6 text-muted">
               ReportForge and later workflow stages can consume the saved analysis.
             </p>
           </div>

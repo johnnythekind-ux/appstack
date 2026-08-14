@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import type { User } from "@supabase/supabase-js";
+
 import { supabase } from "@/lib/supabase";
 
 const links = [
@@ -42,12 +43,14 @@ export default function AppNav() {
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (mounted) {
-        setUser(session?.user ?? null);
-        setAuthReady(true);
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        if (mounted) {
+          setUser(session?.user ?? null);
+          setAuthReady(true);
+        }
       }
-    });
+    );
 
     return () => {
       mounted = false;
@@ -67,11 +70,11 @@ export default function AppNav() {
   }
 
   return (
-    <nav className="border-b border-slate-800 bg-slate-950 text-white">
+    <nav className="border-b border-border bg-surface text-foreground">
       <div className="mx-auto flex max-w-7xl flex-col gap-3 px-6 py-4 md:flex-row md:items-center md:justify-between">
         <Link
           href="/"
-          className="text-xl font-bold tracking-wide transition hover:text-blue-400"
+          className="text-xl font-bold tracking-wide transition hover:text-accent"
         >
           AppStack
         </Link>
@@ -86,8 +89,8 @@ export default function AppNav() {
                 href={link.href}
                 className={`rounded-lg px-3 py-2 transition ${
                   active
-                    ? "bg-blue-600 text-white"
-                    : "text-slate-300 hover:bg-slate-900 hover:text-white"
+                    ? "bg-accent text-white"
+                    : "text-muted hover:bg-surface-muted hover:text-foreground"
                 }`}
               >
                 {link.label}
@@ -97,18 +100,19 @@ export default function AppNav() {
 
           {authReady && (
             <>
-              <div className="mx-1 hidden h-6 w-px bg-slate-700 lg:block" />
+              <div className="mx-1 hidden h-6 w-px bg-border-strong lg:block" />
 
               {user ? (
                 <>
-                  <div className="hidden max-w-48 truncate px-2 text-slate-400 xl:block">
-                    {user.user_metadata?.full_name || user.email}
+                  <div className="hidden max-w-48 truncate px-2 text-subtle xl:block">
+                    {user.user_metadata?.full_name ||
+                      user.email}
                   </div>
 
                   <button
                     type="button"
                     onClick={handleSignOut}
-                    className="rounded-lg border border-slate-700 px-3 py-2 text-slate-300 transition hover:bg-slate-900 hover:text-white"
+                    className="rounded-lg border border-border-strong px-3 py-2 text-muted transition hover:bg-surface-muted hover:text-foreground"
                   >
                     Sign Out
                   </button>
@@ -116,11 +120,7 @@ export default function AppNav() {
               ) : (
                 <Link
                   href="/login"
-                  className={`rounded-lg px-3 py-2 transition ${
-                    pathname === "/login"
-                      ? "bg-blue-600 text-white"
-                      : "border border-slate-700 text-slate-300 hover:bg-slate-900 hover:text-white"
-                  }`}
+                  className="rounded-lg border border-border-strong px-3 py-2 text-muted transition hover:bg-surface-muted hover:text-foreground"
                 >
                   Sign In
                 </Link>

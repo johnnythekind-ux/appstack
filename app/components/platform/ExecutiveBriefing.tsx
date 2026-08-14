@@ -21,10 +21,10 @@ export default function ExecutiveBriefing({
   );
 
   return (
-    <section className="mb-8 rounded-2xl border border-slate-800 bg-slate-950 p-6 shadow-sm">
+    <section className="mb-8 rounded-2xl border border-border bg-surface p-6 shadow-sm">
       <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
         <div className="min-w-0">
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
             Executive Briefing
           </p>
 
@@ -32,48 +32,48 @@ export default function ExecutiveBriefing({
             {status.mission}
           </h2>
 
-          <p className="mt-2 text-sm text-slate-400">
+          <p className="mt-2 text-sm text-muted">
             Current platform mission
           </p>
         </div>
 
         <div className="grid grid-cols-2 gap-x-8 gap-y-5 text-sm lg:grid-cols-4">
           <div>
-            <p className="text-slate-500">
+            <p className="text-subtle">
               Health
             </p>
 
-            <p className="mt-1 font-semibold text-white">
+            <p className="mt-1 font-semibold text-foreground">
               {status.health}
             </p>
           </div>
 
           <div>
-            <p className="text-slate-500">
+            <p className="text-subtle">
               Priority Actions
             </p>
 
-            <p className="mt-1 font-semibold text-white">
+            <p className="mt-1 font-semibold text-foreground">
               {status.priorityCount}
             </p>
           </div>
 
           <div>
-            <p className="text-slate-500">
+            <p className="text-subtle">
               Progress
             </p>
 
-            <p className="mt-1 font-semibold text-white">
+            <p className="mt-1 font-semibold text-foreground">
               {safeProgress}%
             </p>
           </div>
 
           <div>
-            <p className="text-slate-500">
+            <p className="text-subtle">
               Last Updated
             </p>
 
-            <p className="mt-1 font-semibold text-white">
+            <p className="mt-1 font-semibold text-foreground">
               {status.lastUpdated}
             </p>
           </div>
@@ -81,9 +81,9 @@ export default function ExecutiveBriefing({
       </div>
 
       <div className="mt-6">
-        <div className="h-2 overflow-hidden rounded-full bg-slate-800">
+        <div className="h-2 overflow-hidden rounded-full bg-surface-muted">
           <div
-            className="h-full rounded-full bg-blue-500 transition-all duration-500"
+            className="h-full rounded-full bg-accent transition-all duration-500"
             style={{
               width: `${safeProgress}%`,
             }}
