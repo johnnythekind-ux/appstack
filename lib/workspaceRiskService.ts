@@ -28,6 +28,22 @@ export function buildWorkspaceRisk(
   forecast: WorkspaceForecast,
   strategy: WorkspaceStrategy
 ): WorkspaceRisk {
+  if (intelligence.workspaceHealth === "New") {
+    return {
+      title: "Workspace Risk",
+      overallRisk: "Low",
+      riskScore: 0,
+      primaryRisk: "No operational activity to assess yet.",
+      riskFactors: [
+        "No workspace activity exists yet, so operational risk has not been established.",
+      ],
+      safeguards: [
+        "Create or save the first workspace item to establish an operational baseline.",
+      ],
+      confidence: "Low",
+    };
+  }
+
   const reportActions = priorityActions.filter(
     (action) => action.actionType === "generate_report"
   );

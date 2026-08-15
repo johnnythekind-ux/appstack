@@ -19,6 +19,24 @@ export function buildWorkspaceStrategy(
   directorPlan: WorkspaceDirectorPlan,
   forecast: WorkspaceForecast
 ): WorkspaceStrategy {
+  if (intelligence.workspaceHealth === "New") {
+    return {
+      title: "Workspace Strategy",
+      strategicFocus: "Establish the workspace baseline.",
+      executionOrder: [
+        "Create or save the first analysis to begin generating workspace activity.",
+      ],
+      delayActions: [
+        "No workflow tradeoffs need to be made before the first workspace item exists.",
+      ],
+      bottleneckExplanation:
+        "The workspace has no activity yet, so there is no operating workflow to evaluate.",
+      tradeoffExplanation:
+        "There is not enough workspace activity to make meaningful sequencing or tradeoff decisions yet.",
+      strategyConfidence: "Low",
+    };
+  }
+
   const reportActions = priorityActions.filter(
     (action) => action.actionType === "generate_report"
   );

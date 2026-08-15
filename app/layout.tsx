@@ -25,6 +25,49 @@ export const metadata: Metadata = {
     "A modern SaaS architecture demonstration built around authenticated, user-scoped workflows, reporting, jobs, and platform intelligence.",
 };
 
+/*
+ * Runs before React hydrates.
+ *
+ * The user's last-known theme preference is cached in localStorage so the
+ * browser can apply the correct theme before the first visible paint.
+ *
+ * Supabase remains the authoritative persisted account preference.
+ * ThemeProvider reconciles this cached value with Supabase after hydration.
+ */
+const themeBootstrapScript = `
+(function () {
+  try {
+    var preference = localStorage.getItem("appstack-theme-preference");
+
+    if (
+      preference !== "light" &&
+      preference !== "dark" &&
+      preference !== "system"
+    ) {
+      preference = "system";
+    }
+
+    var resolvedTheme = preference;
+
+    if (preference === "system") {
+      resolvedTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+        ? "dark"
+        : "light";
+    }
+
+    document.documentElement.dataset.theme = resolvedTheme;
+    document.documentElement.style.colorScheme = resolvedTheme;
+  } catch (error) {
+    var fallbackTheme = window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light";
+
+    document.documentElement.dataset.theme = fallbackTheme;
+    document.documentElement.style.colorScheme = fallbackTheme;
+  }
+})();
+`;
+
 export default function RootLayout({
   children,
 }: Readonly<{
@@ -36,6 +79,14 @@ export default function RootLayout({
       suppressHydrationWarning
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html: themeBootstrapScript,
+          }}
+        />
+      </head>
+
       <body className="min-h-full">
         <ThemeProvider>
           <AppNav />

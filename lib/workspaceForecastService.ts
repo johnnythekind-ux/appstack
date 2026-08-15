@@ -102,6 +102,21 @@ export function buildWorkspaceForecast(
   directorPlan: WorkspaceDirectorPlan,
   knowledge?: WorkspaceKnowledge
 ): WorkspaceForecast {
+  if (intelligence.workspaceHealth === "New") {
+    return {
+      title: "Workspace Forecast",
+      currentHealth: "New",
+      projectedHealth: "New",
+      currentProgress: 0,
+      projectedProgress: 0,
+      progressGain: 0,
+      projectedResolvedActions: 0,
+      confidence: "Low",
+      prediction:
+        "Not enough workspace activity exists to produce a meaningful forecast yet. Create or save the first workspace item to establish a baseline.",
+    };
+  }
+
   const reportActions = priorityActions.filter(
     (action) => action.actionType === "generate_report"
   );

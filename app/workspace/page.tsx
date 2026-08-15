@@ -9,6 +9,7 @@ import MissionControl from "../components/workspace/MissionControl";
 import WorkspaceStats from "../components/workspace/WorkspaceStats";
 import RecentWork from "../components/workspace/RecentWork";
 import SelectedWorkspaceItem from "../components/workspace/SelectedWorkspaceItem";
+import CreateWorkspaceItemModal from "../components/workspace/CreateWorkspaceItemModal";
 import Toolbar from "../components/Toolbar";
 import Page from "../components/Page";
 import SearchBar from "../components/SearchBar";
@@ -24,6 +25,8 @@ import {
   deleteWorkspaceItem,
   duplicateWorkspaceItem,
   createWorkspaceReport,
+  createWorkspaceTask,
+  updateWorkspaceTask,
 } from "../../lib/workspaceService";
 import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
 
@@ -59,89 +62,153 @@ export default function WorkspacePage() {
     useState<WorkspaceDirectorPlan | null>(null);
 
   const [loading, setLoading] = useState(true);
+  const [authResolved, setAuthResolved] = useState(false);
   const [showAllItems, setShowAllItems] = useState(false);
+  const [createItemOpen, setCreateItemOpen] = useState(false);
+  const [creatingItem, setCreatingItem] = useState(false);
 
   const currentSelectionRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
 
   const workspaceAnalysis = analyzeWorkspaceEvents(
     selectedItem?.type ?? "analysis",
-    selectedItemEvents
+    selectedItemEvents,
+    selectedItem?.status
   );
 
   const recommendation = getWorkspaceRecommendation(workspaceAnalysis);
 
   useEffect(() => {
     let mounted = true;
+    let channel: ReturnType<typeof supabase.channel> | null = null;
 
     async function loadItems() {
-      const { data, error } = await getWorkspaceItems();
+      try {
+        const { data, error } = await getWorkspaceItems();
 
-      if (!mounted) {
-        return;
-      }
+        if (!mounted) {
+          return;
+        }
 
-      if (error) {
-        console.log("Workspace item load error:", {
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-          code: error.code,
-        });
+        if (error) {
+          console.log("Workspace item load error:", {
+            message: error.message,
+            details: error.details,
+            hint: error.hint,
+            code: error.code,
+          });
 
-        toast.error(error.message || "Failed to load workspace items.");
+          toast.error(error.message || "Failed to load workspace items.");
+          setLoading(false);
+          return;
+        }
+
+        const workspaceItems = data || [];
+        setItems(workspaceItems);
+
+        const {
+          data: intelligence,
+          error: intelligenceError,
+        } = await buildWorkspaceIntelligence(workspaceItems);
+
+        if (!mounted) {
+          return;
+        }
+
+        if (intelligenceError) {
+          console.error(intelligenceError);
+          toast.error("Failed to load workspace intelligence.");
+        }
+
+        if (intelligence) {
+          setWorkspaceIntelligence(intelligence.intelligence);
+          setWorkspacePriorityActions(intelligence.priorityActions);
+          setWorkspaceDirectorPlan(intelligence.directorPlan);
+        }
+
         setLoading(false);
-        return;
+      } catch (error) {
+        if (!mounted) {
+          return;
+        }
+
+        const message =
+          error instanceof Error ? error.message : "Failed to load workspace.";
+
+        console.error("Workspace load failed:", error);
+        setLoading(false);
+
+        if (message.toLowerCase().includes("signed in")) {
+          router.replace("/login");
+          return;
+        }
+
+        toast.error(message);
       }
-
-      const workspaceItems = data || [];
-      setItems(workspaceItems);
-
-      const {
-        data: intelligence,
-        error: intelligenceError,
-      } = await buildWorkspaceIntelligence(workspaceItems);
-
-      if (!mounted) {
-        return;
-      }
-
-      if (intelligenceError) {
-        console.error(intelligenceError);
-        toast.error("Failed to load workspace intelligence.");
-      }
-
-      if (intelligence) {
-        setWorkspaceIntelligence(intelligence.intelligence);
-        setWorkspacePriorityActions(intelligence.priorityActions);
-        setWorkspaceDirectorPlan(intelligence.directorPlan);
-      }
-
-      setLoading(false);
     }
 
-    loadItems();
+    async function initializeWorkspace() {
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    const channel = supabase
-      .channel("workspace-items-live")
-      .on(
-        "postgres_changes",
-        {
-          event: "*",
-          schema: "public",
-          table: "workspace_items",
-        },
-        () => {
-          loadItems();
-        }
-      )
-      .subscribe();
+      if (!mounted) {
+        return;
+      }
+
+      if (authError || !user) {
+        window.location.replace("/login");
+        return;
+      }
+
+      setAuthResolved(true);
+
+      await loadItems();
+
+      if (!mounted) {
+        return;
+      }
+
+      channel = supabase
+        .channel("workspace-items-live")
+        .on(
+          "postgres_changes",
+          {
+            event: "*",
+            schema: "public",
+            table: "workspace_items",
+          },
+          () => {
+            loadItems();
+          }
+        )
+        .subscribe();
+    }
+
+    initializeWorkspace();
+
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((event) => {
+      if (!mounted) {
+        return;
+      }
+
+      if (event === "SIGNED_OUT") {
+        window.location.replace("/login");
+      }
+    });
 
     return () => {
       mounted = false;
-      supabase.removeChannel(channel);
+      subscription.unsubscribe();
+
+      if (channel) {
+        supabase.removeChannel(channel);
+      }
     };
-  }, []);
+  }, [router]);
 
   const analyses = items.filter((item) => item.type === "analysis");
   const reports = items.filter((item) => item.type === "report");
@@ -153,7 +220,8 @@ export default function WorkspacePage() {
 
       const matchesSearch =
         item.title?.toLowerCase().includes(searchText) ||
-        item.address?.toLowerCase().includes(searchText);
+        item.address?.toLowerCase().includes(searchText) ||
+        item.content?.toLowerCase().includes(searchText);
 
       const matchesFilter = filter === "all" || item.type === filter;
 
@@ -209,6 +277,98 @@ export default function WorkspacePage() {
     }
   }
 
+  async function createManualWorkspaceItem(input: {
+    title: string;
+    description?: string;
+  }) {
+    if (creatingItem) {
+      return false;
+    }
+
+    setCreatingItem(true);
+
+    try {
+      const { data, error } = await createWorkspaceTask(input);
+
+      if (error || !data) {
+        console.error(error);
+        toast.error(error?.message || "Workspace item creation failed.");
+        return false;
+      }
+
+      setItems((currentItems) => [
+        data,
+        ...currentItems.filter((item) => item.id !== data.id),
+      ]);
+      setSelectedItem(data);
+      setSelectedItemEvents([]);
+      setCreateItemOpen(false);
+      setFilter("all");
+      setSearch("");
+
+      toast.success("Workspace item created.");
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Workspace item creation failed.";
+
+      console.error("Workspace item creation failed:", error);
+      toast.error(message);
+      return false;
+    } finally {
+      setCreatingItem(false);
+    }
+  }
+
+  async function updateSelectedTask(input: {
+    title: string;
+    description?: string;
+    status: "queued" | "running" | "completed";
+  }) {
+    if (!selectedItem || selectedItem.type !== "task") {
+      return false;
+    }
+
+    try {
+      const { data, error } = await updateWorkspaceTask(
+        selectedItem.id,
+        input
+      );
+
+      if (error || !data) {
+        console.error(error);
+        toast.error(error?.message || "Task update failed.");
+        return false;
+      }
+
+      setItems((currentItems) =>
+        currentItems.map((item) =>
+          item.id === data.id ? data : item
+        )
+      );
+
+      setSelectedItem(data);
+      toast.success(
+        input.status === "completed"
+          ? "Task completed."
+          : "Task updated."
+      );
+
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Task update failed.";
+
+      console.error("Task update failed:", error);
+      toast.error(message);
+      return false;
+    }
+  }
+
   async function deleteSelectedItem() {
     if (!selectedItem) {
       return;
@@ -251,20 +411,20 @@ export default function WorkspacePage() {
       return null;
     }
 
-      const metadata = item.metadata ?? {};
+    const metadata = item.metadata ?? {};
 
-  const formatCurrency = (value: unknown) => {
-    if (value === null || value === undefined || value === "") {
-      return "Not available";
-    }
+    const formatCurrency = (value: unknown) => {
+      if (value === null || value === undefined || value === "") {
+        return "Not available";
+      }
 
-    const numericValue =
-      typeof value === "number" ? value : Number(value);
+      const numericValue =
+        typeof value === "number" ? value : Number(value);
 
-    return Number.isFinite(numericValue)
-      ? `$${numericValue.toLocaleString()}`
-      : "Not available";
-  };
+      return Number.isFinite(numericValue)
+        ? `$${numericValue.toLocaleString()}`
+        : "Not available";
+    };
 
     const generatedReport = `Investor Report
 
@@ -411,7 +571,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
   }
 
   async function selectWorkspaceItem(item: any) {
-    await loadSelectedItem(item, false);
+    await loadSelectedItem(item, true);
   }
 
   function openSelectedItem() {
@@ -431,12 +591,30 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
 
     if (selectedItem.type === "job") {
       router.push("/jobs");
+      return;
+    }
+
+    if (selectedItem.type === "task") {
+      revealCurrentSelection();
     }
   }
 
   const visibleItems = showAllItems
     ? filteredItems
     : filteredItems.slice(0, 5);
+
+  if (!authResolved) {
+    return (
+      <Page
+        title="Workspace"
+        description="Manage active work, complete priority actions, and keep every item moving."
+      >
+        <div className="mt-8 rounded-2xl border border-border bg-surface p-6 text-muted">
+          Checking your session...
+        </div>
+      </Page>
+    );
+  }
 
   return (
     <Page
@@ -447,7 +625,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         <SearchBar
           value={search}
           onChange={setSearch}
-          placeholder="Search title or address..."
+          placeholder="Search title, address, or description..."
           className="flex-1 py-3"
         />
 
@@ -460,6 +638,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           <option value="analysis">Analyses</option>
           <option value="report">Reports</option>
           <option value="job">Jobs</option>
+          <option value="task">Tasks</option>
         </select>
 
         <select
@@ -471,6 +650,14 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           <option value="oldest">Oldest</option>
           <option value="az">A–Z</option>
         </select>
+
+        <button
+  type="button"
+  onClick={() => setCreateItemOpen(true)}
+  className="rounded-lg bg-blue-600 px-4 py-3 text-sm font-semibold text-white transition hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-400"
+>
+  + New Workspace Item
+</button>
       </Toolbar>
 
       <div className="mt-8">
@@ -527,8 +714,20 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           onCreateJob={createJobFromSelectedItem}
           onDuplicate={duplicateSelectedItem}
           onDelete={deleteSelectedItem}
+          onUpdateTask={updateSelectedTask}
         />
       </div>
+
+      <CreateWorkspaceItemModal
+        open={createItemOpen}
+        creating={creatingItem}
+        onClose={() => {
+          if (!creatingItem) {
+            setCreateItemOpen(false);
+          }
+        }}
+        onCreate={createManualWorkspaceItem}
+      />
     </Page>
   );
 }

@@ -209,11 +209,16 @@ export default function SettingsPage() {
 
     setSettings(data as UserSettings);
 
-    window.dispatchEvent(
-      new CustomEvent("appstack-theme-preference", {
-        detail: theme,
-      })
-    );
+window.localStorage.setItem(
+  "appstack-theme-preference",
+  theme
+);
+
+window.dispatchEvent(
+  new CustomEvent("appstack-theme-preference", {
+    detail: theme,
+  })
+);
 
     setSavingSettings(false);
     toast.success("Preferences saved.");
@@ -278,15 +283,6 @@ export default function SettingsPage() {
                 </p>
                 <p className="mt-1 break-all text-sm text-muted">
                   {user.email || "Not available"}
-                </p>
-              </div>
-
-              <div>
-                <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                  User ID
-                </p>
-                <p className="mt-1 break-all font-mono text-xs text-muted">
-                  {user.id}
                 </p>
               </div>
 

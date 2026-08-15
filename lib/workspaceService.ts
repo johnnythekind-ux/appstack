@@ -31,7 +31,8 @@ export type WorkspaceStatus =
 export type WorkspaceItemType =
   | "analysis"
   | "report"
-  | "job";
+  | "job"
+  | "task";
 
 export type WorkspaceItem = {
   id: string;
@@ -60,6 +61,17 @@ type UpdateWorkspaceReportInput = {
   status: string;
   content: string;
   analysisId: string;
+};
+
+export type CreateWorkspaceTaskInput = {
+  title: string;
+  description?: string;
+};
+
+export type UpdateWorkspaceTaskInput = {
+  title: string;
+  description?: string;
+  status: "queued" | "running" | "completed";
 };
 
 export async function getWorkspaceItems() {
@@ -98,6 +110,48 @@ export async function duplicateWorkspaceItem(
       content: item.content,
       user_id: userId,
     })
+    .select()
+    .single();
+}
+
+export async function createWorkspaceTask(
+  task: CreateWorkspaceTaskInput
+) {
+  const userId = await getCurrentUserId();
+
+  return await supabase
+    .from("workspace_items")
+    .insert({
+      type: "task",
+      title: task.title.trim(),
+      address: null,
+      status: "queued",
+      content: task.description?.trim() || null,
+      metadata: {
+        source: "manual",
+      },
+      user_id: userId,
+    })
+    .select()
+    .single();
+}
+
+export async function updateWorkspaceTask(
+  taskId: string,
+  task: UpdateWorkspaceTaskInput
+) {
+  const userId = await getCurrentUserId();
+
+  return await supabase
+    .from("workspace_items")
+    .update({
+  title: task.title.trim(),
+  status: task.status,
+  content: task.description?.trim() || null,
+})
+    .eq("id", taskId)
+    .eq("user_id", userId)
+    .eq("type", "task")
     .select()
     .single();
 }
@@ -142,7 +196,7 @@ export async function updateWorkspaceReport(
       metadata: {
         analysis_id: report.analysisId,
       },
-      updated_at: new Date().toISOString(),
+      
     })
     .eq("id", reportId)
     .eq("user_id", userId)

@@ -63,11 +63,10 @@ export default function AppNav() {
   }
 
   async function handleSignOut() {
-    await supabase.auth.signOut();
-    setUser(null);
-    router.push("/login");
-    router.refresh();
-  }
+  await supabase.auth.signOut();
+  setUser(null);
+  router.replace("/login");
+}
 
   return (
     <nav className="border-b border-border bg-surface text-foreground">

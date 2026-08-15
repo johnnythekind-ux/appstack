@@ -10,8 +10,14 @@ import Card from "../components/Card";
 import ExecutiveBriefing, {
   type ExecutiveBriefingModel,
 } from "../components/platform/ExecutiveBriefing";
+import CreateWorkspaceItemModal from "../components/workspace/CreateWorkspaceItemModal";
 
-import { getWorkspaceItems } from "../../lib/workspaceService";
+import {
+  createWorkspaceTask,
+  getWorkspaceItems,
+} from "../../lib/workspaceService";
+import { buildWorkspaceIntelligence } from "../../lib/workspaceIntelligenceCoordinator";
+import type { ExecutiveWorkspaceIntelligence } from "../../lib/executiveWorkspaceIntelligence";
 
 const engineeringConcepts = [
   "Modular architecture",
@@ -54,7 +60,7 @@ const walkthroughSteps = [
   },
   {
     number: 5,
-    title: "Review Your Workspace",
+    title: "Open Workspace to inspect persisted objects, history, recommended actions, and direct workspace tasks.",
     description:
       "Open Workspace to inspect the objects, history, and recommended next actions.",
     href: "/workspace",
@@ -98,6 +104,11 @@ const architectureSteps = [
 export default function DashboardPage() {
   const [items, setItems] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [lastUpdated, setLastUpdated] = useState("—");
+  const [executiveIntelligence, setExecutiveIntelligence] =
+    useState<ExecutiveWorkspaceIntelligence | null>(null);
+  const [createItemOpen, setCreateItemOpen] = useState(false);
+  const [creatingItem, setCreatingItem] = useState(false);
 
   useEffect(() => {
     async function loadItems() {
@@ -110,7 +121,24 @@ export default function DashboardPage() {
         return;
       }
 
-      setItems(data || []);
+      const workspaceItems = data || [];
+      setItems(workspaceItems);
+
+      const {
+        data: intelligenceData,
+        error: intelligenceError,
+      } = await buildWorkspaceIntelligence(workspaceItems);
+
+      if (intelligenceError) {
+        console.error("Dashboard intelligence load error:", intelligenceError);
+        setExecutiveIntelligence(null);
+      } else {
+        setExecutiveIntelligence(
+          intelligenceData?.executiveIntelligence ?? null
+        );
+      }
+
+      setLastUpdated(new Date().toLocaleTimeString());
       setLoading(false);
     }
 
@@ -135,6 +163,8 @@ export default function DashboardPage() {
     (item) => item.type === "job"
   );
 
+  // These raw job counts are retained only for the activity cards below.
+  // They no longer drive the Executive Briefing.
   const activeJobs = jobs.filter(
     (job) => job.status !== "Completed"
   );
@@ -159,24 +189,83 @@ export default function DashboardPage() {
         new Date(a.created_at).getTime()
     )[0];
 
+  const canonicalIntelligence = executiveIntelligence?.intelligence ?? null;
+  const canonicalPriorities = executiveIntelligence?.priorities ?? [];
+
   const platformStatus: ExecutiveBriefingModel = {
     health:
-      activeJobs.length > 0
-        ? "Active"
-        : "Healthy",
+      canonicalIntelligence?.workspaceHealth ??
+      (loading ? "Loading" : "Unknown"),
     mission:
-      activeJobs.length > 0
-        ? "Welcome to the AppStack architecture demonstration."
-        : "Complete the guided architectural walkthrough.",
-    priorityCount: activeJobs.length,
-    progress:
-      jobs.length === 0
-        ? 100
-        : Math.round(
-            (completedJobs.length / jobs.length) * 100
-          ),
-    lastUpdated: new Date().toLocaleTimeString(),
+      canonicalIntelligence?.recommendedAction ??
+      (loading
+        ? "Loading current workspace intelligence."
+        : "Workspace intelligence is unavailable."),
+    priorityCount: canonicalPriorities.length,
+    progress: canonicalIntelligence?.progressPercent ?? 0,
+    lastUpdated,
   };
+
+  async function createManualWorkspaceItem(input: {
+    title: string;
+    description?: string;
+  }) {
+    if (creatingItem) {
+      return false;
+    }
+
+    setCreatingItem(true);
+
+    try {
+      const { data, error } = await createWorkspaceTask(input);
+
+      if (error || !data) {
+        console.error(error);
+        toast.error(error?.message || "Workspace item creation failed.");
+        return false;
+      }
+
+      setItems((currentItems) => [
+        data,
+        ...currentItems.filter((item) => item.id !== data.id),
+      ]);
+
+      const {
+        data: intelligenceData,
+        error: intelligenceError,
+      } = await buildWorkspaceIntelligence([
+        data,
+        ...items.filter((item) => item.id !== data.id),
+      ]);
+
+      if (intelligenceError) {
+        console.error(
+          "Dashboard intelligence refresh error:",
+          intelligenceError
+        );
+      } else {
+        setExecutiveIntelligence(
+          intelligenceData?.executiveIntelligence ?? null
+        );
+      }
+
+      setLastUpdated(new Date().toLocaleTimeString());
+      setCreateItemOpen(false);
+      toast.success("Workspace item created.");
+      return true;
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Workspace item creation failed.";
+
+      console.error("Workspace item creation failed:", error);
+      toast.error(message);
+      return false;
+    } finally {
+      setCreatingItem(false);
+    }
+  }
 
   function getItemIcon(type: string) {
     switch (type) {
@@ -186,6 +275,8 @@ export default function DashboardPage() {
         return "📄";
       case "job":
         return "⚙️";
+      case "task":
+        return "✓";
       default:
         return "📁";
     }
@@ -216,10 +307,12 @@ export default function DashboardPage() {
           </h2>
 
           <p className="mt-4 max-w-3xl text-base leading-7 text-muted">
-            AppStack is a portfolio platform that demonstrates how production
-            software moves structured data through deterministic business rules,
-            persistence, reusable reporting, operational processing, event history,
-            and platform intelligence.
+            AppStack is a portfolio platform that demonstrates how production software
+moves structured data through deterministic business rules, persistence,
+reusable reporting, operational processing, event history, and platform
+intelligence. It also supports direct Workspace tasks for creating, editing,
+tracking, and completing operational work outside the structured
+analysis-to-report-to-job workflow.
           </p>
 
           <p className="mt-3 max-w-3xl text-sm leading-6 text-subtle">
@@ -289,7 +382,7 @@ export default function DashboardPage() {
       <div className="text-subtle">→</div>
 
       <div className="text-muted">
-        Jobs simulate asynchronous background processing.
+        Jobs simulate asynchronous processing, while Workspace tasks support direct CRUD workflows.
       </div>
     </div>
 
@@ -385,7 +478,7 @@ export default function DashboardPage() {
           </p>
 
           <p className="mt-2 text-sm text-muted">
-            Simulated work still moving through execution.
+            Execution activity will appear here when jobs are created.
           </p>
         </Card>
 
@@ -421,7 +514,7 @@ export default function DashboardPage() {
         </Card>
       </section>
 
-      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-3">
+      <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
         <Link
           href="/workspace"
           className="rounded-2xl border border-border bg-surface p-5 transition hover:border-accent hover:bg-surface-muted"
@@ -438,6 +531,24 @@ export default function DashboardPage() {
             Review stored objects, events, recommendations, and priority actions.
           </p>
         </Link>
+
+        <button
+          type="button"
+          onClick={() => setCreateItemOpen(true)}
+          className="rounded-2xl border border-border bg-surface p-5 text-left transition hover:border-accent hover:bg-surface-muted"
+        >
+          <p className="text-xs font-semibold uppercase tracking-wider text-accent">
+            Capture New Work
+          </p>
+
+          <h2 className="mt-2 text-xl font-bold">
+            Create Workspace Item
+          </h2>
+
+          <p className="mt-2 text-sm leading-6 text-muted">
+            Add a general task directly to Workspace without starting a deal analysis.
+          </p>
+        </button>
 
         <Link
           href="/intelligence"
@@ -490,7 +601,7 @@ export default function DashboardPage() {
               className="group rounded-xl border border-border bg-surface p-5 transition hover:border-accent hover:bg-surface-muted"
             >
               <div className="flex items-start gap-4">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-accent-foreground">
+                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-accent text-sm font-bold text-white">
                   {step.number}
                 </span>
 
@@ -511,7 +622,7 @@ export default function DashboardPage() {
         <div className="mt-6 flex flex-wrap gap-3 border-t border-border pt-6">
           <Link
             href="/deal-analyzer"
-            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-accent-hover"
+            className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover"
           >
             Start the Guided Walkthrough
           </Link>
@@ -632,6 +743,16 @@ export default function DashboardPage() {
           ))}
         </div>
       </section>
+      <CreateWorkspaceItemModal
+        open={createItemOpen}
+        creating={creatingItem}
+        onClose={() => {
+          if (!creatingItem) {
+            setCreateItemOpen(false);
+          }
+        }}
+        onCreate={createManualWorkspaceItem}
+      />
     </Page>
   );
 }

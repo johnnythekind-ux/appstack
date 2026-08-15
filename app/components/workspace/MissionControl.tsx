@@ -62,7 +62,7 @@ export default function MissionControl({
 
   return (
     <Card>
-      <div className="flex flex-col gap-2 border-b border-slate-800 pb-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="flex flex-col gap-2 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
             Mission Control
@@ -73,32 +73,32 @@ export default function MissionControl({
           </h2>
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-slate-400">
+        <div className="flex flex-wrap items-center gap-x-3 gap-y-2 text-sm text-muted">
           <span>
             Health:{" "}
-            <strong className="font-semibold text-white">
+            <strong className="font-semibold text-foreground">
               {workspaceHealth}
             </strong>
           </span>
 
-          <span aria-hidden="true" className="text-slate-700">
+          <span aria-hidden="true" className="text-subtle">
             •
           </span>
 
           <span>
             Progress:{" "}
-            <strong className="font-semibold text-white">
+            <strong className="font-semibold text-foreground">
               {progressPercent}%
             </strong>
           </span>
 
-          <span aria-hidden="true" className="text-slate-700">
+          <span aria-hidden="true" className="text-subtle">
             •
           </span>
 
           <span>
             Time:{" "}
-            <strong className="font-semibold text-white">
+            <strong className="font-semibold text-foreground">
               {estimatedMinutes} min
             </strong>
           </span>

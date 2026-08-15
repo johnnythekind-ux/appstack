@@ -24,35 +24,45 @@ export default function DirectorPanel({
 
   const primaryAction = priorityActions[0];
 
+  const isNew = directorPlan.workspaceStatus === "New";
+
   const isCaughtUp =
     progressPercent === 100 &&
     directorPlan.workspaceStatus === "Healthy" &&
     priorityActions.length === 0;
 
-  const briefHeadline = isCaughtUp
-    ? "The workspace is fully caught up."
-    : primaryAction
-      ? priorityActions.length === 1
-        ? "One priority is shaping the current workspace."
-        : `${priorityActions.length} priorities are shaping the current workspace.`
-      : progressPercent >= 90
-        ? "The workspace is approaching a fully resolved state."
-        : "The workspace still has meaningful work in motion.";
+  const briefHeadline = isNew
+    ? "Your workspace is ready."
+    : isCaughtUp
+      ? "The workspace is fully caught up."
+      : primaryAction
+        ? priorityActions.length === 1
+          ? "One priority is shaping the current workspace."
+          : `${priorityActions.length} priorities are shaping the current workspace.`
+        : progressPercent >= 90
+          ? "The workspace is approaching a fully resolved state."
+          : "The workspace still has meaningful work in motion.";
 
-  const briefMessage = isCaughtUp
-    ? "No priority actions are waiting. Use Forecast, Strategy, Risk, and Insights to understand what the completed workspace activity is telling you."
-    : primaryAction
-      ? `The strongest immediate signal is ${primaryAction.title.toLowerCase()} for ${primaryAction.itemTitle}. The current action plan is estimated to take about ${directorPlan.estimatedMinutes} minutes.`
-      : "No immediate priority action is available, but the workspace has not yet reached a fully resolved state.";
+  const briefMessage = isNew
+    ? "No workspace activity has been recorded yet. Create or save your first workspace item to begin building workspace intelligence."
+    : isCaughtUp
+      ? "No priority actions are waiting. Use Forecast, Strategy, Risk, and Insights to understand what the completed workspace activity is telling you."
+      : primaryAction
+        ? `The strongest immediate signal is ${primaryAction.title.toLowerCase()} for ${primaryAction.itemTitle}. The current action plan is estimated to take about ${directorPlan.estimatedMinutes} minutes.`
+        : "No immediate priority action is available, but the workspace has not yet reached a fully resolved state.";
 
-  const focusTitle = isCaughtUp
-    ? "No immediate action required"
-    : primaryAction?.itemTitle ?? directorPlan.nextBestAction;
+  const focusTitle = isNew
+    ? "Create or save your first workspace item."
+    : isCaughtUp
+      ? "No immediate action required"
+      : primaryAction?.itemTitle ?? directorPlan.nextBestAction;
 
-  const focusMessage = isCaughtUp
-    ? "Operational work is caught up. The intelligence views can now be used for context, patterns, risk, and forward-looking decisions."
-    : primaryAction?.reason ??
-      "Review the current workspace position before beginning additional work.";
+  const focusMessage = isNew
+    ? "Start with your first analysis to establish workspace activity and unlock operational intelligence."
+    : isCaughtUp
+      ? "Operational work is caught up. The intelligence views can now be used for context, patterns, risk, and forward-looking decisions."
+      : primaryAction?.reason ??
+        "Review the current workspace position before beginning additional work.";
 
   return (
     <div className="space-y-6">
@@ -95,15 +105,17 @@ export default function DirectorPanel({
           </p>
 
           <p className="mt-2 text-sm leading-6 text-slate-400">
-            {isCaughtUp
-              ? "The workspace is caught up and no priority work remains."
-              : priorityActions.length > 0
-                ? `${priorityActions.length} priority ${
-                    priorityActions.length === 1
-                      ? "action remains"
-                      : "actions remain"
-                  } before the workspace is fully caught up.`
-                : "The workspace is still progressing toward a fully resolved state."}
+            {isNew
+              ? "No workspace activity has been recorded yet."
+              : isCaughtUp
+                ? "The workspace is caught up and no priority work remains."
+                : priorityActions.length > 0
+                  ? `${priorityActions.length} priority ${
+                      priorityActions.length === 1
+                        ? "action remains"
+                        : "actions remain"
+                    } before the workspace is fully caught up.`
+                  : "The workspace is still progressing toward a fully resolved state."}
           </p>
         </div>
       </div>
@@ -115,21 +127,24 @@ export default function DirectorPanel({
           </p>
 
           {directorPlan.estimatedMinutes > 0 && (
-  <span className="text-sm text-slate-500">
-    {directorPlan.estimatedMinutes} min
-  </span>
-)}
+            <span className="text-sm text-slate-500">
+              {directorPlan.estimatedMinutes} min
+            </span>
+          )}
         </div>
 
         {priorityActions.length === 0 ? (
           <div className="mt-5">
             <p className="font-semibold">
-              No action sequence is required.
+              {isNew
+                ? "No action sequence is required yet."
+                : "No action sequence is required."}
             </p>
 
             <p className="mt-2 text-sm leading-6 text-slate-400">
-              No execution sequence is needed. Use Forecast, Strategy, Risk, and Insights
-to interpret the workspace&apos;s current position and monitor what changes next.
+              {isNew
+                ? "Create or save your first workspace item to begin."
+                : "No execution sequence is needed. Use Forecast, Strategy, Risk, and Insights to interpret the workspace's current position and monitor what changes next."}
             </p>
           </div>
         ) : (

@@ -29,6 +29,10 @@ export default function ForecastPanel({
     projectedProgress - currentProgress
   );
 
+  const isNewWorkspace =
+    forecast.currentHealth === "New" &&
+    forecast.projectedHealth === "New";
+
   const isCurrentlyComplete = currentProgress >= 100;
   const isProjectedComplete = projectedProgress >= 100;
 
@@ -41,25 +45,33 @@ export default function ForecastPanel({
     projectedProgress > currentProgress ||
     forecast.projectedHealth !== forecast.currentHealth;
 
-  const headline = isStableComplete
-    ? "The workspace is projected to remain fully caught up."
-    : !isCurrentlyComplete && isProjectedComplete
-      ? "The workspace is projected to reach full completion."
-      : isImproving
-        ? "The workspace is projected to improve."
-        : "The workspace is expected to remain stable.";
+  const headline = isNewWorkspace
+    ? "A forecast will form as workspace activity is recorded."
+    : isStableComplete
+      ? "The workspace is projected to remain fully caught up."
+      : !isCurrentlyComplete && isProjectedComplete
+        ? "The workspace is projected to reach full completion."
+        : isImproving
+          ? "The workspace is projected to improve."
+          : "The workspace is expected to remain stable.";
 
-  const stepTwoTitle = isStableComplete
-    ? "Current conditions remain stable"
-    : "Recommended work continues";
+  const stepTwoTitle = isNewWorkspace
+    ? "Workspace activity establishes the baseline"
+    : isStableComplete
+      ? "Current conditions remain stable"
+      : "Recommended work continues";
 
-  const stepTwoMessage = isStableComplete
-    ? "AppStack will continue evaluating new workspace activity for changes in health, completion, and risk."
-    : "AppStack evaluates how the current workspace should change as its unfinished work advances.";
+  const stepTwoMessage = isNewWorkspace
+    ? "Create or save the first workspace item so AppStack has enough activity to begin forming a meaningful forecast."
+    : isStableComplete
+      ? "AppStack will continue evaluating new workspace activity for changes in health, completion, and risk."
+      : "AppStack evaluates how the current workspace should change as its unfinished work advances.";
 
-  const projectedStateMessage = isStableComplete
-    ? `Health is expected to remain ${forecast.projectedHealth} at ${projectedProgress}% completion.`
-    : `Health is expected to become ${forecast.projectedHealth} at ${projectedProgress}% completion.`;
+  const projectedStateMessage = isNewWorkspace
+    ? "No projected change is available yet because the workspace has not established an activity baseline."
+    : isStableComplete
+      ? `Health is expected to remain ${forecast.projectedHealth} at ${projectedProgress}% completion.`
+      : `Health is expected to become ${forecast.projectedHealth} at ${projectedProgress}% completion.`;
 
   return (
     <div className="space-y-6">
@@ -137,8 +149,9 @@ export default function ForecastPanel({
           </p>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            The workspace is currently {currentProgress}% complete.
-            This is the starting point used by the forecast.
+            {isNewWorkspace
+              ? "No activity baseline exists yet. The first saved workspace item will establish the starting point for future forecasts."
+              : `The workspace is currently ${currentProgress}% complete. This is the starting point used by the forecast.`}
           </p>
         </div>
 
@@ -152,8 +165,9 @@ export default function ForecastPanel({
           </p>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            The current rule-based projection places the workspace at{" "}
-            {projectedProgress}% completion.
+            {isNewWorkspace
+              ? "A projected position will appear after enough workspace activity has been recorded."
+              : `The current rule-based projection places the workspace at ${projectedProgress}% completion.`}
           </p>
         </div>
       </div>

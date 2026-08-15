@@ -22,6 +22,10 @@ function determineNextBestAction(
   intelligence: WorkspaceIntelligence,
   priorityActions: WorkspacePriorityAction[]
 ): string {
+  if (intelligence.workspaceHealth === "New") {
+    return "Create or save your first workspace item.";
+  }
+
   const primaryAction = priorityActions[0];
 
   if (primaryAction) {
@@ -74,6 +78,15 @@ function buildWorkspaceBriefing(
   const jobActions = priorityActions.filter(
     (action) => action.actionType === "create_job"
   );
+
+  if (intelligence.workspaceHealth === "New") {
+    return {
+      headline: "Your workspace is ready.",
+      statusTitle: "No workspace activity yet.",
+      statusMessage:
+        "Create or save your first analysis to begin building workspace intelligence.",
+    };
+  }
 
   if (
     priorityActions.length === 0 &&
@@ -205,7 +218,9 @@ export function buildWorkspaceDirectorPlan(
   }
 
   if (summary.length === 0) {
-    if (
+    if (intelligence.workspaceHealth === "New") {
+      summary.push("No workspace activity has been recorded yet.");
+    } else if (
       intelligence.workspaceHealth === "Healthy" &&
       intelligence.progressPercent === 100
     ) {

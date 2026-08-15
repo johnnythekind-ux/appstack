@@ -1,9 +1,5 @@
 import { Event } from "./eventService";
-
-export type WorkspaceItemType =
-  | "analysis"
-  | "report"
-  | "job";
+import type { WorkspaceItemType } from "./workspaceService";
 
 export type WorkflowStage =
   | "Analysis"
@@ -19,6 +15,8 @@ export type WorkspaceHealth =
   | "Unknown";
 
 export type WorkspaceAnalysis = {
+  itemType: WorkspaceItemType;
+  itemStatus?: string;
   stage: WorkflowStage;
   health: WorkspaceHealth;
   eventCount: number;
@@ -46,6 +44,8 @@ export function analyzeWorkspaceEvents(
 
   let stage: WorkflowStage = "Unknown";
   let health: WorkspaceHealth = "Unknown";
+
+  const normalizedStatus = itemStatus?.toLowerCase();
 
   if (isDeleted) {
     stage = "Archived";
@@ -91,8 +91,6 @@ export function analyzeWorkspaceEvents(
       );
     }
   } else if (itemType === "job") {
-    const normalizedStatus = itemStatus?.toLowerCase();
-
     if (
       hasJob ||
       normalizedStatus === "completed" ||
@@ -116,9 +114,32 @@ export function analyzeWorkspaceEvents(
         );
       }
     }
+  } else if (itemType === "task") {
+    stage = "Execution";
+
+    if (normalizedStatus === "completed") {
+      health = "Healthy";
+      insights.push(
+        "This workspace task has been completed."
+      );
+    } else {
+      health = "Needs Attention";
+
+      if (normalizedStatus === "running") {
+        insights.push(
+          "This workspace task is currently in progress."
+        );
+      } else {
+        insights.push(
+          "This workspace task is waiting to be completed."
+        );
+      }
+    }
   }
 
   return {
+    itemType,
+    itemStatus,
     stage,
     health,
     eventCount: events.length,

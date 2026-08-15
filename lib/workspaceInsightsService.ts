@@ -30,6 +30,14 @@ export function buildWorkspaceInsights(
   intelligence: WorkspaceIntelligence,
   priorityActions: WorkspacePriorityAction[]
 ): WorkspaceInsights {
+  if (intelligence.workspaceHealth === "New") {
+    return {
+      title: "Workspace Insights",
+      headline: "Insights will appear after workspace activity is recorded.",
+      insights: [],
+    };
+  }
+
   const insights: WorkspaceInsight[] = [];
 
   const reportActions = priorityActions.filter(

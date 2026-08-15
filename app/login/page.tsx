@@ -25,7 +25,6 @@ export default function LoginPage() {
 
       if (mounted && session) {
         router.replace("/dashboard");
-        router.refresh();
       }
     }
 
@@ -36,7 +35,6 @@ export default function LoginPage() {
     } = supabase.auth.onAuthStateChange((_event, session) => {
       if (mounted && session) {
         router.replace("/dashboard");
-        router.refresh();
       }
     });
 
@@ -89,23 +87,22 @@ export default function LoginPage() {
     }
 
     toast.success("Signed in successfully.");
-    router.replace("/dashboard");
-    router.refresh();
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 text-white">
+    <main className="min-h-screen bg-background text-foreground">
       <div className="mx-auto grid min-h-screen max-w-7xl items-center gap-12 px-6 py-12 lg:grid-cols-[1.1fr_0.9fr] lg:px-10">
         <section className="hidden lg:block">
-          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-blue-400">
+          <p className="text-xs font-semibold uppercase tracking-[0.22em] text-accent">
             AppStack
           </p>
 
           <h1 className="mt-5 max-w-2xl text-5xl font-bold leading-tight">
-            Modern SaaS architecture, demonstrated through one connected application.
+            Modern SaaS architecture, demonstrated through one connected
+            application.
           </h1>
 
-          <p className="mt-6 max-w-2xl text-lg leading-8 text-slate-400">
+          <p className="mt-6 max-w-2xl text-lg leading-8 text-muted">
             Sign in to continue into a protected workspace where identity,
             user-scoped data, deterministic workflows, reporting, execution,
             and platform intelligence work together as one system.
@@ -132,13 +129,13 @@ export default function LoginPage() {
             ].map(([title, description]) => (
               <div
                 key={title}
-                className="rounded-2xl border border-slate-800 bg-slate-900/40 p-5"
+                className="rounded-2xl border border-border bg-surface-muted p-5"
               >
-                <p className="text-sm font-semibold text-white">
+                <p className="text-sm font-semibold text-foreground">
                   {title}
                 </p>
 
-                <p className="mt-2 text-sm leading-6 text-slate-400">
+                <p className="mt-2 text-sm leading-6 text-muted">
                   {description}
                 </p>
               </div>
@@ -147,8 +144,8 @@ export default function LoginPage() {
         </section>
 
         <section className="mx-auto w-full max-w-md">
-          <div className="rounded-2xl border border-slate-800 bg-slate-900/50 p-8 shadow-2xl shadow-black/20 backdrop-blur">
-            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-blue-400">
+          <div className="rounded-2xl border border-border bg-surface p-8 shadow-2xl shadow-black/10 backdrop-blur">
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
               {mode === "login" ? "Secure access" : "Create account"}
             </p>
 
@@ -158,14 +155,14 @@ export default function LoginPage() {
                 : "Create your AppStack account"}
             </h2>
 
-            <p className="mt-3 text-sm leading-6 text-slate-400">
+            <p className="mt-3 text-sm leading-6 text-muted">
               {mode === "login"
                 ? "Sign in to continue into your protected AppStack workspace."
                 : "Create an account to establish identity, protected access, and user-scoped workspace data."}
             </p>
 
             <div className="mt-8">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 Email
               </label>
 
@@ -177,12 +174,12 @@ export default function LoginPage() {
                 }
                 placeholder="you@example.com"
                 autoComplete="email"
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                className="mt-2 w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
 
             <div className="mt-5">
-              <label className="text-sm font-medium text-slate-300">
+              <label className="text-sm font-medium text-foreground">
                 Password
               </label>
 
@@ -198,7 +195,7 @@ export default function LoginPage() {
                     ? "current-password"
                     : "new-password"
                 }
-                className="mt-2 w-full rounded-xl border border-slate-700 bg-slate-950 px-4 py-3 text-white outline-none transition placeholder:text-slate-600 focus:border-blue-500"
+                className="mt-2 w-full rounded-xl border border-border-strong bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
               />
             </div>
 
@@ -206,7 +203,7 @@ export default function LoginPage() {
               type="button"
               onClick={handleSubmit}
               disabled={loading}
-              className="mt-7 w-full rounded-xl bg-blue-600 px-4 py-3 font-semibold text-white transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-7 w-full rounded-xl bg-accent px-4 py-3 font-semibold text-accent-foreground transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
             >
               {loading
                 ? mode === "login"
@@ -226,14 +223,13 @@ export default function LoginPage() {
                     : "login"
                 )
               }
-              className="mt-5 w-full text-sm font-medium text-slate-400 transition hover:text-white"
+              className="mt-5 w-full text-sm font-medium text-muted transition hover:text-foreground"
             >
               {mode === "login"
                 ? "Need an account? Create one"
                 : "Already have an account? Sign in"}
             </button>
           </div>
-
         </section>
       </div>
     </main>

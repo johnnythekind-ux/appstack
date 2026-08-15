@@ -8,18 +8,18 @@ export default function StatusBadge({
   const normalizedStatus =
     status === "PASS ON DEAL"
       ? "PASS"
-      : status;
+      : status.trim().toUpperCase();
 
   const colors: Record<string, string> = {
     BUY: "bg-green-600 text-white",
     PASS: "bg-red-600 text-white",
     NEGOTIATE: "bg-yellow-500 text-black",
 
-    Queued: "bg-blue-600 text-white",
-    Running: "bg-yellow-500 text-black",
-    Completed: "bg-green-600 text-white",
+    QUEUED: "bg-blue-600 text-white",
+    RUNNING: "bg-yellow-500 text-black",
+    COMPLETED: "bg-green-600 text-white",
 
-    Saved: "bg-slate-600 text-white",
+    SAVED: "bg-slate-600 text-white",
   };
 
   return (

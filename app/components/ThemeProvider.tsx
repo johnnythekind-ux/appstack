@@ -7,6 +7,8 @@ import { supabase } from "../../lib/supabase";
 type ThemePreference = "system" | "light" | "dark";
 type ResolvedTheme = "light" | "dark";
 
+const THEME_STORAGE_KEY = "appstack-theme-preference";
+
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
     return "dark";
@@ -30,17 +32,46 @@ function applyTheme(theme: ResolvedTheme) {
   document.documentElement.style.colorScheme = theme;
 }
 
+function isThemePreference(
+  value: string | null
+): value is ThemePreference {
+  return (
+    value === "system" ||
+    value === "light" ||
+    value === "dark"
+  );
+}
+
+function getCachedPreference(): ThemePreference {
+  if (typeof window === "undefined") {
+    return "system";
+  }
+
+  const cachedPreference =
+    window.localStorage.getItem(THEME_STORAGE_KEY);
+
+  return isThemePreference(cachedPreference)
+    ? cachedPreference
+    : "system";
+}
+
+function cachePreference(preference: ThemePreference) {
+  window.localStorage.setItem(
+    THEME_STORAGE_KEY,
+    preference
+  );
+}
+
 export default function ThemeProvider({
   children,
 }: {
   children: React.ReactNode;
 }) {
   const [preference, setPreference] =
-    useState<ThemePreference>("system");
+    useState<ThemePreference>(() => getCachedPreference());
 
   useEffect(() => {
     let mounted = true;
-    let mediaQuery: MediaQueryList | null = null;
 
     async function loadThemePreference() {
       const {
@@ -52,9 +83,10 @@ export default function ThemeProvider({
       }
 
       if (!user) {
-        const fallback = getSystemTheme();
-        applyTheme(fallback);
-        setPreference("system");
+        const cachedPreference = getCachedPreference();
+
+        setPreference(cachedPreference);
+        applyTheme(resolveTheme(cachedPreference));
         return;
       }
 
@@ -69,13 +101,24 @@ export default function ThemeProvider({
       }
 
       if (error) {
-        console.error("Theme preference load error:", error);
+        console.error(
+          "Theme preference load error:",
+          error
+        );
+
+        const cachedPreference = getCachedPreference();
+
+        setPreference(cachedPreference);
+        applyTheme(resolveTheme(cachedPreference));
+        return;
       }
 
       const nextPreference =
-        (data?.theme as ThemePreference | undefined) ??
-        "system";
+        isThemePreference(data?.theme)
+          ? data.theme
+          : "system";
 
+      cachePreference(nextPreference);
       setPreference(nextPreference);
       applyTheme(resolveTheme(nextPreference));
     }
@@ -93,8 +136,11 @@ export default function ThemeProvider({
         event as CustomEvent<ThemePreference>;
 
       const nextPreference =
-        customEvent.detail ?? "system";
+        isThemePreference(customEvent.detail)
+          ? customEvent.detail
+          : "system";
 
+      cachePreference(nextPreference);
       setPreference(nextPreference);
       applyTheme(resolveTheme(nextPreference));
     }
@@ -107,17 +153,11 @@ export default function ThemeProvider({
     return () => {
       mounted = false;
       subscription.unsubscribe();
+
       window.removeEventListener(
         "appstack-theme-preference",
         handlePreferenceUpdated as EventListener
       );
-
-      if (mediaQuery) {
-        mediaQuery.removeEventListener(
-          "change",
-          loadThemePreference
-        );
-      }
     };
   }, []);
 

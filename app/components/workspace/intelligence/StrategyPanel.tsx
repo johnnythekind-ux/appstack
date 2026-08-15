@@ -16,6 +16,12 @@ export default function StrategyPanel({
   }
 
   const bottleneckText = strategy.bottleneckExplanation.toLowerCase();
+  const strategicFocusText = strategy.strategicFocus.toLowerCase();
+
+  const isNewWorkspace =
+    strategicFocusText.includes("establish the workspace baseline") ||
+    bottleneckText.includes("no activity yet") ||
+    bottleneckText.includes("no operating workflow");
 
   const hasNoBottleneck =
     bottleneckText.includes("no significant") ||
@@ -53,15 +59,21 @@ export default function StrategyPanel({
         </div>
 
         <p className="mt-5 max-w-3xl text-base leading-7 text-muted">
-          {isMaintenanceState
-            ? "The workspace is currently stable. Strategy is focused on preserving momentum, monitoring new activity, and avoiding unnecessary changes."
-            : "The current strategy identifies the highest-leverage sequence of work while deliberately postponing actions that could create unnecessary friction or dependency problems."}
+          {isNewWorkspace
+            ? "There is not enough workspace activity yet to evaluate sequencing, dependencies, or operating constraints. The first objective is to establish a usable baseline."
+            : isMaintenanceState
+              ? "The workspace is currently stable. Strategy is focused on preserving momentum, monitoring new activity, and avoiding unnecessary changes."
+              : "The current strategy identifies the highest-leverage sequence of work while deliberately postponing actions that could create unnecessary friction or dependency problems."}
         </p>
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-          {hasNoBottleneck ? "Current Constraint" : "Primary Bottleneck"}
+          {isNewWorkspace
+            ? "Baseline Status"
+            : hasNoBottleneck
+              ? "Current Constraint"
+              : "Primary Bottleneck"}
         </p>
 
         <p className="mt-3 text-lg font-semibold">
@@ -69,15 +81,17 @@ export default function StrategyPanel({
         </p>
 
         <p className="mt-2 text-sm leading-6 text-muted">
-          {hasNoBottleneck
-            ? "No active constraint is currently affecting execution. Strategy can remain focused on maintaining the workspace's current position."
-            : "This bottleneck is the constraint currently shaping the recommended execution order."}
+          {isNewWorkspace
+            ? "No bottleneck or execution constraint can be evaluated yet because the workspace has not recorded operating activity."
+            : hasNoBottleneck
+              ? "No active constraint is currently affecting execution. Strategy can remain focused on maintaining the workspace's current position."
+              : "This bottleneck is the constraint currently shaping the recommended execution order."}
         </p>
       </div>
 
       <div className="rounded-xl border border-border bg-surface p-5">
         <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-          {isMaintenanceState
+          {isNewWorkspace || isMaintenanceState
             ? "Recommended Approach"
             : "Recommended Sequence"}
         </p>
@@ -98,9 +112,11 @@ export default function StrategyPanel({
                 </p>
 
                 <p className="mt-1 text-sm leading-6 text-muted">
-                  {isMaintenanceState
-                    ? "No immediate intervention is required. Continue observing workspace activity and respond when conditions change."
-                    : "Complete this stage before advancing to lower-priority work."}
+                  {isNewWorkspace
+                    ? "Complete this first step to establish the activity baseline Strategy needs before it can evaluate sequencing and dependencies."
+                    : isMaintenanceState
+                      ? "No immediate intervention is required. Continue observing workspace activity and respond when conditions change."
+                      : "Complete this stage before advancing to lower-priority work."}
                 </p>
               </div>
             </li>
@@ -147,9 +163,11 @@ export default function StrategyPanel({
         </p>
 
         <p className="mt-3 leading-7 text-muted">
-          {isMaintenanceState
-            ? "Maintaining the current approach should preserve workspace stability while allowing AppStack to detect and respond to meaningful new activity."
-            : "Following this order should reduce the current bottleneck, preserve workflow dependencies, and improve the quality of the next Workspace Intelligence calculation."}
+          {isNewWorkspace
+            ? "Recording the first workspace activity will establish the baseline needed for Strategy to evaluate real constraints, dependencies, and recommended sequencing."
+            : isMaintenanceState
+              ? "Maintaining the current approach should preserve workspace stability while allowing AppStack to detect and respond to meaningful new activity."
+              : "Following this order should reduce the current bottleneck, preserve workflow dependencies, and improve the quality of the next Workspace Intelligence calculation."}
         </p>
       </div>
     </div>

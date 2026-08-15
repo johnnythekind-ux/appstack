@@ -6,7 +6,7 @@ export type WorkspaceIntelligence = {
   needsJobs: number;
   healthyItems: number;
   unknownItems: number;
-  workspaceHealth: "Healthy" | "Needs Attention" | "Unknown";
+  workspaceHealth: "Healthy" | "Needs Attention" | "Unknown" | "New";
   primaryBottleneck: string;
   recommendedAction: string;
   progressPercent: number;
@@ -19,14 +19,22 @@ export function analyzeWorkspace(
 
   const needsReports = workspaceAnalyses.filter(
     (analysis) =>
+      analysis.itemType === "analysis" &&
       analysis.stage === "Analysis" &&
       analysis.health !== "Healthy"
   ).length;
 
   const needsJobs = workspaceAnalyses.filter(
     (analysis) =>
+      analysis.itemType === "report" &&
       analysis.stage === "Reporting" &&
       analysis.health !== "Healthy"
+  ).length;
+
+  const pendingTasks = workspaceAnalyses.filter(
+    (analysis) =>
+      analysis.itemType === "task" &&
+      analysis.itemStatus?.toLowerCase() !== "completed"
   ).length;
 
   const healthyItems = workspaceAnalyses.filter(
@@ -40,7 +48,10 @@ export function analyzeWorkspace(
   ).length;
 
   const unresolvedItems =
-    needsReports + needsJobs + unknownItems;
+    needsReports +
+    needsJobs +
+    pendingTasks +
+    unknownItems;
 
   const completedItems = Math.max(
     0,
@@ -66,8 +77,8 @@ export function analyzeWorkspace(
     "Continue monitoring workspace activity.";
 
   if (totalItems === 0) {
-    workspaceHealth = "Unknown";
-    primaryBottleneck = "No workspace items";
+    workspaceHealth = "New";
+    primaryBottleneck = "None";
     recommendedAction =
       "Create or save your first workspace item.";
   } else if (unknownItems > 0) {
@@ -85,6 +96,13 @@ export function analyzeWorkspace(
     primaryBottleneck = "Jobs needed";
     recommendedAction =
       "Create execution jobs for completed reports.";
+  } else if (pendingTasks > 0) {
+    workspaceHealth = "Needs Attention";
+    primaryBottleneck = "Tasks pending";
+    recommendedAction =
+      pendingTasks === 1
+        ? "Complete the pending workspace task."
+        : `Complete the ${pendingTasks} pending workspace tasks.`;
   }
 
   return {
