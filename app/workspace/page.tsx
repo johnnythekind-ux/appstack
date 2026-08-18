@@ -23,6 +23,7 @@ import {
 import {
   getWorkspaceItems,
   deleteWorkspaceItem,
+  deleteWorkspaceItems,
   duplicateWorkspaceItem,
   createWorkspaceReport,
   createWorkspaceTask,
@@ -66,6 +67,8 @@ export default function WorkspacePage() {
   const [showAllItems, setShowAllItems] = useState(false);
   const [createItemOpen, setCreateItemOpen] = useState(false);
   const [creatingItem, setCreatingItem] = useState(false);
+  const [bulkSelectedIds, setBulkSelectedIds] = useState<string[]>([]);
+  const [deletingSelected, setDeletingSelected] = useState(false);
 
   const currentSelectionRef = useRef<HTMLDivElement | null>(null);
   const router = useRouter();
@@ -369,6 +372,109 @@ export default function WorkspacePage() {
     }
   }
 
+  async function deleteBulkSelectedItems() {
+    if (bulkSelectedIds.length === 0 || deletingSelected) {
+      return;
+    }
+
+    const selectedItems = items.filter((item) =>
+      bulkSelectedIds.includes(item.id)
+    );
+
+    if (selectedItems.length === 0) {
+      setBulkSelectedIds([]);
+      return;
+    }
+
+    const confirmed = window.confirm(
+      `Delete ${selectedItems.length} selected workspace ${
+        selectedItems.length === 1 ? "item" : "items"
+      }?\n\nThis action cannot be undone.`
+    );
+
+    if (!confirmed) {
+      return;
+    }
+
+    setDeletingSelected(true);
+
+    try {
+      const idsToDelete = selectedItems.map((item) => item.id);
+      const { error } = await deleteWorkspaceItems(idsToDelete);
+
+      if (error) {
+        console.error("Bulk delete failed:", error);
+        toast.error(error.message || "Bulk delete failed.");
+        return;
+      }
+
+      const deletedIdSet = new Set(idsToDelete);
+      const remainingItems = items.filter(
+        (item) => !deletedIdSet.has(item.id)
+      );
+
+      setItems(remainingItems);
+      setBulkSelectedIds([]);
+
+      if (selectedItem && deletedIdSet.has(selectedItem.id)) {
+        setSelectedItem(null);
+        setSelectedItemEvents([]);
+      }
+
+      const {
+        data: intelligence,
+        error: intelligenceError,
+      } = await buildWorkspaceIntelligence(remainingItems);
+
+      if (intelligenceError) {
+        console.error(
+          "Workspace intelligence refresh failed after bulk delete:",
+          intelligenceError
+        );
+      } else if (intelligence) {
+        setWorkspaceIntelligence(intelligence.intelligence);
+        setWorkspacePriorityActions(intelligence.priorityActions);
+        setWorkspaceDirectorPlan(intelligence.directorPlan);
+      }
+
+      const { error: eventError } = await createEvent({
+        workspace_item_id: null,
+        event_type: "item_deleted",
+        description: `${selectedItems.length} workspace ${
+          selectedItems.length === 1 ? "item was" : "items were"
+        } deleted in bulk.`,
+        source: "Workspace",
+        metadata: {
+          deleted_item_ids: idsToDelete,
+          deleted_count: selectedItems.length,
+          deleted_titles: selectedItems.map((item) => item.title),
+          bulk_action: true,
+        },
+      });
+
+      if (eventError) {
+        console.error("Bulk delete event tracking failed:", eventError);
+        toast.error(
+          "Items were deleted, but activity tracking could not be recorded."
+        );
+      }
+
+      toast.success(
+        `${selectedItems.length} workspace ${
+          selectedItems.length === 1 ? "item" : "items"
+        } deleted.`
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Bulk delete failed.";
+
+      console.error("Bulk delete failed:", error);
+      toast.error(message);
+    } finally {
+      setDeletingSelected(false);
+    }
+  }
+
   async function deleteSelectedItem() {
     if (!selectedItem) {
       return;
@@ -603,6 +709,10 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     ? filteredItems
     : filteredItems.slice(0, 5);
 
+  useEffect(() => {
+    setBulkSelectedIds([]);
+  }, [search, filter, sort, showAllItems]);
+
   if (!authResolved) {
     return (
       <Page
@@ -684,8 +794,12 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
           visibleItems={visibleItems}
           filteredItems={filteredItems}
           selectedItem={selectedItem}
+          selectedIds={bulkSelectedIds}
+          deletingSelected={deletingSelected}
           showAllItems={showAllItems}
           onSelectItem={selectWorkspaceItem}
+          onSelectionChange={setBulkSelectedIds}
+          onDeleteSelected={deleteBulkSelectedItems}
           onToggleShowAll={() =>
             setShowAllItems((current) => !current)
           }

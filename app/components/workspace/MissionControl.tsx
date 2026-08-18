@@ -64,7 +64,7 @@ export default function MissionControl({
     <Card>
       <div className="flex flex-col gap-2 border-b border-border pb-4 lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.2em] text-blue-400">
+          <p className="text-xs font-bold uppercase tracking-[0.2em] text-accent">
             Mission Control
           </p>
 
@@ -111,7 +111,7 @@ export default function MissionControl({
             {statusTitle}
           </p>
 
-          <p className="mt-2 text-slate-400">
+          <p className="mt-2 text-muted">
             {statusMessage}
           </p>
         </div>
@@ -120,12 +120,12 @@ export default function MissionControl({
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_auto] lg:items-center">
             <div>
               <div className="flex flex-wrap items-center gap-3">
-                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-[0.18em] text-subtle">
                   Primary Objective
                 </p>
 
                 <span
-                  className="rounded-full border border-slate-700 px-3 py-1 text-xs text-slate-300"
+                  className="rounded-full border border-border-strong bg-surface px-3 py-1 text-xs text-foreground"
                   title={`${primaryAction.priority} priority`}
                 >
                   {getActionStatusLabel(primaryAction)}
@@ -137,11 +137,11 @@ export default function MissionControl({
               </h3>
 
               <div className="mt-3 max-w-3xl">
-                <p className="text-sm font-semibold text-slate-300">
+                <p className="text-sm font-semibold text-foreground">
                   Why this matters
                 </p>
 
-                <p className="mt-1 text-sm leading-6 text-slate-400 sm:text-base">
+                <p className="mt-1 text-sm leading-6 text-muted sm:text-base">
                   {primaryAction.reason}
                 </p>
               </div>
@@ -157,18 +157,18 @@ export default function MissionControl({
       )}
 
       {upcomingActions.length > 0 && (
-        <div className="border-t border-slate-800 pt-4">
+        <div className="border-t border-border pt-4">
           <div className="flex items-center justify-between gap-4">
-            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-slate-400">
+            <h3 className="text-sm font-bold uppercase tracking-[0.18em] text-muted">
               Up Next
             </h3>
 
-            <p className="text-sm text-slate-500">
+            <p className="text-sm text-subtle">
               {priorityActions.length - 1} remaining
             </p>
           </div>
 
-          <div className="mt-3 divide-y divide-slate-800 rounded-xl border border-slate-800">
+          <div className="mt-3 divide-y divide-slate-800 rounded-xl border border-border">
             {upcomingActions.map((action) => (
               <div
                 key={`${action.itemId}-${action.actionType}`}
@@ -179,7 +179,7 @@ export default function MissionControl({
                     {action.title}
                   </p>
 
-                  <p className="mt-1 truncate text-sm text-slate-400">
+                  <p className="mt-1 truncate text-sm text-muted">
                     {action.itemTitle}
                   </p>
                 </div>
@@ -187,7 +187,7 @@ export default function MissionControl({
                 <button
                   type="button"
                   onClick={() => onAction(action)}
-                  className="shrink-0 rounded-lg border border-slate-700 px-4 py-2 text-sm font-semibold text-slate-200 transition hover:border-slate-500 hover:bg-slate-900"
+                  className="shrink-0 rounded-lg border border-border-strong bg-surface px-4 py-2 text-sm font-semibold text-foreground transition hover:border-accent hover:bg-surface-muted"
                 >
                   {getActionLabel(action)}
                 </button>

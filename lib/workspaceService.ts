@@ -94,6 +94,24 @@ export async function deleteWorkspaceItem(id: string) {
     .eq("user_id", userId);
 }
 
+export async function deleteWorkspaceItems(ids: string[]) {
+  if (ids.length === 0) {
+    return {
+      data: [],
+      error: null,
+    };
+  }
+
+  const userId = await getCurrentUserId();
+
+  return await supabase
+    .from("workspace_items")
+    .delete()
+    .eq("user_id", userId)
+    .in("id", ids)
+    .select("id");
+}
+
 export async function duplicateWorkspaceItem(
   item: WorkspaceItem
 ) {
