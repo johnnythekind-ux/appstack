@@ -222,6 +222,20 @@ export async function updateWorkspaceReport(
     .single();
 }
 
+export async function getWorkspaceAnalysisById(
+  analysisId: string
+) {
+  const userId = await getCurrentUserId();
+
+  return await supabase
+    .from("workspace_items")
+    .select("*")
+    .eq("id", analysisId)
+    .eq("user_id", userId)
+    .eq("type", "analysis")
+    .maybeSingle();
+}
+
 export async function getWorkspaceReports() {
   const userId = await getCurrentUserId();
 

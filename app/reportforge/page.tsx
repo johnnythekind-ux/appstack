@@ -12,11 +12,13 @@ import ExpandableList from "../components/ExpandableList";
 
 import {
   createWorkspaceReport,
+  getWorkspaceAnalysisById,
   getWorkspaceReportByAnalysisId,
   getWorkspaceReports,
   updateWorkspaceReport,
   type WorkspaceItem,
 } from "../../lib/workspaceService";
+import { downloadInvestorReportPdf } from "../../lib/reportPdf";
 
 type SavedAnalysis = {
   id?: string;
@@ -28,6 +30,30 @@ type SavedAnalysis = {
   maxOffer: number;
   recommendation: string;
 };
+
+function workspaceItemToSavedAnalysis(
+  item: WorkspaceItem
+): SavedAnalysis {
+  const metadata = item.metadata ?? {};
+
+  const toNumber = (value: unknown) => {
+    const numericValue =
+      typeof value === "number" ? value : Number(value);
+
+    return Number.isFinite(numericValue) ? numericValue : 0;
+  };
+
+  return {
+    id: item.id,
+    name: item.title,
+    address: item.address ?? "",
+    purchasePrice: toNumber(metadata.purchasePrice),
+    arv: toNumber(metadata.arv),
+    repairCost: toNumber(metadata.repairCost),
+    maxOffer: toNumber(metadata.maxOffer),
+    recommendation: String(item.status ?? ""),
+  };
+}
 
 export default function ReportForgePage() {
   const [analysis, setAnalysis] =
@@ -99,19 +125,79 @@ export default function ReportForgePage() {
   }
 
   useEffect(() => {
-    const storedAnalysis = localStorage.getItem(
-      "appstack_saved_analysis"
-    );
+    let mounted = true;
 
-    if (storedAnalysis) {
+    async function initializeReportForge() {
+      await loadReports();
+
+      const params = new URLSearchParams(
+        window.location.search
+      );
+      const requestedAnalysisId =
+        params.get("analysisId");
+
+      if (requestedAnalysisId) {
+        const { data, error } =
+          await getWorkspaceAnalysisById(
+            requestedAnalysisId
+          );
+
+        if (!mounted) {
+          return;
+        }
+
+        if (error) {
+          console.error(
+            "Requested analysis could not be loaded:",
+            error
+          );
+          toast.error(
+            "The report's source analysis could not be loaded."
+          );
+          return;
+        }
+
+        if (!data) {
+          toast.error(
+            "The report's source analysis was not found."
+          );
+          return;
+        }
+
+        const requestedAnalysis =
+          workspaceItemToSavedAnalysis(data);
+
+        setAnalysis(requestedAnalysis);
+
+        localStorage.setItem(
+          "appstack_saved_analysis",
+          JSON.stringify(requestedAnalysis)
+        );
+
+        await loadExistingReport(data.id);
+        return;
+      }
+
+      const storedAnalysis = localStorage.getItem(
+        "appstack_saved_analysis"
+      );
+
+      if (!storedAnalysis) {
+        return;
+      }
+
       try {
         const parsedAnalysis: SavedAnalysis =
           JSON.parse(storedAnalysis);
 
+        if (!mounted) {
+          return;
+        }
+
         setAnalysis(parsedAnalysis);
 
         if (parsedAnalysis.id) {
-          loadExistingReport(
+          await loadExistingReport(
             parsedAnalysis.id
           );
         }
@@ -127,7 +213,11 @@ export default function ReportForgePage() {
       }
     }
 
-    loadReports();
+    initializeReportForge();
+
+    return () => {
+      mounted = false;
+    };
   }, []);
 
   function formatRecommendation(
@@ -285,6 +375,37 @@ Based on the 70% rule, the purchase price ${
     );
 
     await loadReports();
+  }
+
+  function downloadReportPdf() {
+    if (!analysis || !report) {
+      toast.error(
+        "Generate an investor report before downloading it."
+      );
+      return;
+    }
+
+    const sections = getReportSections();
+
+    if (!sections) {
+      toast.error(
+        "The report details could not be prepared for download."
+      );
+      return;
+    }
+
+    downloadInvestorReportPdf({
+      propertyName: analysis.name,
+      address: analysis.address,
+      purchasePrice: analysis.purchasePrice,
+      arv: analysis.arv,
+      repairCost: analysis.repairCost,
+      maxOffer: analysis.maxOffer,
+      recommendation: sections.displayedRecommendation,
+      interpretation: sections.interpretation,
+    });
+
+    toast.success("Investor report downloaded.");
   }
 
   function getReportStatusMessage() {
@@ -551,6 +672,13 @@ Based on the 70% rule, the purchase price ${
               onClick={generateReport}
             >
               Regenerate
+            </Button>
+
+            <Button
+              variant="secondary"
+              onClick={downloadReportPdf}
+            >
+              Download PDF
             </Button>
           </div>
 

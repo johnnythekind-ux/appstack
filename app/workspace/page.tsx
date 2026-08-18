@@ -691,7 +691,18 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     }
 
     if (selectedItem.type === "report") {
-      router.push("/reportforge");
+      const analysisId = selectedItem.metadata?.analysis_id;
+
+      if (!analysisId) {
+        toast.error(
+          "This report is not linked to a source analysis."
+        );
+        return;
+      }
+
+      router.push(
+        `/reportforge?analysisId=${encodeURIComponent(analysisId)}`
+      );
       return;
     }
 
