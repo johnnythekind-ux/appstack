@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -11,6 +11,7 @@ import StatusBadge from "../components/StatusBadge";
 
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
 import { createEvent } from "../../lib/eventService";
+import { canPerformBillingAction } from "../../lib/billingEntitlementService";
 
 type PendingJobContext = {
   reportId: string;
@@ -34,6 +35,9 @@ export default function JobsPage() {
     useState<PendingJobContext | null>(null);
   const [creating, setCreating] = useState(false);
   const [executing, setExecuting] = useState(false);
+
+  const currentJobRef =
+    useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
     const storedContext = localStorage.getItem(
@@ -68,6 +72,19 @@ export default function JobsPage() {
       );
     }
   }, []);
+
+  useEffect(() => {
+    if (!currentJob?.id) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      currentJobRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [currentJob?.id]);
 
   async function executeJob(queuedJob: CurrentJob) {
     setExecuting(true);
@@ -139,6 +156,35 @@ export default function JobsPage() {
       (pendingContext?.reportTitle
         ? `${pendingContext.reportTitle} Processing Job`
         : "Investor Report Processing Job");
+
+    const {
+      data: billingDecision,
+      error: billingError,
+    } = await canPerformBillingAction(
+      "create_job"
+    );
+
+    if (billingError || !billingDecision) {
+      console.error(
+        "Billing entitlement check failed:",
+        billingError
+      );
+
+      toast.error(
+        "AppStack could not verify your current plan limits."
+      );
+
+      return;
+    }
+
+    if (!billingDecision.allowed) {
+      toast.error(
+        billingDecision.reason ||
+          "Your current plan does not allow another job this billing period."
+      );
+
+      return;
+    }
 
     setCreating(true);
 
@@ -289,10 +335,14 @@ export default function JobsPage() {
       </Card>
 
       {currentJob && (
-        <Card
-          title="Current Job"
-          className="mt-8"
+        <div
+          ref={currentJobRef}
+          className="scroll-mt-6"
         >
+          <Card
+            title="Current Job"
+            className="mt-8"
+          >
           <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <p className="text-xs font-semibold uppercase tracking-wider text-accent">
@@ -405,7 +455,8 @@ export default function JobsPage() {
               </Button>
             </div>
           )}
-        </Card>
+          </Card>
+        </div>
       )}
 
       <Card

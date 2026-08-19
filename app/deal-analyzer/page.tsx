@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
 
 import Page from "../components/Page";
@@ -10,6 +10,7 @@ import StatusBadge from "../components/StatusBadge";
 
 import { supabase } from "../../lib/supabase";
 import { createEvent } from "../../lib/eventService";
+import { canPerformBillingAction } from "../../lib/billingEntitlementService";
 
 type SavedAnalysis = {
   id: string;
@@ -47,6 +48,9 @@ export default function DealAnalyzerPage() {
   const [saved, setSaved] = useState(false);
   const [saving, setSaving] = useState(false);
 
+  const recommendationRef =
+    useRef<HTMLDivElement | null>(null);
+
   const arvValue = parseCurrencyInput(arv);
   const repairValue = parseCurrencyInput(repairCost);
 
@@ -54,6 +58,19 @@ export default function DealAnalyzerPage() {
     Number.isFinite(arvValue) && Number.isFinite(repairValue)
       ? arvValue * 0.7 - repairValue
       : Number.NaN;
+
+  useEffect(() => {
+    if (!result) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      recommendationRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [result]);
 
   function analyzeDeal() {
     const price = parseCurrencyInput(purchasePrice);
@@ -97,6 +114,35 @@ export default function DealAnalyzerPage() {
     }
 
     if (saving || saved) {
+      return;
+    }
+
+    const {
+      data: billingDecision,
+      error: billingError,
+    } = await canPerformBillingAction(
+      "create_analysis"
+    );
+
+    if (billingError || !billingDecision) {
+      console.error(
+        "Billing entitlement check failed:",
+        billingError
+      );
+
+      toast.error(
+        "AppStack could not verify your current plan limits."
+      );
+
+      return;
+    }
+
+    if (!billingDecision.allowed) {
+      toast.error(
+        billingDecision.reason ||
+          "Your current plan does not allow another analysis this billing period."
+      );
+
       return;
     }
 
@@ -329,10 +375,14 @@ export default function DealAnalyzerPage() {
       </Card>
 
       {result && (
-        <Card
-          title="Recommendation"
-          className="mt-8"
+        <div
+          ref={recommendationRef}
+          className="scroll-mt-6"
         >
+          <Card
+            title="Recommendation"
+            className="mt-8"
+          >
           <StatusBadge
             status={
               result === "PASS"
@@ -446,7 +496,8 @@ export default function DealAnalyzerPage() {
               </Button>
             </div>
           )}
-        </Card>
+          </Card>
+        </div>
       )}
 
       <Card

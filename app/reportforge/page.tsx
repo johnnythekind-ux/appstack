@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import toast from "react-hot-toast";
 
@@ -19,6 +19,7 @@ import {
   type WorkspaceItem,
 } from "../../lib/workspaceService";
 import { downloadInvestorReportPdf } from "../../lib/reportPdf";
+import { canPerformBillingAction } from "../../lib/billingEntitlementService";
 
 type SavedAnalysis = {
   id?: string;
@@ -72,6 +73,9 @@ export default function ReportForgePage() {
     useState(false);
   const [savingReport, setSavingReport] =
     useState(false);
+
+  const generatedReportRef =
+    useRef<HTMLDivElement | null>(null);
 
   async function loadReports() {
     const { data, error } =
@@ -220,6 +224,19 @@ export default function ReportForgePage() {
     };
   }, []);
 
+  useEffect(() => {
+    if (!report || !draftChanged) {
+      return;
+    }
+
+    requestAnimationFrame(() => {
+      generatedReportRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+  }, [report, draftChanged]);
+
   function formatRecommendation(
     recommendation: string
   ) {
@@ -322,6 +339,37 @@ Based on the 70% rule, the purchase price ${
 
     if (savingReport) {
       return;
+    }
+
+    if (!existingReport) {
+      const {
+        data: billingDecision,
+        error: billingError,
+      } = await canPerformBillingAction(
+        "create_report"
+      );
+
+      if (billingError || !billingDecision) {
+        console.error(
+          "Billing entitlement check failed:",
+          billingError
+        );
+
+        toast.error(
+          "AppStack could not verify your current plan limits."
+        );
+
+        return;
+      }
+
+      if (!billingDecision.allowed) {
+        toast.error(
+          billingDecision.reason ||
+            "Your current plan does not allow another report this billing period."
+        );
+
+        return;
+      }
     }
 
     setSavingReport(true);
@@ -578,14 +626,18 @@ Based on the 70% rule, the purchase price ${
       )}
 
       {report && (
-        <Card
-          title={
-            existingReport && !draftChanged
-              ? "Saved Investor Report"
-              : "Generated Investor Report"
-          }
-          className="mt-8"
+        <div
+          ref={generatedReportRef}
+          className="scroll-mt-6"
         >
+          <Card
+            title={
+              existingReport && !draftChanged
+                ? "Saved Investor Report"
+                : "Generated Investor Report"
+            }
+            className="mt-8"
+          >
           {analysis && getReportSections() && (
             <div className="overflow-hidden rounded-xl border border-slate-300 bg-white text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100">
               <div className="border-b border-slate-200 p-6 dark:border-slate-700">
@@ -701,7 +753,8 @@ Based on the 70% rule, the purchase price ${
               </Link>
             </div>
           )}
-        </Card>
+          </Card>
+        </div>
       )}
 
       <Card
