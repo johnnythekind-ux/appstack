@@ -74,6 +74,8 @@ export default function BillingPage() {
   const [usage, setUsage] = useState<BillingUsage | null>(null);
   const [usageLoading, setUsageLoading] = useState(true);
 
+  const [checkoutLoading, setCheckoutLoading] = useState(false);
+
   useEffect(() => {
     let mounted = true;
 
@@ -151,6 +153,47 @@ export default function BillingPage() {
     };
   }, []);
 
+  async function startCheckout() {
+    if (checkoutLoading) {
+      return;
+    }
+
+    setCheckoutLoading(true);
+
+    try {
+      const response = await fetch(
+        "/api/billing/checkout",
+        {
+          method: "POST",
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.url) {
+        throw new Error(
+          result.error ||
+            "Checkout could not be started."
+        );
+      }
+
+      window.location.href = result.url;
+    } catch (error) {
+      console.error(
+        "Checkout start failed:",
+        error
+      );
+
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Checkout could not be started."
+      );
+
+      setCheckoutLoading(false);
+    }
+  }
+
   const plan = subscription
     ? BILLING_PLANS[subscription.plan]
     : null;
@@ -203,7 +246,7 @@ export default function BillingPage() {
         : "Not Connected",
       detail: stripeConnected
         ? "Stripe identifiers are connected to the current subscription."
-        : "Checkout, invoices, and billing portal access have not been connected yet.",
+        : "Stripe Checkout is available, while subscription synchronization and billing portal access are still being completed.",
       active: stripeConnected,
     },
   ];
@@ -256,6 +299,21 @@ export default function BillingPage() {
               <p className="mt-3 max-w-3xl leading-7 text-muted">
                 {plan.description}
               </p>
+
+              {subscription.plan === "free" && (
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    onClick={startCheckout}
+                    disabled={checkoutLoading}
+                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {checkoutLoading
+                      ? "Opening Checkout..."
+                      : "Upgrade to Pro — $29/month"}
+                  </button>
+                </div>
+              )}
 
               <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
                 <div className="rounded-lg border border-border bg-surface p-4">
@@ -464,9 +522,9 @@ export default function BillingPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Subscription persistence is ready for Stripe identifiers, but no
-            checkout session, payment method, invoice, webhook, or billing portal
-            has been connected yet.
+            Stripe Checkout is connected in sandbox mode. Subscription lifecycle
+            events are being synchronized into AppStack next, while billing portal
+            management remains a later payment-stage capability.
           </p>
 
           <div className="mt-5 rounded-lg border border-border bg-surface-muted p-4">
@@ -477,7 +535,7 @@ export default function BillingPage() {
             <p className="mt-2 text-sm leading-6 text-muted">
               {stripeConnected
                 ? "Stripe identifiers are present on this subscription."
-                : "Stripe fields remain empty until the payment integration stage."}
+                : "Stripe identifiers will populate after a successful linked checkout and webhook synchronization."}
             </p>
           </div>
         </Card>
