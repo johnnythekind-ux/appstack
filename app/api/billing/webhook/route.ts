@@ -52,8 +52,7 @@ export async function POST(request: NextRequest) {
       case "checkout.session.completed": {
         const session = event.data.object as Stripe.Checkout.Session;
 
-        const userId =
-          session.metadata?.appstack_user_id;
+        const userId = session.metadata?.appstack_user_id;
 
         const customerId =
           typeof session.customer === "string"
@@ -78,8 +77,7 @@ export async function POST(request: NextRequest) {
             plan: "pro",
             status: "active",
             stripe_customer_id: customerId ?? null,
-            stripe_subscription_id:
-              subscriptionId ?? null,
+            stripe_subscription_id: subscriptionId ?? null,
           })
           .eq("user_id", userId);
 
@@ -109,21 +107,54 @@ export async function POST(request: NextRequest) {
           subscription.status === "active" ||
           subscription.status === "trialing";
 
+        /*
+         * Stripe can represent a scheduled cancellation in more than
+         * one way.
+         *
+         * In our Customer Portal configuration, Stripe is currently
+         * setting an explicit future `cancel_at` timestamp while
+         * `cancel_at_period_end` remains false.
+         *
+         * AppStack normalizes either representation into one business
+         * concept: cancellation is scheduled.
+         */
+        const cancellationScheduled =
+          subscription.cancel_at_period_end ||
+          subscription.cancel_at !== null;
+
+        /*
+         * When Stripe provides an explicit cancel_at timestamp,
+         * that is also the date through which the user retains access.
+         */
+        const currentPeriodEnd =
+          subscription.cancel_at !== null
+            ? new Date(subscription.cancel_at * 1000).toISOString()
+            : null;
+
         const { error } = await supabase
           .from("subscriptions")
           .update({
             plan: active ? "pro" : "free",
+
             status: active
               ? "active"
               : subscription.status === "past_due"
                 ? "past_due"
                 : "canceled",
+
             stripe_customer_id:
               typeof subscription.customer === "string"
                 ? subscription.customer
                 : subscription.customer.id,
+
             stripe_subscription_id:
               subscription.id,
+
+            cancel_at_period_end:
+              cancellationScheduled,
+
+            current_period_end:
+              currentPeriodEnd,
           })
           .eq("user_id", userId);
 
