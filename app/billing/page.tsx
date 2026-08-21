@@ -45,8 +45,8 @@ const billingFlow = [
     step: "Step 4",
     title: "Connect Payments",
     description:
-      "Stripe will provide checkout, customer records, subscription lifecycle events, invoices, and billing portal management.",
-    status: "Planned",
+      "Stripe Checkout, customer records, subscription lifecycle events, and customer billing portal management are connected.",
+    status: "Complete",
   },
 ];
 
@@ -75,6 +75,7 @@ export default function BillingPage() {
   const [usageLoading, setUsageLoading] = useState(true);
 
   const [checkoutLoading, setCheckoutLoading] = useState(false);
+  const [portalLoading, setPortalLoading] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -194,6 +195,33 @@ export default function BillingPage() {
     }
   }
 
+  async function openBillingPortal() {
+    if (portalLoading) return;
+
+    setPortalLoading(true);
+
+    try {
+      const response = await fetch("/api/billing/portal", {
+        method: "POST",
+      });
+      const result = await response.json();
+
+      if (!response.ok || !result.url) {
+        throw new Error(result.error || "Billing portal could not be opened.");
+      }
+
+      window.location.href = result.url;
+    } catch (error) {
+      console.error("Billing portal start failed:", error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : "Billing portal could not be opened."
+      );
+      setPortalLoading(false);
+    }
+  }
+
   const plan = subscription
     ? BILLING_PLANS[subscription.plan]
     : null;
@@ -246,7 +274,7 @@ export default function BillingPage() {
         : "Not Connected",
       detail: stripeConnected
         ? "Stripe identifiers are connected to the current subscription."
-        : "Stripe Checkout is available, while subscription synchronization and billing portal access are still being completed.",
+        : "Stripe Checkout is available; Stripe customer details will appear after a successful linked checkout.",
       active: stripeConnected,
     },
   ];
@@ -311,6 +339,19 @@ export default function BillingPage() {
                     {checkoutLoading
                       ? "Opening Checkout..."
                       : "Upgrade to Pro — $29/month"}
+                  </button>
+                </div>
+              )}
+
+              {subscription.plan === "pro" && stripeConnected && (
+                <div className="mt-5">
+                  <button
+                    type="button"
+                    onClick={openBillingPortal}
+                    disabled={portalLoading}
+                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                  >
+                    {portalLoading ? "Opening Billing..." : "Manage Billing"}
                   </button>
                 </div>
               )}
@@ -522,9 +563,8 @@ export default function BillingPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Stripe Checkout is connected in sandbox mode. Subscription lifecycle
-            events are being synchronized into AppStack next, while billing portal
-            management remains a later payment-stage capability.
+            Stripe Checkout, subscription synchronization, and customer billing
+            portal access are connected in sandbox mode.
           </p>
 
           <div className="mt-5 rounded-lg border border-border bg-surface-muted p-4">
@@ -543,11 +583,11 @@ export default function BillingPage() {
 
       <Card title="Billing Flow" className="mt-8">
         <p className="max-w-3xl text-sm leading-6 text-muted">
-  Billing is being layered onto the identity boundary in stages. Identity,
-  persisted plan assignment, current-period usage metering, and entitlement
-  enforcement for analyses, reports, and jobs are now connected. Stripe
-  payment lifecycle integration is the next stage, while AI usage enforcement
-  remains deferred until reliable AI metering is available.
+  Billing is layered onto the identity boundary in stages. Identity, persisted
+  plan assignment, current-period usage metering, entitlement enforcement,
+  Stripe Checkout, subscription synchronization, and customer billing management
+  are connected. AI usage enforcement remains deferred until reliable AI metering
+  is available.
 </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
@@ -610,7 +650,7 @@ export default function BillingPage() {
             ],
             [
               "4. Payments",
-              "Stripe will manage checkout, invoices, and the external payment lifecycle.",
+              "Stripe manages checkout, invoices, customer billing controls, and the external payment lifecycle.",
             ],
           ].map(([title, description]) => (
             <div
