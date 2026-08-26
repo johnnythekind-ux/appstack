@@ -1,13 +1,14 @@
 import { supabase } from "./supabase";
 
 import {
-  getCurrentSubscription,
+  getSubscriptionForUserId,
 } from "./billingService";
 
 export type BillingUsage = {
   analyses: number;
   reports: number;
   jobs: number;
+  aiRequests: number;
 
   periodStart: string;
   periodEnd: string;
@@ -52,8 +53,11 @@ function getDefaultMonthlyPeriod() {
   );
 
   return {
-    periodStart: start.toISOString(),
-    periodEnd: end.toISOString(),
+    periodStart:
+      start.toISOString(),
+
+    periodEnd:
+      end.toISOString(),
   };
 }
 
@@ -64,7 +68,10 @@ async function countWorkspaceItems({
   periodEnd,
 }: {
   userId: string;
-  type: "analysis" | "report" | "job";
+  type:
+    | "analysis"
+    | "report"
+    | "job";
   periodStart: string;
   periodEnd: string;
 }) {
@@ -79,8 +86,49 @@ async function countWorkspaceItems({
     })
     .eq("user_id", userId)
     .eq("type", type)
-    .gte("created_at", periodStart)
-    .lt("created_at", periodEnd);
+    .gte(
+      "created_at",
+      periodStart
+    )
+    .lt(
+      "created_at",
+      periodEnd
+    );
+
+  if (error) {
+    throw error;
+  }
+
+  return count ?? 0;
+}
+
+async function countAIRequests({
+  userId,
+  periodStart,
+  periodEnd,
+}: {
+  userId: string;
+  periodStart: string;
+  periodEnd: string;
+}) {
+  const {
+    count,
+    error,
+  } = await supabase
+    .from("ai_usage")
+    .select("id", {
+      count: "exact",
+      head: true,
+    })
+    .eq("user_id", userId)
+    .gte(
+      "created_at",
+      periodStart
+    )
+    .lt(
+      "created_at",
+      periodEnd
+    );
 
   if (error) {
     throw error;
@@ -94,17 +142,32 @@ export async function getCurrentBillingUsage(): Promise<{
   error: unknown;
 }> {
   try {
-    const userId = await getCurrentUserId();
+    /*
+     * Resolve the current user once.
+     */
+    const userId =
+      await getCurrentUserId();
 
+    /*
+     * Reuse that same trusted user ID
+     * when loading subscription state.
+     *
+     * This avoids another auth.getUser()
+     * call inside billingService.
+     */
     const {
       data: subscription,
       error: subscriptionError,
-    } = await getCurrentSubscription();
+    } =
+      await getSubscriptionForUserId(
+        userId
+      );
 
     if (subscriptionError) {
       return {
         data: null,
-        error: subscriptionError,
+        error:
+          subscriptionError,
       };
     }
 
@@ -112,17 +175,20 @@ export async function getCurrentBillingUsage(): Promise<{
       getDefaultMonthlyPeriod();
 
     const periodStart =
-      subscription?.currentPeriodStart ??
+      subscription
+        ?.currentPeriodStart ??
       defaultPeriod.periodStart;
 
     const periodEnd =
-      subscription?.currentPeriodEnd ??
+      subscription
+        ?.currentPeriodEnd ??
       defaultPeriod.periodEnd;
 
     const [
       analyses,
       reports,
       jobs,
+      aiRequests,
     ] = await Promise.all([
       countWorkspaceItems({
         userId,
@@ -144,6 +210,12 @@ export async function getCurrentBillingUsage(): Promise<{
         periodStart,
         periodEnd,
       }),
+
+      countAIRequests({
+        userId,
+        periodStart,
+        periodEnd,
+      }),
     ]);
 
     return {
@@ -151,6 +223,7 @@ export async function getCurrentBillingUsage(): Promise<{
         analyses,
         reports,
         jobs,
+        aiRequests,
         periodStart,
         periodEnd,
       },

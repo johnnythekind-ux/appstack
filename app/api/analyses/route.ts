@@ -1,13 +1,17 @@
 import { NextResponse } from "next/server";
 
 import { evaluateEntitlement } from "../../../lib/billingDomain";
-import { generateWorkspaceAIResponse } from "../../../lib/openai";
 import { createClient } from "../../../lib/supabase/server";
-import {
-  buildWorkspaceAIContext,
-  type BuildWorkspaceAIContextInput,
-} from "../../../lib/workspaceAIContextBuilder";
-import { buildWorkspacePrompt } from "../../../lib/workspacePromptBuilder";
+
+type CreateAnalysisRequest = {
+  name?: string;
+  address?: string;
+  purchasePrice?: number;
+  arv?: number;
+  repairCost?: number;
+  maxOffer?: number;
+  recommendation?: string;
+};
 
 function getDefaultMonthlyPeriod() {
   const now = new Date();
@@ -50,30 +54,31 @@ export async function POST(request: Request) {
 
     if (userError || !user) {
       return NextResponse.json(
-        {
-          error: "Authentication required.",
-        },
-        {
-          status: 401,
-        }
+        { error: "Authentication required." },
+        { status: 401 }
       );
     }
 
-    // 2. Validate the AI request.
+    // 2. Validate incoming analysis data.
     const body =
-      (await request.json()) as BuildWorkspaceAIContextInput;
+      (await request.json()) as CreateAnalysisRequest;
+
+    const name =
+      body.name?.trim() || "Untitled Analysis";
+
+    const address =
+      body.address?.trim() || "No address entered";
 
     if (
-      typeof body.question !== "string" ||
-      body.question.trim().length === 0
+      typeof body.purchasePrice !== "number" ||
+      typeof body.arv !== "number" ||
+      typeof body.repairCost !== "number" ||
+      typeof body.maxOffer !== "number" ||
+      !body.recommendation
     ) {
       return NextResponse.json(
-        {
-          error: "A workspace question is required.",
-        },
-        {
-          status: 400,
-        }
+        { error: "Valid analysis data is required." },
+        { status: 400 }
       );
     }
 
@@ -91,17 +96,13 @@ export async function POST(request: Request) {
 
     if (subscriptionError) {
       console.error(
-        "Workspace AI subscription lookup failed:",
+        "Analysis creation subscription lookup failed:",
         subscriptionError
       );
 
       return NextResponse.json(
-        {
-          error: "Billing status could not be verified.",
-        },
-        {
-          status: 500,
-        }
+        { error: "Billing status could not be verified." },
+        { status: 500 }
       );
     }
 
@@ -121,34 +122,33 @@ export async function POST(request: Request) {
       subscription?.current_period_end ??
       defaultPeriod.periodEnd;
 
-    // 4. Count AI requests already used this billing period.
+    // 4. Count analyses already created this billing period.
     const {
-      count: aiRequestsUsed,
+      count: analysesUsed,
       error: usageError,
     } = await supabase
-      .from("ai_usage")
+      .from("workspace_items")
       .select("id", {
         count: "exact",
         head: true,
       })
       .eq("user_id", user.id)
+      .eq("type", "analysis")
       .gte("created_at", periodStart)
       .lt("created_at", periodEnd);
 
     if (usageError) {
       console.error(
-        "Workspace AI usage lookup failed:",
+        "Analysis creation usage lookup failed:",
         usageError
       );
 
       return NextResponse.json(
         {
           error:
-            "Current AI billing usage could not be verified.",
+            "Current billing usage could not be verified.",
         },
-        {
-          status: 500,
-        }
+        { status: 500 }
       );
     }
 
@@ -156,8 +156,8 @@ export async function POST(request: Request) {
     const entitlement =
       evaluateEntitlement({
         plan,
-        capability: "ai_request",
-        used: aiRequestsUsed ?? 0,
+        capability: "analysis",
+        used: analysesUsed ?? 0,
       });
 
     if (!entitlement.allowed) {
@@ -165,88 +165,63 @@ export async function POST(request: Request) {
         {
           error:
             entitlement.reason ??
-            "Your current plan does not allow another AI request this billing period.",
+            "Your current plan does not allow another analysis this billing period.",
           entitlement,
         },
-        {
-          status: 403,
-        }
+        { status: 403 }
       );
     }
 
-    // 6. Build trusted AI context and prompt.
-    const context =
-      buildWorkspaceAIContext({
-        ...body,
-        question: body.question.trim(),
-      });
-
-    const prompt =
-      buildWorkspacePrompt(context);
-
-    // 7. Only after authentication + entitlement approval do we call OpenAI.
-    const answer =
-      await generateWorkspaceAIResponse(
-        prompt
-      );
-
-    // 8. Record one successful AI usage unit.
+    // 6. Create the analysis only after entitlement approval.
     const {
-      error: usageInsertError,
+      data: analysis,
+      error: createError,
     } = await supabase
-      .from("ai_usage")
+      .from("workspace_items")
       .insert({
+        type: "analysis",
+        title: name,
+        address,
+        status: body.recommendation,
+        metadata: {
+          purchasePrice: body.purchasePrice,
+          arv: body.arv,
+          repairCost: body.repairCost,
+          maxOffer: body.maxOffer,
+        },
         user_id: user.id,
-        request_type: "workspace_ai",
-      });
+      })
+      .select()
+      .single();
 
-    if (usageInsertError) {
+    if (createError) {
       console.error(
-        "Workspace AI usage recording failed:",
-        usageInsertError
+        "Server-side analysis creation failed:",
+        createError
       );
 
       return NextResponse.json(
-        {
-          error:
-            "The AI response was generated, but usage tracking failed.",
-        },
-        {
-          status: 500,
-        }
+        { error: "Analysis could not be created." },
+        { status: 500 }
       );
     }
 
-    // 9. Return the AI response only after successful usage recording.
-    return NextResponse.json({
-      answer,
-      entitlement: {
-        ...entitlement,
-        used: entitlement.used + 1,
-        remaining: Math.max(
-          0,
-          entitlement.remaining - 1
-        ),
+    return NextResponse.json(
+      {
+        analysis,
+        entitlement,
       },
-    });
+      { status: 201 }
+    );
   } catch (error) {
     console.error(
-      "Workspace AI request failed:",
+      "Unexpected analysis creation failure:",
       error
     );
 
-    const message =
-      error instanceof Error
-        ? error.message
-        : "The workspace AI request failed.";
-
     return NextResponse.json(
-      {
-        error: message,
-      },
-      {
-        status: 500,
-      }
+      { error: "Analysis creation failed." },
+      { status: 500 }
     );
   }
 }

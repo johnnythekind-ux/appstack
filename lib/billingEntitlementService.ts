@@ -47,7 +47,7 @@ function getCapabilityForAction(
 function getUsageForCapability(
   capability: BillableCapability,
   usage: BillingUsage
-): number | null {
+): number {
   switch (capability) {
     case "analysis":
       return usage.analyses;
@@ -59,7 +59,7 @@ function getUsageForCapability(
       return usage.jobs;
 
     case "ai_request":
-      return null;
+  return usage.aiRequests;
   }
 }
 
@@ -138,19 +138,6 @@ export async function canPerformBillingAction(
         capability,
         usage
       );
-
-    if (used === null) {
-      return {
-        data: {
-          action,
-          allowed: true,
-          entitlement: null,
-          reason:
-            "AI usage metering is not connected yet, so this capability is not currently enforced.",
-        },
-        error: null,
-      };
-    }
 
     const entitlement =
       evaluateEntitlement({

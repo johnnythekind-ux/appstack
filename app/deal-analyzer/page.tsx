@@ -8,7 +8,6 @@ import Card from "../components/Card";
 import Button from "../components/Button";
 import StatusBadge from "../components/StatusBadge";
 
-import { supabase } from "../../lib/supabase";
 import { createEvent } from "../../lib/eventService";
 import { canPerformBillingAction } from "../../lib/billingEntitlementService";
 
@@ -23,8 +22,26 @@ type SavedAnalysis = {
   recommendation: string;
 };
 
+type AnalysisApiResponse = {
+  analysis?: {
+    id: string;
+    type: string;
+    title: string;
+    address?: string | null;
+    status: string;
+    metadata?: Record<string, unknown> | null;
+    user_id: string;
+    created_at?: string;
+    updated_at?: string;
+  };
+  entitlement?: unknown;
+  error?: string;
+};
+
 function parseCurrencyInput(value: string) {
-  const normalized = value.replace(/[$,\s]/g, "").trim();
+  const normalized = value
+    .replace(/[$,\s]/g, "")
+    .trim();
 
   if (!normalized) {
     return Number.NaN;
@@ -36,26 +53,39 @@ function parseCurrencyInput(value: string) {
 export default function DealAnalyzerPage() {
   const [analysisName, setAnalysisName] =
     useState("");
+
   const [propertyAddress, setPropertyAddress] =
     useState("");
+
   const [purchasePrice, setPurchasePrice] =
     useState("");
+
   const [arv, setArv] = useState("");
+
   const [repairCost, setRepairCost] =
     useState("");
+
   const [result, setResult] =
     useState<string | null>(null);
-  const [saved, setSaved] = useState(false);
-  const [saving, setSaving] = useState(false);
+
+  const [saved, setSaved] =
+    useState(false);
+
+  const [saving, setSaving] =
+    useState(false);
 
   const recommendationRef =
     useRef<HTMLDivElement | null>(null);
 
-  const arvValue = parseCurrencyInput(arv);
-  const repairValue = parseCurrencyInput(repairCost);
+  const arvValue =
+    parseCurrencyInput(arv);
+
+  const repairValue =
+    parseCurrencyInput(repairCost);
 
   const maxOffer =
-    Number.isFinite(arvValue) && Number.isFinite(repairValue)
+    Number.isFinite(arvValue) &&
+    Number.isFinite(repairValue)
       ? arvValue * 0.7 - repairValue
       : Number.NaN;
 
@@ -73,9 +103,14 @@ export default function DealAnalyzerPage() {
   }, [result]);
 
   function analyzeDeal() {
-    const price = parseCurrencyInput(purchasePrice);
-    const currentArvValue = parseCurrencyInput(arv);
-    const currentRepairValue = parseCurrencyInput(repairCost);
+    const price =
+      parseCurrencyInput(purchasePrice);
+
+    const currentArvValue =
+      parseCurrencyInput(arv);
+
+    const currentRepairValue =
+      parseCurrencyInput(repairCost);
 
     if (
       !purchasePrice.trim() ||
@@ -91,12 +126,15 @@ export default function DealAnalyzerPage() {
       toast.error(
         "Enter a valid purchase price, ARV, and repair cost."
       );
+
       return;
     }
 
     if (price <= maxOffer) {
       setResult("BUY");
-    } else if (price <= maxOffer * 1.1) {
+    } else if (
+      price <= maxOffer * 1.1
+    ) {
       setResult("NEGOTIATE");
     } else {
       setResult("PASS");
@@ -110,6 +148,7 @@ export default function DealAnalyzerPage() {
       toast.error(
         "Analyze the deal before saving it."
       );
+
       return;
     }
 
@@ -124,7 +163,10 @@ export default function DealAnalyzerPage() {
       "create_analysis"
     );
 
-    if (billingError || !billingDecision) {
+    if (
+      billingError ||
+      !billingDecision
+    ) {
       console.error(
         "Billing entitlement check failed:",
         billingError
@@ -152,97 +194,168 @@ export default function DealAnalyzerPage() {
       name:
         analysisName.trim() ||
         "Untitled Analysis",
+
       address:
         propertyAddress.trim() ||
         "No address entered",
-      purchasePrice: parseCurrencyInput(purchasePrice),
-      arv: parseCurrencyInput(arv),
-      repairCost: parseCurrencyInput(repairCost),
+
+      purchasePrice:
+        parseCurrencyInput(
+          purchasePrice
+        ),
+
+      arv:
+        parseCurrencyInput(arv),
+
+      repairCost:
+        parseCurrencyInput(
+          repairCost
+        ),
+
       maxOffer,
-      recommendation: result,
+
+      recommendation:
+        result,
     };
 
-    const {
-      data: { user },
-      error: userError,
-    } = await supabase.auth.getUser();
+    try {
+      const response =
+        await fetch(
+          "/api/analyses",
+          {
+            method: "POST",
 
-    if (userError || !user) {
-      toast.error(
-        "You must be signed in to save an analysis."
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body: JSON.stringify({
+              name:
+                analysisData.name,
+
+              address:
+                analysisData.address,
+
+              purchasePrice:
+                analysisData.purchasePrice,
+
+              arv:
+                analysisData.arv,
+
+              repairCost:
+                analysisData.repairCost,
+
+              maxOffer:
+                analysisData.maxOffer,
+
+              recommendation:
+                analysisData.recommendation,
+            }),
+          }
+        );
+
+      const apiResult =
+        (await response.json()) as AnalysisApiResponse;
+
+      if (!response.ok) {
+        const message =
+          apiResult.error ||
+          "The analysis could not be saved.";
+
+        if (response.status !== 403) {
+          console.error(
+            "Analysis creation failed:",
+            apiResult
+          );
+        }
+
+        toast.error(message);
+        return;
+      }
+
+      const createdAnalysis =
+        apiResult.analysis;
+
+      if (!createdAnalysis) {
+        console.error(
+          "Analysis creation returned no analysis."
+        );
+
+        toast.error(
+          "The analysis could not be saved."
+        );
+
+        return;
+      }
+
+      const savedAnalysis: SavedAnalysis = {
+        id: createdAnalysis.id,
+        ...analysisData,
+      };
+
+      localStorage.setItem(
+        "appstack_saved_analysis",
+        JSON.stringify(
+          savedAnalysis
+        )
       );
-      setSaving(false);
-      return;
-    }
 
-    const { data, error } = await supabase
-      .from("workspace_items")
-      .insert({
-        type: "analysis",
-        title: analysisData.name,
-        address: analysisData.address,
-        status: analysisData.recommendation,
+      const {
+        error: eventError,
+      } = await createEvent({
+        workspace_item_id:
+          createdAnalysis.id,
+
+        event_type:
+          "analysis_created",
+
+        description:
+          `Analysis created: ${savedAnalysis.name}`,
+
+        source:
+          "Deal Analyzer",
+
         metadata: {
-          purchasePrice:
-            analysisData.purchasePrice,
-          arv: analysisData.arv,
-          repairCost:
-            analysisData.repairCost,
-          maxOffer: analysisData.maxOffer,
-        },
-        user_id: user.id,
-      })
-      .select()
-      .single();
+          address:
+            savedAnalysis.address,
 
-    if (error) {
-      console.error(error);
-      toast.error(
-        "The analysis could not be saved."
-      );
-      setSaving(false);
-      return;
-    }
-
-    const savedAnalysis: SavedAnalysis = {
-      id: data.id,
-      ...analysisData,
-    };
-
-    localStorage.setItem(
-      "appstack_saved_analysis",
-      JSON.stringify(savedAnalysis)
-    );
-
-    const { error: eventError } =
-      await createEvent({
-        workspace_item_id: data.id,
-        event_type: "analysis_created",
-        description: `Analysis created: ${savedAnalysis.name}`,
-        source: "Deal Analyzer",
-        metadata: {
-          address: savedAnalysis.address,
           recommendation:
             savedAnalysis.recommendation,
-          maxOffer: savedAnalysis.maxOffer,
+
+          maxOffer:
+            savedAnalysis.maxOffer,
         },
       });
 
-    if (eventError) {
-      toast.error(
-        "The analysis was saved, but activity tracking failed."
-      );
-    }
+      if (eventError) {
+        toast.error(
+          "The analysis was saved, but activity tracking failed."
+        );
+      }
 
-    setSaved(true);
-    setSaving(false);
-    toast.success(
-      "Analysis saved successfully."
-    );
+      setSaved(true);
+
+      toast.success(
+        "Analysis saved successfully."
+      );
+    } catch (error) {
+      console.error(
+        "Analysis creation request failed:",
+        error
+      );
+
+      toast.error(
+        "The analysis could not be saved."
+      );
+    } finally {
+      setSaving(false);
+    }
   }
 
   function continueToReportForge() {
-    window.location.href = "/reportforge";
+    window.location.href =
+      "/reportforge";
   }
 
   function runAnotherAnalysis() {
@@ -271,9 +384,13 @@ export default function DealAnalyzerPage() {
         className="mt-10"
       >
         <p className="mb-6 max-w-3xl text-sm leading-6 text-muted">
-          Enter the property assumptions AppStack needs to evaluate the deal.
-          The recommendation is calculated from explicit business rules — not AI —
-          so the same inputs always produce the same result.
+          Enter the property assumptions
+          AppStack needs to evaluate the
+          deal. The recommendation is
+          calculated from explicit
+          business rules — not AI — so
+          the same inputs always produce
+          the same result.
         </p>
 
         <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
@@ -339,7 +456,9 @@ export default function DealAnalyzerPage() {
             <input
               value={arv}
               onChange={(event) =>
-                setArv(event.target.value)
+                setArv(
+                  event.target.value
+                )
               }
               inputMode="decimal"
               className="mt-2 w-full rounded-lg border border-border bg-surface px-4 py-3 text-foreground outline-none transition placeholder:text-subtle focus:border-accent focus:ring-2 focus:ring-accent/20"
@@ -383,119 +502,140 @@ export default function DealAnalyzerPage() {
             title="Recommendation"
             className="mt-8"
           >
-          <StatusBadge
-            status={
-              result === "PASS"
-                ? "PASS ON DEAL"
-                : result
-            }
-          />
+            <StatusBadge
+              status={
+                result === "PASS"
+                  ? "PASS ON DEAL"
+                  : result
+              }
+            />
 
-          <div className="mt-4">
-            <h3 className="text-xl font-semibold">
-              {analysisName ||
-                "Untitled Analysis"}
-            </h3>
+            <div className="mt-4">
+              <h3 className="text-xl font-semibold">
+                {analysisName ||
+                  "Untitled Analysis"}
+              </h3>
 
-            <p className="mt-1 text-muted">
-              {propertyAddress ||
-                "No property address entered"}
+              <p className="mt-1 text-muted">
+                {propertyAddress ||
+                  "No property address entered"}
+              </p>
+            </div>
+
+            <div className="mt-6">
+              <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
+                Deterministic result
+              </p>
+
+              <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
+                <div className="rounded-lg border border-border bg-surface-muted p-4">
+                  <p className="text-xs text-muted">
+                    ARV
+                  </p>
+
+                  <p className="mt-2 text-xl font-semibold">
+                    $
+                    {parseCurrencyInput(
+                      arv
+                    ).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border bg-surface-muted p-4">
+                  <p className="text-xs text-muted">
+                    Repairs
+                  </p>
+
+                  <p className="mt-2 text-xl font-semibold">
+                    $
+                    {parseCurrencyInput(
+                      repairCost
+                    ).toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border bg-surface-muted p-4">
+                  <p className="text-xs text-muted">
+                    Maximum Offer
+                  </p>
+
+                  <p className="mt-2 text-xl font-semibold">
+                    $
+                    {maxOffer.toLocaleString()}
+                  </p>
+                </div>
+
+                <div className="rounded-lg border border-border bg-surface-muted p-4">
+                  <p className="text-xs text-muted">
+                    Purchase Price
+                  </p>
+
+                  <p className="mt-2 text-xl font-semibold">
+                    $
+                    {parseCurrencyInput(
+                      purchasePrice
+                    ).toLocaleString()}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <p className="mt-5 text-muted">
+              This result is based on a
+              simple maximum-offer rule:
+              ARV × 70% minus repairs.
             </p>
-          </div>
 
-          <div className="mt-6">
-            <p className="text-xs font-medium uppercase tracking-[0.18em] text-subtle">
-              Deterministic result
-            </p>
-
-            <div className="mt-3 grid grid-cols-2 gap-4 md:grid-cols-3">
-            <div className="rounded-lg border border-border bg-surface-muted p-4">
-              <p className="text-xs text-muted">
-                ARV
-              </p>
-
-              <p className="mt-2 text-xl font-semibold">
-                ${parseCurrencyInput(arv).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-surface-muted p-4">
-              <p className="text-xs text-muted">
-                Repairs
-              </p>
-
-              <p className="mt-2 text-xl font-semibold">
-                ${parseCurrencyInput(repairCost).toLocaleString()}
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-surface-muted p-4">
-              <p className="text-xs text-muted">
-                Maximum Offer
-              </p>
-
-              <p className="mt-2 text-xl font-semibold">
-                ${maxOffer.toLocaleString()}
-              </p>
-            </div>
-
-            <div className="rounded-lg border border-border bg-surface-muted p-4">
-              <p className="text-xs text-muted">
-                Purchase Price
-              </p>
-
-              <p className="mt-2 text-xl font-semibold">
-                ${parseCurrencyInput(purchasePrice).toLocaleString()}
-              </p>
-            </div>
-          </div>
-        </div>
-
-          <p className="mt-5 text-muted">
-            This result is based on a simple
-            maximum-offer rule: ARV × 70% minus
-            repairs.
-          </p>
-
-          <div className="mt-6 flex flex-wrap gap-3">
-            <Button
-              onClick={saveAnalysis}
-              variant="secondary"
-              disabled={saved || saving}
-            >
-              {saving
-                ? "Saving Analysis..."
-                : saved
-                  ? "Analysis Saved"
-                  : "Save to Workspace"}
-            </Button>
-
-            <Button
-              onClick={runAnotherAnalysis}
-            >
-              Run Another Analysis
-            </Button>
-          </div>
-
-          {saved && (
-            <div className="mt-4 rounded-lg border border-border bg-surface-muted p-4">
-              <p className="text-sm font-medium text-success">
-                Analysis saved to the shared Workspace.
-              </p>
-
-              <p className="mt-2 text-sm leading-6 text-muted">
-                The saved analysis is now available as a persisted input for downstream
-                AppStack workflows, including ReportForge.
-              </p>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <Button
+                onClick={saveAnalysis}
+                variant="secondary"
+                disabled={
+                  saved || saving
+                }
+              >
+                {saving
+                  ? "Saving Analysis..."
+                  : saved
+                    ? "Analysis Saved"
+                    : "Save to Workspace"}
+              </Button>
 
               <Button
-                onClick={continueToReportForge}
-                className="mt-4"
+                onClick={
+                  runAnotherAnalysis
+                }
               >
-                Continue to ReportForge
+                Run Another Analysis
               </Button>
             </div>
-          )}
+
+            {saved && (
+              <div className="mt-4 rounded-lg border border-border bg-surface-muted p-4">
+                <p className="text-sm font-medium text-success">
+                  Analysis saved to the
+                  shared Workspace.
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  The saved analysis is
+                  now available as a
+                  persisted input for
+                  downstream AppStack
+                  workflows, including
+                  ReportForge.
+                </p>
+
+                <Button
+                  onClick={
+                    continueToReportForge
+                  }
+                  className="mt-4"
+                >
+                  Continue to ReportForge
+                </Button>
+              </div>
+            )}
           </Card>
         </div>
       )}
@@ -505,37 +645,62 @@ export default function DealAnalyzerPage() {
         className="mt-8"
       >
         <p className="max-w-3xl text-sm leading-6 text-muted">
-          Deal Analyzer is the entry point into AppStack&apos;s connected workflow.
-          It turns structured property inputs into a deterministic decision, then
-          persists that result so other modules can build on the same shared data.
+          Deal Analyzer is the entry
+          point into AppStack&apos;s
+          connected workflow. It turns
+          structured property inputs into
+          a deterministic decision, then
+          persists that result so other
+          modules can build on the same
+          shared data.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           <div className="rounded-lg border border-border bg-surface-muted p-4">
-            <p className="text-sm font-semibold text-foreground">1. Structured input</p>
+            <p className="text-sm font-semibold text-foreground">
+              1. Structured input
+            </p>
+
             <p className="mt-2 text-sm leading-6 text-muted">
-              Property assumptions are captured in a consistent form.
+              Property assumptions are
+              captured in a consistent
+              form.
             </p>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-4">
-            <p className="text-sm font-semibold text-foreground">2. Deterministic logic</p>
+            <p className="text-sm font-semibold text-foreground">
+              2. Deterministic logic
+            </p>
+
             <p className="mt-2 text-sm leading-6 text-muted">
-              Explicit business rules calculate the maximum offer and recommendation.
+              Explicit business rules
+              calculate the maximum offer
+              and recommendation.
             </p>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-4">
-            <p className="text-sm font-semibold text-foreground">3. Persistence</p>
+            <p className="text-sm font-semibold text-foreground">
+              3. Persistence
+            </p>
+
             <p className="mt-2 text-sm leading-6 text-muted">
-              Saving creates a reusable analysis record in the shared workspace.
+              Saving creates a reusable
+              analysis record in the
+              shared workspace.
             </p>
           </div>
 
           <div className="rounded-lg border border-border bg-surface-muted p-4">
-            <p className="text-sm font-semibold text-foreground">4. Module handoff</p>
+            <p className="text-sm font-semibold text-foreground">
+              4. Module handoff
+            </p>
+
             <p className="mt-2 text-sm leading-6 text-muted">
-              ReportForge and later workflow stages can consume the saved analysis.
+              ReportForge and later
+              workflow stages can consume
+              the saved analysis.
             </p>
           </div>
         </div>

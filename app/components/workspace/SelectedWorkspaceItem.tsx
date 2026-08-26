@@ -537,10 +537,6 @@ export default function SelectedWorkspaceItem({
               </Button>
             )}
 
-            <Button onClick={onDuplicate}>
-              Duplicate
-            </Button>
-
             <Button onClick={onDelete}>
               Delete
             </Button>

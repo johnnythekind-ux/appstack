@@ -31,16 +31,16 @@ const billingFlow = [
     step: "Step 2",
     title: "Assign Plan",
     description:
-      "Each authenticated user now has a persisted AppStack subscription record and plan assignment.",
+      "Each authenticated user has a persisted AppStack subscription record and deterministic plan assignment.",
     status: "Complete",
   },
   {
-  step: "Step 3",
-  title: "Enforce Entitlements",
-  description:
-    "Plan limits are measured and enforced for analyses, reports, and jobs. AI usage enforcement remains intentionally deferred until reliable AI metering is connected.",
-  status: "Complete",
-},
+    step: "Step 3",
+    title: "Meter & Enforce Usage",
+    description:
+      "Analyses, reports, jobs, and AI requests are measured for the active billing period and enforced against plan allowances.",
+    status: "Complete",
+  },
   {
     step: "Step 4",
     title: "Connect Payments",
@@ -50,16 +50,22 @@ const billingFlow = [
   },
 ];
 
-function getStatusLabel(status: SubscriptionRecord["status"]) {
+function getStatusLabel(
+  status: SubscriptionRecord["status"]
+) {
   switch (status) {
     case "free":
       return "Free";
+
     case "active":
       return "Active";
+
     case "past_due":
       return "Past Due";
+
     case "canceled":
       return "Canceled";
+
     default:
       return status;
   }
@@ -69,13 +75,24 @@ export default function BillingPage() {
   const [subscription, setSubscription] =
     useState<SubscriptionRecord | null>(null);
 
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] =
+    useState(true);
 
-  const [usage, setUsage] = useState<BillingUsage | null>(null);
-  const [usageLoading, setUsageLoading] = useState(true);
+  const [usage, setUsage] =
+    useState<BillingUsage | null>(null);
 
-  const [checkoutLoading, setCheckoutLoading] = useState(false);
-  const [portalLoading, setPortalLoading] = useState(false);
+  const [usageLoading, setUsageLoading] =
+    useState(true);
+
+  const [
+    checkoutLoading,
+    setCheckoutLoading,
+  ] = useState(false);
+
+  const [
+    portalLoading,
+    setPortalLoading,
+  ] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -107,7 +124,9 @@ export default function BillingPage() {
             "Your billing information could not be loaded."
           );
         } else {
-          setSubscription(subscriptionResult.data);
+          setSubscription(
+            subscriptionResult.data
+          );
         }
 
         if (
@@ -169,16 +188,21 @@ export default function BillingPage() {
         }
       );
 
-      const result = await response.json();
+      const result =
+        await response.json();
 
-      if (!response.ok || !result.url) {
+      if (
+        !response.ok ||
+        !result.url
+      ) {
         throw new Error(
           result.error ||
             "Checkout could not be started."
         );
       }
 
-      window.location.href = result.url;
+      window.location.href =
+        result.url;
     } catch (error) {
       console.error(
         "Checkout start failed:",
@@ -196,40 +220,62 @@ export default function BillingPage() {
   }
 
   async function openBillingPortal() {
-    if (portalLoading) return;
+    if (portalLoading) {
+      return;
+    }
 
     setPortalLoading(true);
 
     try {
-      const response = await fetch("/api/billing/portal", {
-        method: "POST",
-      });
-      const result = await response.json();
+      const response = await fetch(
+        "/api/billing/portal",
+        {
+          method: "POST",
+        }
+      );
 
-      if (!response.ok || !result.url) {
-        throw new Error(result.error || "Billing portal could not be opened.");
+      const result =
+        await response.json();
+
+      if (
+        !response.ok ||
+        !result.url
+      ) {
+        throw new Error(
+          result.error ||
+            "Billing portal could not be opened."
+        );
       }
 
-      window.location.href = result.url;
+      window.location.href =
+        result.url;
     } catch (error) {
-      console.error("Billing portal start failed:", error);
+      console.error(
+        "Billing portal start failed:",
+        error
+      );
+
       toast.error(
         error instanceof Error
           ? error.message
           : "Billing portal could not be opened."
       );
+
       setPortalLoading(false);
     }
   }
 
   const plan = subscription
-    ? BILLING_PLANS[subscription.plan]
+    ? BILLING_PLANS[
+        subscription.plan
+      ]
     : null;
 
-  const stripeConnected = Boolean(
-    subscription?.stripeCustomerId &&
-      subscription?.stripeSubscriptionId
-  );
+  const stripeConnected =
+    Boolean(
+      subscription?.stripeCustomerId &&
+        subscription?.stripeSubscriptionId
+    );
 
   const usagePeriodLabel = usage
     ? `${new Date(
@@ -261,9 +307,13 @@ export default function BillingPage() {
     },
     {
       label: "Usage metering",
-      value: usage ? "Active" : usageLoading ? "Loading" : "Unavailable",
+      value: usage
+        ? "Active"
+        : usageLoading
+          ? "Loading"
+          : "Unavailable",
       detail: usage
-        ? "Current-period analyses, reports, and jobs are measured against plan allowances."
+        ? "Current-period analyses, reports, jobs, and AI requests are measured against plan allowances."
         : "Current-period usage could not be loaded.",
       active: Boolean(usage),
     },
@@ -282,9 +332,12 @@ export default function BillingPage() {
   return (
     <Page
       title="Billing"
-      description="Review your current AppStack plan, persisted subscription state, and the billing capabilities being built on top of authentication."
+      description="Review your current AppStack plan, subscription lifecycle, usage metering, entitlement enforcement, and Stripe billing state."
     >
-      <Card title="Current Subscription" className="mt-10">
+      <Card
+        title="Current Subscription"
+        className="mt-10"
+      >
         {loading && (
           <div className="rounded-xl border border-border bg-surface-muted p-6">
             <p className="text-sm text-muted">
@@ -293,203 +346,243 @@ export default function BillingPage() {
           </div>
         )}
 
-        {!loading && !subscription && (
-          <div className="rounded-xl border border-border bg-surface-muted p-6">
-            <p className="text-sm font-semibold text-foreground">
-              Subscription unavailable
-            </p>
-
-            <p className="mt-2 text-sm leading-6 text-muted">
-              AppStack could not load the current subscription record.
-            </p>
-          </div>
-        )}
-
-        {!loading && subscription && plan && (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+        {!loading &&
+          !subscription && (
             <div className="rounded-xl border border-border bg-surface-muted p-6">
-              <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
-                Current Plan
+              <p className="text-sm font-semibold text-foreground">
+                Subscription unavailable
               </p>
 
-              <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
-                <h2 className="text-3xl font-bold text-foreground">
-                  {plan.name}
-                </h2>
+              <p className="mt-2 text-sm leading-6 text-muted">
+                AppStack could not load
+                the current subscription
+                record.
+              </p>
+            </div>
+          )}
 
-                {subscription.plan !== "free" && (
-                  <p className="pb-1 text-lg font-semibold text-muted">
-                    {formatPlanPrice(subscription.plan)}
-                  </p>
+        {!loading &&
+          subscription &&
+          plan && (
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1.4fr_0.6fr]">
+              <div className="rounded-xl border border-border bg-surface-muted p-6">
+                <p className="text-xs font-bold uppercase tracking-[0.18em] text-accent">
+                  Current Plan
+                </p>
+
+                <div className="mt-3 flex flex-wrap items-end gap-x-4 gap-y-2">
+                  <h2 className="text-3xl font-bold text-foreground">
+                    {plan.name}
+                  </h2>
+
+                  {subscription.plan !==
+                    "free" && (
+                    <p className="pb-1 text-lg font-semibold text-muted">
+                      {formatPlanPrice(
+                        subscription.plan
+                      )}
+                    </p>
+                  )}
+                </div>
+
+                <p className="mt-3 max-w-3xl leading-7 text-muted">
+                  {plan.description}
+                </p>
+
+                {subscription.plan ===
+                  "free" && (
+                  <div className="mt-5">
+                    <button
+                      type="button"
+                      onClick={
+                        startCheckout
+                      }
+                      disabled={
+                        checkoutLoading
+                      }
+                      className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                    >
+                      {checkoutLoading
+                        ? "Opening Checkout..."
+                        : "Upgrade to Pro — $29/month"}
+                    </button>
+                  </div>
                 )}
+
+                {subscription.plan ===
+                  "pro" &&
+                  stripeConnected && (
+                    <div className="mt-5">
+                      <button
+                        type="button"
+                        onClick={
+                          openBillingPortal
+                        }
+                        disabled={
+                          portalLoading
+                        }
+                        className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
+                      >
+                        {portalLoading
+                          ? "Opening Billing..."
+                          : "Manage Billing"}
+                      </button>
+                    </div>
+                  )}
+
+                <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
+                  <div className="rounded-lg border border-border bg-surface p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                      Analyses
+                    </p>
+
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {usage
+                        ? `${usage.analyses} / ${plan.entitlements.analysisLimit}`
+                        : `— / ${plan.entitlements.analysisLimit}`}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      used this period
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-surface p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                      Reports
+                    </p>
+
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {usage
+                        ? `${usage.reports} / ${plan.entitlements.reportLimit}`
+                        : `— / ${plan.entitlements.reportLimit}`}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      used this period
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-surface p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                      Jobs
+                    </p>
+
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {usage
+                        ? `${usage.jobs} / ${plan.entitlements.jobLimit}`
+                        : `— / ${plan.entitlements.jobLimit}`}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      used this period
+                    </p>
+                  </div>
+
+                  <div className="rounded-lg border border-border bg-surface p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                      AI Requests
+                    </p>
+
+                    <p className="mt-2 text-xl font-bold text-foreground">
+                      {usage
+                        ? `${usage.aiRequests} / ${plan.entitlements.aiRequestLimit}`
+                        : `— / ${plan.entitlements.aiRequestLimit}`}
+                    </p>
+
+                    <p className="mt-1 text-xs text-muted">
+                      used this period
+                    </p>
+                  </div>
+                </div>
               </div>
 
-              <p className="mt-3 max-w-3xl leading-7 text-muted">
-                {plan.description}
-              </p>
+              <div className="rounded-xl border border-border bg-surface p-6">
+                <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                  Subscription Status
+                </p>
 
-              {subscription.plan === "free" && (
-                <div className="mt-5">
-                  <button
-                    type="button"
-                    onClick={startCheckout}
-                    disabled={checkoutLoading}
-                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {checkoutLoading
-                      ? "Opening Checkout..."
-                      : "Upgrade to Pro — $29/month"}
-                  </button>
-                </div>
-              )}
+                <p className="mt-3 text-2xl font-bold text-foreground">
+                  {getStatusLabel(
+                    subscription.status
+                  )}
+                </p>
 
-              {subscription.plan === "pro" && stripeConnected && (
-                <div className="mt-5">
-                  <button
-                    type="button"
-                    onClick={openBillingPortal}
-                    disabled={portalLoading}
-                    className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-white transition hover:bg-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
-                  >
-                    {portalLoading ? "Opening Billing..." : "Manage Billing"}
-                  </button>
-                </div>
-              )}
+                <div className="mt-6 space-y-4 text-sm">
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      Stripe
+                    </p>
 
-              <div className="mt-6 grid grid-cols-2 gap-3 md:grid-cols-4">
-                <div className="rounded-lg border border-border bg-surface p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                    Analyses
-                  </p>
-                  <p className="mt-2 text-xl font-bold text-foreground">
-                    {usage
-                      ? `${usage.analyses} / ${plan.entitlements.analysisLimit}`
-                      : `— / ${plan.entitlements.analysisLimit}`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    used this period
-                  </p>
-                </div>
+                    <p className="mt-1 text-muted">
+                      {stripeConnected
+                        ? "Connected"
+                        : "Not connected yet"}
+                    </p>
+                  </div>
 
-                <div className="rounded-lg border border-border bg-surface p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                    Reports
-                  </p>
-                  <p className="mt-2 text-xl font-bold text-foreground">
-                    {usage
-                      ? `${usage.reports} / ${plan.entitlements.reportLimit}`
-                      : `— / ${plan.entitlements.reportLimit}`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    used this period
-                  </p>
-                </div>
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      Billing period
+                    </p>
 
-                <div className="rounded-lg border border-border bg-surface p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                    Jobs
-                  </p>
-                  <p className="mt-2 text-xl font-bold text-foreground">
-                    {usage
-                      ? `${usage.jobs} / ${plan.entitlements.jobLimit}`
-                      : `— / ${plan.entitlements.jobLimit}`}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    used this period
-                  </p>
-                </div>
-
-                <div className="rounded-lg border border-border bg-surface p-4">
-                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                    AI Requests
-                  </p>
-                  <p className="mt-2 text-xl font-bold text-foreground">
-                    — / {plan.entitlements.aiRequestLimit}
-                  </p>
-                  <p className="mt-1 text-xs text-muted">
-                    metering not connected
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <div className="rounded-xl border border-border bg-surface p-6">
-              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                Subscription Status
-              </p>
-
-              <p className="mt-3 text-2xl font-bold text-foreground">
-                {getStatusLabel(subscription.status)}
-              </p>
-
-              <div className="mt-6 space-y-4 text-sm">
-                <div>
-                  <p className="font-semibold text-foreground">
-                    Stripe
-                  </p>
-                  <p className="mt-1 text-muted">
-                    {stripeConnected
-                      ? "Connected"
-                      : "Not connected yet"}
-                  </p>
-                </div>
-
-                <div>
-                  <p className="font-semibold text-foreground">
-                    Billing period
-                  </p>
-                  <p className="mt-1 text-muted">
-                    {usage
-                      ? usagePeriodLabel
-                      : subscription.currentPeriodStart &&
-                          subscription.currentPeriodEnd
-                        ? `${new Date(
-                            subscription.currentPeriodStart
-                          ).toLocaleDateString()} – ${new Date(
+                    <p className="mt-1 text-muted">
+                      {usage
+                        ? usagePeriodLabel
+                        : subscription.currentPeriodStart &&
                             subscription.currentPeriodEnd
-                          ).toLocaleDateString()}`
-                        : "Not established yet"}
-                  </p>
-                </div>
+                          ? `${new Date(
+                              subscription.currentPeriodStart
+                            ).toLocaleDateString()} – ${new Date(
+                              subscription.currentPeriodEnd
+                            ).toLocaleDateString()}`
+                          : "Not established yet"}
+                    </p>
+                  </div>
 
-                <div>
-                  <p className="font-semibold text-foreground">
-                    Cancellation
-                  </p>
-                  <p className="mt-1 text-muted">
-                    {subscription.cancelAtPeriodEnd
-                      ? "Scheduled at period end"
-                      : "Not scheduled"}
-                  </p>
+                  <div>
+                    <p className="font-semibold text-foreground">
+                      Cancellation
+                    </p>
+
+                    <p className="mt-1 text-muted">
+  {subscription.status === "canceled"
+    ? "Completed"
+    : subscription.cancelAtPeriodEnd
+      ? "Scheduled at period end"
+      : "Not scheduled"}
+</p>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
       </Card>
 
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {billingStatus.map((item) => (
-          <Card key={item.label}>
-            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-              {item.label}
-            </p>
+        {billingStatus.map(
+          (item) => (
+            <Card key={item.label}>
+              <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                {item.label}
+              </p>
 
-            <p
-              className={`mt-3 text-xl font-bold ${
-                item.active
-                  ? "text-emerald-600 dark:text-emerald-400"
-                  : "text-foreground"
-              }`}
-            >
-              {item.value}
-            </p>
+              <p
+                className={`mt-3 text-xl font-bold ${
+                  item.active
+                    ? "text-emerald-600 dark:text-emerald-400"
+                    : "text-foreground"
+                }`}
+              >
+                {item.value}
+              </p>
 
-            <p className="mt-2 text-sm leading-6 text-muted">
-              {item.detail}
-            </p>
-          </Card>
-        ))}
+              <p className="mt-2 text-sm leading-6 text-muted">
+                {item.detail}
+              </p>
+            </Card>
+          )
+        )}
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-4 lg:grid-cols-3">
@@ -503,9 +596,13 @@ export default function BillingPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            AppStack now persists a subscription record for each authenticated
-            user. The current plan is resolved through the billing service
-            instead of being hard-coded into this page.
+            AppStack persists a
+            subscription record for each
+            authenticated user. The
+            current plan is resolved
+            through the billing service
+            instead of being hard-coded
+            into this page.
           </p>
 
           <div className="mt-5 rounded-lg border border-border bg-surface-muted p-4">
@@ -533,10 +630,12 @@ export default function BillingPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Analyses, reports, and jobs are now measured for the current billing
-            period and compared with the allowances defined by the active plan.
-            AI request metering is intentionally deferred until a reliable usage
-            source is connected.
+            Analyses, reports, jobs, and
+            AI requests are measured for
+            the current billing period
+            and compared with the
+            deterministic allowances
+            defined by the active plan.
           </p>
 
           <div className="mt-5 rounded-lg border border-border bg-surface-muted p-4">
@@ -546,9 +645,8 @@ export default function BillingPage() {
 
             <p className="mt-2 text-sm leading-6 text-muted">
               {usage
-                ? `${usage.analyses} analyses, ${usage.reports} reports, and ${usage.jobs} jobs recorded from ${usagePeriodLabel}.`
+                ? `${usage.analyses} analyses, ${usage.reports} reports, ${usage.jobs} jobs, and ${usage.aiRequests} AI requests recorded from ${usagePeriodLabel}.`
                 : "Usage data is still loading or unavailable."}
-
             </p>
           </div>
         </Card>
@@ -563,8 +661,11 @@ export default function BillingPage() {
           </h2>
 
           <p className="mt-2 text-sm leading-6 text-muted">
-            Stripe Checkout, subscription synchronization, and customer billing
-            portal access are connected in sandbox mode.
+            Stripe Checkout,
+            subscription synchronization,
+            and customer billing portal
+            access are connected in
+            sandbox mode.
           </p>
 
           <div className="mt-5 rounded-lg border border-border bg-surface-muted p-4">
@@ -581,64 +682,82 @@ export default function BillingPage() {
         </Card>
       </section>
 
-      <Card title="Billing Flow" className="mt-8">
+      <Card
+        title="Billing Flow"
+        className="mt-8"
+      >
         <p className="max-w-3xl text-sm leading-6 text-muted">
-  Billing is layered onto the identity boundary in stages. Identity, persisted
-  plan assignment, current-period usage metering, entitlement enforcement,
-  Stripe Checkout, subscription synchronization, and customer billing management
-  are connected. AI usage enforcement remains deferred until reliable AI metering
-  is available.
-</p>
+          Billing is layered onto the
+          identity boundary in stages.
+          Identity, persisted plan
+          assignment, current-period usage
+          metering, deterministic
+          entitlement enforcement, Stripe
+          Checkout, subscription
+          synchronization, and customer
+          billing management are now
+          connected.
+        </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
-          {billingFlow.map((item) => (
-            <div
-              key={item.step}
-              className="rounded-xl border border-border bg-surface-muted p-5"
-            >
-              <div className="flex items-center justify-between gap-3">
-                <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-                  {item.step}
+          {billingFlow.map(
+            (item) => (
+              <div
+                key={item.step}
+                className="rounded-xl border border-border bg-surface-muted p-5"
+              >
+                <div className="flex items-center justify-between gap-3">
+                  <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                    {item.step}
+                  </p>
+
+                  <span
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                      item.status ===
+                      "Complete"
+                        ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
+                        : item.status ===
+                            "Next"
+                          ? "bg-blue-500/15 text-blue-700 dark:text-blue-300"
+                          : "border border-border bg-surface text-muted"
+                    }`}
+                  >
+                    {item.status}
+                  </span>
+                </div>
+
+                <h3 className="mt-3 font-semibold text-foreground">
+                  {item.title}
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {item.description}
                 </p>
-
-                <span
-                  className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
-                    item.status === "Complete"
-                      ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400"
-                      : item.status === "Next"
-                        ? "bg-blue-500/15 text-blue-700 dark:text-blue-300"
-                        : "border border-border bg-surface text-muted"
-                  }`}
-                >
-                  {item.status}
-                </span>
               </div>
-
-              <h3 className="mt-3 font-semibold text-foreground">
-                {item.title}
-              </h3>
-
-              <p className="mt-2 text-sm leading-6 text-muted">
-                {item.description}
-              </p>
-            </div>
-          ))}
+            )
+          )}
         </div>
       </Card>
 
-      <Card title="How this fits AppStack" className="mt-8">
+      <Card
+        title="How this fits AppStack"
+        className="mt-8"
+      >
         <p className="max-w-3xl text-sm leading-6 text-muted">
-          Billing remains an account-level service built on AppStack identity.
-          Supabase now persists plan and subscription state for each user, while
-          the billing domain defines deterministic plan allowances independently
-          of Stripe.
+          Billing remains an account-level
+          service built on AppStack
+          identity. Supabase persists plan,
+          subscription, and usage state,
+          while the billing domain defines
+          deterministic allowances
+          independently of Stripe.
         </p>
 
         <div className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-4">
           {[
             [
               "1. Identity",
-              "Authentication establishes the account owner.",
+              "Authentication establishes the account owner and trusted user boundary.",
             ],
             [
               "2. Subscription",
@@ -646,26 +765,28 @@ export default function BillingPage() {
             ],
             [
               "3. Entitlements",
-              "Billing rules define the allowances that application services now enforce.",
+              "Server-side application boundaries meter and enforce analyses, reports, jobs, and AI requests.",
             ],
             [
               "4. Payments",
               "Stripe manages checkout, invoices, customer billing controls, and the external payment lifecycle.",
             ],
-          ].map(([title, description]) => (
-            <div
-              key={title}
-              className="rounded-xl border border-border bg-surface-muted p-4"
-            >
-              <p className="text-sm font-semibold text-foreground">
-                {title}
-              </p>
+          ].map(
+            ([title, description]) => (
+              <div
+                key={title}
+                className="rounded-xl border border-border bg-surface-muted p-4"
+              >
+                <p className="text-sm font-semibold text-foreground">
+                  {title}
+                </p>
 
-              <p className="mt-2 text-sm leading-6 text-muted">
-                {description}
-              </p>
-            </div>
-          ))}
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  {description}
+                </p>
+              </div>
+            )
+          )}
         </div>
       </Card>
 

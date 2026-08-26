@@ -53,13 +53,18 @@ function mapSubscriptionRow(
     plan: row.plan,
     status: row.status,
 
-    stripeCustomerId: row.stripe_customer_id,
+    stripeCustomerId:
+      row.stripe_customer_id,
+
     stripeSubscriptionId:
       row.stripe_subscription_id,
-    stripePriceId: row.stripe_price_id,
+
+    stripePriceId:
+      row.stripe_price_id,
 
     currentPeriodStart:
       row.current_period_start,
+
     currentPeriodEnd:
       row.current_period_end,
 
@@ -68,10 +73,36 @@ function mapSubscriptionRow(
   };
 }
 
-export async function getCurrentSubscription() {
-  const userId = await getCurrentUserId();
+function createDefaultSubscription(
+  userId: string
+): SubscriptionRecord {
+  return {
+    userId,
+    plan: DEFAULT_BILLING_PLAN,
+    status:
+      DEFAULT_SUBSCRIPTION_STATUS,
 
-  const { data, error } = await supabase
+    stripeCustomerId: null,
+    stripeSubscriptionId: null,
+    stripePriceId: null,
+
+    currentPeriodStart: null,
+    currentPeriodEnd: null,
+
+    cancelAtPeriodEnd: false,
+  };
+}
+
+export async function getSubscriptionForUserId(
+  userId: string
+): Promise<{
+  data: SubscriptionRecord | null;
+  error: unknown;
+}> {
+  const {
+    data,
+    error,
+  } = await supabase
     .from("subscriptions")
     .select("*")
     .eq("user_id", userId)
@@ -86,18 +117,10 @@ export async function getCurrentSubscription() {
 
   if (!data) {
     return {
-      data: {
-        userId,
-        plan: DEFAULT_BILLING_PLAN,
-        status:
-          DEFAULT_SUBSCRIPTION_STATUS,
-        stripeCustomerId: null,
-        stripeSubscriptionId: null,
-        stripePriceId: null,
-        currentPeriodStart: null,
-        currentPeriodEnd: null,
-        cancelAtPeriodEnd: false,
-      } satisfies SubscriptionRecord,
+      data:
+        createDefaultSubscription(
+          userId
+        ),
       error: null,
     };
   }
@@ -110,13 +133,25 @@ export async function getCurrentSubscription() {
   };
 }
 
+export async function getCurrentSubscription() {
+  const userId =
+    await getCurrentUserId();
+
+  return await getSubscriptionForUserId(
+    userId
+  );
+}
+
 export async function getCurrentBillingPlan() {
   const {
     data: subscription,
     error,
   } = await getCurrentSubscription();
 
-  if (error || !subscription) {
+  if (
+    error ||
+    !subscription
+  ) {
     return {
       data: null,
       error,
@@ -146,7 +181,10 @@ export async function evaluateCurrentEntitlement({
     error,
   } = await getCurrentSubscription();
 
-  if (error || !subscription) {
+  if (
+    error ||
+    !subscription
+  ) {
     return {
       data: null,
       error,

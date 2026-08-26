@@ -151,29 +151,32 @@ export default function WorkspacePage() {
     }
 
     async function initializeWorkspace() {
-      const {
-        data: { user },
-        error: authError,
-      } = await supabase.auth.getUser();
+  const {
+    data: { session },
+    error: authError,
+  } = await supabase.auth.getSession();
 
-      if (!mounted) {
-        return;
-      }
+  if (!mounted) {
+    return;
+  }
 
-      if (authError || !user) {
-        window.location.replace("/login");
-        return;
-      }
+  if (
+    authError ||
+    !session?.user
+  ) {
+    window.location.replace("/login");
+    return;
+  }
 
-      setAuthResolved(true);
+  setAuthResolved(true);
 
-      await loadItems();
+  await loadItems();
 
-      if (!mounted) {
-        return;
-      }
+  if (!mounted) {
+    return;
+  }
 
-      channel = supabase
+  channel = supabase
         .channel("workspace-items-live")
         .on(
           "postgres_changes",

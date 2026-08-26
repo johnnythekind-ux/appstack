@@ -81,27 +81,36 @@ export default function SettingsPage() {
     let mounted = true;
 
     async function loadUser() {
-      const {
-        data: { user },
-        error,
-      } = await supabase.auth.getUser();
+  const {
+    data: { session },
+    error,
+  } = await supabase.auth.getSession();
 
-      if (!mounted) return;
+  if (!mounted) return;
 
-      if (error || !user) {
-        toast.error("Account information could not be loaded.");
-        setUser(null);
-        setProfile(null);
-        setSettings(null);
-        setLoading(false);
-        return;
-      }
+  const user =
+    session?.user ?? null;
 
-      setUser(user);
-      await loadAccountData(user);
+  if (error || !user) {
+    toast.error(
+      "Account information could not be loaded."
+    );
 
-      if (mounted) setLoading(false);
-    }
+    setUser(null);
+    setProfile(null);
+    setSettings(null);
+    setLoading(false);
+    return;
+  }
+
+  setUser(user);
+
+  await loadAccountData(user);
+
+  if (mounted) {
+    setLoading(false);
+  }
+}
 
     loadUser();
 

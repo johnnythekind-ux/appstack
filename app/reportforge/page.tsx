@@ -342,36 +342,35 @@ Based on the 70% rule, the purchase price ${
     }
 
     if (!existingReport) {
-      const {
-        data: billingDecision,
-        error: billingError,
-      } = await canPerformBillingAction(
-        "create_report"
-      );
+  const {
+    data: billingDecision,
+    error: billingError,
+  } = await canPerformBillingAction(
+    "create_report"
+  );
 
-      if (billingError || !billingDecision) {
-        console.error(
-          "Billing entitlement check failed:",
-          billingError
-        );
+  if (billingError || !billingDecision) {
+    console.error(
+      "Billing entitlement check failed:",
+      billingError
+    );
 
-        toast.error(
-          "AppStack could not verify your current plan limits."
-        );
+    toast.error(
+      "AppStack could not verify your current plan limits."
+    );
 
-        return;
-      }
+    return;
+  }
 
-      if (!billingDecision.allowed) {
-        toast.error(
-          billingDecision.reason ||
-            "Your current plan does not allow another report this billing period."
-        );
+  if (!billingDecision.allowed) {
+    toast.error(
+      billingDecision.reason ||
+        "Your current plan does not allow another report this billing period."
+    );
 
-        return;
-      }
-    }
-
+    return;
+  }
+}
     setSavingReport(true);
 
     const reportInput = {

@@ -157,34 +157,34 @@ export default function JobsPage() {
         ? `${pendingContext.reportTitle} Processing Job`
         : "Investor Report Processing Job");
 
-    const {
-      data: billingDecision,
-      error: billingError,
-    } = await canPerformBillingAction(
-      "create_job"
-    );
+   const {
+  data: billingDecision,
+  error: billingError,
+} = await canPerformBillingAction(
+  "create_job"
+);
 
-    if (billingError || !billingDecision) {
-      console.error(
-        "Billing entitlement check failed:",
-        billingError
-      );
+if (billingError || !billingDecision) {
+  console.error(
+    "Billing entitlement check failed:",
+    billingError
+  );
 
-      toast.error(
-        "AppStack could not verify your current plan limits."
-      );
+  toast.error(
+    "AppStack could not verify your current plan limits."
+  );
 
-      return;
-    }
+  return;
+}
 
-    if (!billingDecision.allowed) {
-      toast.error(
-        billingDecision.reason ||
-          "Your current plan does not allow another job this billing period."
-      );
+if (!billingDecision.allowed) {
+  toast.error(
+    billingDecision.reason ||
+      "Your current plan does not allow another job this billing period."
+  );
 
-      return;
-    }
+  return;
+}
 
     setCreating(true);
 
@@ -197,12 +197,25 @@ export default function JobsPage() {
         reportTitle: pendingContext?.reportTitle,
       });
 
-    if (error) {
-      console.error(error);
-      toast.error("The job could not be created.");
-      setCreating(false);
-      return;
-    }
+    if (error || !data) {
+  const message =
+    error instanceof Error
+      ? error.message
+      : "The job could not be created.";
+
+  const isBillingLimitError =
+    message.includes("Monthly job limit") ||
+    message.includes("current plan");
+
+  if (!isBillingLimitError && error) {
+    console.error(error);
+  }
+
+  toast.error(message);
+
+  setCreating(false);
+  return;
+}
 
     const queuedJob: CurrentJob = {
       id: data.id,

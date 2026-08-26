@@ -1,20 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "../../lib/supabase";
 
-type ThemePreference = "system" | "light" | "dark";
-type ResolvedTheme = "light" | "dark";
+type ThemePreference =
+  | "system"
+  | "light"
+  | "dark";
 
-const THEME_STORAGE_KEY = "appstack-theme-preference";
+type ResolvedTheme =
+  | "light"
+  | "dark";
+
+const THEME_STORAGE_KEY =
+  "appstack-theme-preference";
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
     return "dark";
   }
 
-  return window.matchMedia("(prefers-color-scheme: dark)").matches
+  return window.matchMedia(
+    "(prefers-color-scheme: dark)"
+  ).matches
     ? "dark"
     : "light";
 }
@@ -27,9 +37,14 @@ function resolveTheme(
     : preference;
 }
 
-function applyTheme(theme: ResolvedTheme) {
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
+function applyTheme(
+  theme: ResolvedTheme
+) {
+  document.documentElement.dataset.theme =
+    theme;
+
+  document.documentElement.style.colorScheme =
+    theme;
 }
 
 function isThemePreference(
@@ -42,20 +57,27 @@ function isThemePreference(
   );
 }
 
-function getCachedPreference(): ThemePreference {
+function getCachedPreference():
+  ThemePreference {
   if (typeof window === "undefined") {
     return "system";
   }
 
   const cachedPreference =
-    window.localStorage.getItem(THEME_STORAGE_KEY);
+    window.localStorage.getItem(
+      THEME_STORAGE_KEY
+    );
 
-  return isThemePreference(cachedPreference)
+  return isThemePreference(
+    cachedPreference
+  )
     ? cachedPreference
     : "system";
 }
 
-function cachePreference(preference: ThemePreference) {
+function cachePreference(
+  preference: ThemePreference
+) {
   window.localStorage.setItem(
     THEME_STORAGE_KEY,
     preference
@@ -67,30 +89,44 @@ export default function ThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [preference, setPreference] =
-    useState<ThemePreference>(() => getCachedPreference());
+  const [
+    preference,
+    setPreference,
+  ] = useState<ThemePreference>(
+    () => getCachedPreference()
+  );
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadThemePreference() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-
+    async function loadThemePreference(
+      user: User | null
+    ) {
       if (!mounted) {
         return;
       }
 
       if (!user) {
-        const cachedPreference = getCachedPreference();
+        const cachedPreference =
+          getCachedPreference();
 
-        setPreference(cachedPreference);
-        applyTheme(resolveTheme(cachedPreference));
+        setPreference(
+          cachedPreference
+        );
+
+        applyTheme(
+          resolveTheme(
+            cachedPreference
+          )
+        );
+
         return;
       }
 
-      const { data, error } = await supabase
+      const {
+        data,
+        error,
+      } = await supabase
         .from("user_settings")
         .select("theme")
         .eq("user_id", user.id)
@@ -106,72 +142,132 @@ export default function ThemeProvider({
           error
         );
 
-        const cachedPreference = getCachedPreference();
+        const cachedPreference =
+          getCachedPreference();
 
-        setPreference(cachedPreference);
-        applyTheme(resolveTheme(cachedPreference));
+        setPreference(
+          cachedPreference
+        );
+
+        applyTheme(
+          resolveTheme(
+            cachedPreference
+          )
+        );
+
         return;
       }
 
       const nextPreference =
-        isThemePreference(data?.theme)
+        isThemePreference(
+          data?.theme
+        )
           ? data.theme
           : "system";
 
-      cachePreference(nextPreference);
-      setPreference(nextPreference);
-      applyTheme(resolveTheme(nextPreference));
+      cachePreference(
+        nextPreference
+      );
+
+      setPreference(
+        nextPreference
+      );
+
+      applyTheme(
+        resolveTheme(
+          nextPreference
+        )
+      );
     }
 
-    loadThemePreference();
+    async function initializeTheme() {
+      const {
+        data: { session },
+      } =
+        await supabase.auth.getSession();
+
+      if (!mounted) {
+        return;
+      }
+
+      await loadThemePreference(
+        session?.user ?? null
+      );
+    }
+
+    initializeTheme();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(() => {
-      loadThemePreference();
-    });
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          void loadThemePreference(
+            session?.user ?? null
+          );
+        }
+      );
 
-    function handlePreferenceUpdated(event: Event) {
-      const customEvent =
-        event as CustomEvent<ThemePreference>;
+    const handlePreferenceUpdated:
+      EventListener = (event) => {
+        const customEvent =
+          event as CustomEvent<ThemePreference>;
 
-      const nextPreference =
-        isThemePreference(customEvent.detail)
-          ? customEvent.detail
-          : "system";
+        const nextPreference =
+          isThemePreference(
+            customEvent.detail
+          )
+            ? customEvent.detail
+            : "system";
 
-      cachePreference(nextPreference);
-      setPreference(nextPreference);
-      applyTheme(resolveTheme(nextPreference));
-    }
+        cachePreference(
+          nextPreference
+        );
+
+        setPreference(
+          nextPreference
+        );
+
+        applyTheme(
+          resolveTheme(
+            nextPreference
+          )
+        );
+      };
 
     window.addEventListener(
       "appstack-theme-preference",
-      handlePreferenceUpdated as EventListener
+      handlePreferenceUpdated
     );
 
     return () => {
       mounted = false;
+
       subscription.unsubscribe();
 
       window.removeEventListener(
         "appstack-theme-preference",
-        handlePreferenceUpdated as EventListener
+        handlePreferenceUpdated
       );
     };
   }, []);
 
   useEffect(() => {
-    if (preference !== "system") {
+    if (
+      preference !== "system"
+    ) {
       return;
     }
 
-    const mediaQuery = window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    );
+    const mediaQuery =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
 
     const applySystemTheme = () => {
-      applyTheme(getSystemTheme());
+      applyTheme(
+        getSystemTheme()
+      );
     };
 
     mediaQuery.addEventListener(

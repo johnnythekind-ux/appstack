@@ -8,48 +8,96 @@ export type CreateJobInput = {
   reportTitle?: string;
 };
 
-async function getCurrentUserId() {
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+export type WorkspaceJob = {
+  id: string;
+  type: string;
+  title: string;
+  status: string;
+  user_id: string;
+  metadata: {
+    source?: string;
+    reportId?: string;
+    reportTitle?: string;
+    [key: string]: unknown;
+  } | null;
+  created_at?: string;
+  updated_at?: string;
+};
 
-  if (error || !user) {
-    throw new Error("You must be signed in to create a job.");
+type CreateJobApiResponse = {
+  job?: WorkspaceJob;
+  entitlement?: unknown;
+  error?: string;
+};
+
+export async function createJob(
+  job: CreateJobInput
+): Promise<{
+  data: WorkspaceJob | null;
+  error: Error | null;
+}> {
+  try {
+    const response = await fetch("/api/jobs", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        title: job.title,
+        source: job.source,
+        reportId: job.reportId,
+        reportTitle: job.reportTitle,
+      }),
+    });
+
+    const result =
+      (await response.json()) as CreateJobApiResponse;
+
+    if (!response.ok) {
+      return {
+        data: null,
+        error: new Error(
+          result.error ??
+            "Job could not be created."
+        ),
+      };
+    }
+
+    if (!result.job) {
+      return {
+        data: null,
+        error: new Error(
+          "Job creation returned no job."
+        ),
+      };
+    }
+
+    return {
+      data: result.job,
+      error: null,
+    };
+  } catch (error) {
+    console.error(
+      "Job creation request failed:",
+      error
+    );
+
+    return {
+      data: null,
+      error:
+        error instanceof Error
+          ? error
+          : new Error(
+              "Job creation request failed."
+            ),
+    };
   }
-
-  return user.id;
 }
 
-export async function createJob(job: CreateJobInput) {
-  const userId = await getCurrentUserId();
-
-  const metadata: Record<string, string> = {
-    source: job.source,
-  };
-
-  if (job.reportId) {
-    metadata.reportId = job.reportId;
-  }
-
-  if (job.reportTitle) {
-    metadata.reportTitle = job.reportTitle;
-  }
-
-  return await supabase
-    .from("workspace_items")
-    .insert({
-      type: "job",
-      title: job.title,
-      status: job.status,
-      metadata,
-      user_id: userId,
-    })
-    .select()
-    .single();
-}
-
-export async function updateJobStatus(id: string, status: string) {
+export async function updateJobStatus(
+  id: string,
+  status: string
+) {
   return await supabase
     .from("workspace_items")
     .update({

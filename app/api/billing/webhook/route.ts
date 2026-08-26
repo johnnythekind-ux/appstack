@@ -4,35 +4,90 @@ import Stripe from "stripe";
 import { stripe } from "../../../../lib/stripe";
 import { supabaseAdmin } from "../../../../lib/supabase/admin";
 
-const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+const webhookSecret =
+  process.env.STRIPE_WEBHOOK_SECRET;
 
-export async function POST(request: NextRequest) {
+type SubscriptionItemWithPeriod =
+  Stripe.SubscriptionItem & {
+    current_period_start?: number;
+    current_period_end?: number;
+  };
+
+function timestampToISOString(
+  timestamp?: number | null
+) {
+  return typeof timestamp === "number"
+    ? new Date(
+        timestamp * 1000
+      ).toISOString()
+    : null;
+}
+
+function getSubscriptionPeriod(
+  subscription: Stripe.Subscription
+) {
+  const item =
+    subscription.items.data[0] as
+      | SubscriptionItemWithPeriod
+      | undefined;
+
+  return {
+    currentPeriodStart:
+      timestampToISOString(
+        item?.current_period_start
+      ),
+
+    currentPeriodEnd:
+      timestampToISOString(
+        item?.current_period_end
+      ),
+  };
+}
+
+export async function POST(
+  request: NextRequest
+) {
   if (!webhookSecret) {
     return NextResponse.json(
-      { error: "STRIPE_WEBHOOK_SECRET is not configured." },
-      { status: 500 }
+      {
+        error:
+          "STRIPE_WEBHOOK_SECRET is not configured.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 
-  const signature = request.headers.get("stripe-signature");
+  const signature =
+    request.headers.get(
+      "stripe-signature"
+    );
 
   if (!signature) {
     return NextResponse.json(
-      { error: "Missing Stripe signature." },
-      { status: 400 }
+      {
+        error:
+          "Missing Stripe signature.",
+      },
+      {
+        status: 400,
+      }
     );
   }
 
-  const body = await request.text();
+  const body =
+    await request.text();
 
   let event: Stripe.Event;
 
   try {
-    event = stripe.webhooks.constructEvent(
-      body,
-      signature,
-      webhookSecret
-    );
+    event =
+      stripe.webhooks.constructEvent(
+        body,
+        signature,
+        webhookSecret
+      );
   } catch (error) {
     console.error(
       "Stripe webhook signature verification failed:",
@@ -40,27 +95,39 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Invalid webhook signature." },
-      { status: 400 }
+      {
+        error:
+          "Invalid webhook signature.",
+      },
+      {
+        status: 400,
+      }
     );
   }
 
   try {
-    const supabase = supabaseAdmin;
+    const supabase =
+      supabaseAdmin;
 
     switch (event.type) {
       case "checkout.session.completed": {
-        const session = event.data.object as Stripe.Checkout.Session;
+        const session =
+          event.data
+            .object as Stripe.Checkout.Session;
 
-        const userId = session.metadata?.appstack_user_id;
+        const userId =
+          session.metadata
+            ?.appstack_user_id;
 
         const customerId =
-          typeof session.customer === "string"
+          typeof session.customer ===
+          "string"
             ? session.customer
             : session.customer?.id;
 
         const subscriptionId =
-          typeof session.subscription === "string"
+          typeof session.subscription ===
+          "string"
             ? session.subscription
             : session.subscription?.id;
 
@@ -68,18 +135,28 @@ export async function POST(request: NextRequest) {
           console.error(
             "Checkout session is missing appstack_user_id metadata."
           );
+
           break;
         }
 
-        const { error } = await supabase
+        const {
+          error,
+        } = await supabase
           .from("subscriptions")
           .update({
             plan: "pro",
             status: "active",
-            stripe_customer_id: customerId ?? null,
-            stripe_subscription_id: subscriptionId ?? null,
+
+            stripe_customer_id:
+              customerId ?? null,
+
+            stripe_subscription_id:
+              subscriptionId ?? null,
           })
-          .eq("user_id", userId);
+          .eq(
+            "user_id",
+            userId
+          );
 
         if (error) {
           throw error;
@@ -91,59 +168,76 @@ export async function POST(request: NextRequest) {
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription =
-          event.data.object as Stripe.Subscription;
+          event.data
+            .object as Stripe.Subscription;
 
         const userId =
-          subscription.metadata?.appstack_user_id;
+          subscription.metadata
+            ?.appstack_user_id;
 
         if (!userId) {
           console.error(
             "Subscription is missing appstack_user_id metadata."
           );
+
           break;
         }
 
         const active =
-          subscription.status === "active" ||
-          subscription.status === "trialing";
+          subscription.status ===
+            "active" ||
+          subscription.status ===
+            "trialing";
 
         /*
-         * Stripe can represent a scheduled cancellation in more than
-         * one way.
+         * Stripe may represent a future
+         * cancellation using either
+         * cancel_at_period_end or an
+         * explicit cancel_at timestamp.
          *
-         * In our Customer Portal configuration, Stripe is currently
-         * setting an explicit future `cancel_at` timestamp while
-         * `cancel_at_period_end` remains false.
-         *
-         * AppStack normalizes either representation into one business
-         * concept: cancellation is scheduled.
+         * This is cancellation state,
+         * not the normal billing-period
+         * boundary.
          */
         const cancellationScheduled =
-          subscription.cancel_at_period_end ||
-          subscription.cancel_at !== null;
+          subscription
+            .cancel_at_period_end ||
+          subscription.cancel_at !==
+            null;
 
         /*
-         * When Stripe provides an explicit cancel_at timestamp,
-         * that is also the date through which the user retains access.
+         * In the Stripe object model used
+         * by AppStack, current period
+         * timestamps are present on the
+         * subscription item.
          */
-        const currentPeriodEnd =
-          subscription.cancel_at !== null
-            ? new Date(subscription.cancel_at * 1000).toISOString()
-            : null;
+        const {
+          currentPeriodStart,
+          currentPeriodEnd,
+        } =
+          getSubscriptionPeriod(
+            subscription
+          );
 
-        const { error } = await supabase
+        const {
+          error,
+        } = await supabase
           .from("subscriptions")
           .update({
-            plan: active ? "pro" : "free",
+            plan: active
+              ? "pro"
+              : "free",
 
             status: active
               ? "active"
-              : subscription.status === "past_due"
+              : subscription.status ===
+                  "past_due"
                 ? "past_due"
                 : "canceled",
 
             stripe_customer_id:
-              typeof subscription.customer === "string"
+              typeof subscription.customer ===
+              "string"
                 ? subscription.customer
                 : subscription.customer.id,
 
@@ -153,10 +247,16 @@ export async function POST(request: NextRequest) {
             cancel_at_period_end:
               cancellationScheduled,
 
+            current_period_start:
+              currentPeriodStart,
+
             current_period_end:
               currentPeriodEnd,
           })
-          .eq("user_id", userId);
+          .eq(
+            "user_id",
+            userId
+          );
 
         if (error) {
           throw error;
@@ -169,7 +269,9 @@ export async function POST(request: NextRequest) {
         break;
     }
 
-    return NextResponse.json({ received: true });
+    return NextResponse.json({
+      received: true,
+    });
   } catch (error) {
     console.error(
       "Stripe webhook processing failed:",
@@ -177,8 +279,13 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json(
-      { error: "Webhook processing failed." },
-      { status: 500 }
+      {
+        error:
+          "Webhook processing failed.",
+      },
+      {
+        status: 500,
+      }
     );
   }
 }

@@ -1,56 +1,101 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
-import { useEffect, useState } from "react";
+import {
+  usePathname,
+  useRouter,
+} from "next/navigation";
+import {
+  useEffect,
+  useState,
+} from "react";
 import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "@/lib/supabase";
 
 const links = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/workspace", label: "Workspace" },
-  { href: "/intelligence", label: "Intelligence" },
-  { href: "/deal-analyzer", label: "Deal Analyzer" },
-  { href: "/reportforge", label: "ReportForge" },
-  { href: "/jobs", label: "Jobs" },
-  { href: "/billing", label: "Billing" },
-  { href: "/settings", label: "Settings" },
+  {
+    href: "/dashboard",
+    label: "Dashboard",
+  },
+  {
+    href: "/workspace",
+    label: "Workspace",
+  },
+  {
+    href: "/intelligence",
+    label: "Intelligence",
+  },
+  {
+    href: "/deal-analyzer",
+    label: "Deal Analyzer",
+  },
+  {
+    href: "/reportforge",
+    label: "ReportForge",
+  },
+  {
+    href: "/jobs",
+    label: "Jobs",
+  },
+  {
+    href: "/billing",
+    label: "Billing",
+  },
+  {
+    href: "/settings",
+    label: "Settings",
+  },
 ];
 
 export default function AppNav() {
   const pathname = usePathname();
   const router = useRouter();
 
-  const [user, setUser] = useState<User | null>(null);
-  const [authReady, setAuthReady] = useState(false);
+  const [user, setUser] =
+    useState<User | null>(null);
+
+  const [authReady, setAuthReady] =
+    useState(false);
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadUser() {
+    async function initializeAuthState() {
       const {
-        data: { user },
-      } = await supabase.auth.getUser();
+        data: { session },
+      } =
+        await supabase.auth.getSession();
 
-      if (mounted) {
-        setUser(user);
-        setAuthReady(true);
+      if (!mounted) {
+        return;
       }
+
+      setUser(
+        session?.user ?? null
+      );
+
+      setAuthReady(true);
     }
 
-    loadUser();
+    initializeAuthState();
 
     const {
       data: { subscription },
-    } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
-        if (mounted) {
-          setUser(session?.user ?? null);
+    } =
+      supabase.auth.onAuthStateChange(
+        (_event, session) => {
+          if (!mounted) {
+            return;
+          }
+
+          setUser(
+            session?.user ?? null
+          );
+
           setAuthReady(true);
         }
-      }
-    );
+      );
 
     return () => {
       mounted = false;
@@ -63,10 +108,12 @@ export default function AppNav() {
   }
 
   async function handleSignOut() {
-  await supabase.auth.signOut();
-  setUser(null);
-  router.replace("/login");
-}
+    await supabase.auth.signOut();
+
+    setUser(null);
+
+    router.replace("/login");
+  }
 
   return (
     <nav className="border-b border-border bg-surface text-foreground">
@@ -80,7 +127,8 @@ export default function AppNav() {
 
         <div className="flex flex-wrap items-center gap-2 text-sm">
           {links.map((link) => {
-            const active = pathname === link.href;
+            const active =
+              pathname === link.href;
 
             return (
               <Link
@@ -104,13 +152,16 @@ export default function AppNav() {
               {user ? (
                 <>
                   <div className="hidden max-w-48 truncate px-2 text-subtle xl:block">
-                    {user.user_metadata?.full_name ||
+                    {user.user_metadata
+                      ?.full_name ||
                       user.email}
                   </div>
 
                   <button
                     type="button"
-                    onClick={handleSignOut}
+                    onClick={
+                      handleSignOut
+                    }
                     className="rounded-lg border border-border-strong px-3 py-2 text-muted transition hover:bg-surface-muted hover:text-foreground"
                   >
                     Sign Out
