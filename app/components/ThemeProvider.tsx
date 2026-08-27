@@ -138,9 +138,14 @@ export default function ThemeProvider({
 
       if (error) {
         console.error(
-          "Theme preference load error:",
-          error
-        );
+  "Theme preference load error:",
+  {
+    message: error.message,
+    details: error.details,
+    hint: error.hint,
+    code: error.code,
+  }
+);
 
         const cachedPreference =
           getCachedPreference();
