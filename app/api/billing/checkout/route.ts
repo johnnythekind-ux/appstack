@@ -32,6 +32,9 @@ export async function POST() {
       );
     }
 
+    const appUrl =
+      process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
 
@@ -54,11 +57,9 @@ export async function POST() {
 
       customer_email: user.email ?? undefined,
 
-      success_url:
-        "http://localhost:3000/billing?checkout=success",
+      success_url: `${appUrl}/billing?checkout=success`,
 
-      cancel_url:
-        "http://localhost:3000/billing?checkout=cancelled",
+      cancel_url: `${appUrl}/billing?checkout=cancelled`,
     });
 
     if (!session.url) {
@@ -74,10 +75,7 @@ export async function POST() {
       url: session.url,
     });
   } catch (error) {
-    console.error(
-      "Stripe checkout session creation failed:",
-      error
-    );
+    console.error("Stripe checkout session creation failed:", error);
 
     return NextResponse.json(
       {
