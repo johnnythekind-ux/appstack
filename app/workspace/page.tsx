@@ -562,8 +562,20 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     });
 
     if (error) {
-      console.error(error);
-      toast.error("Report generation failed.");
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Report generation failed.";
+
+      const isBillingLimitError =
+        message.includes("Monthly report limit") ||
+        message.includes("current plan");
+
+      if (!isBillingLimitError) {
+        console.error("Report generation failed:", error);
+      }
+
+      toast.error(message);
       return null;
     }
 
@@ -745,7 +757,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
       title="Workspace"
       description="Manage active work, complete priority actions, and keep every item moving."
     >
-      <Toolbar>
+      <Toolbar className="flex-col sm:flex-row">
         <SearchBar
           value={search}
           onChange={setSearch}

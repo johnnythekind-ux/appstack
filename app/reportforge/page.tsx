@@ -65,6 +65,8 @@ export default function ReportForgePage() {
   const [draftChanged, setDraftChanged] =
     useState(false);
   const [saved, setSaved] = useState(false);
+  const [reportVisible, setReportVisible] =
+    useState(true);
   const [savedReports, setSavedReports] =
     useState<WorkspaceItem[]>([]);
   const [loadingReports, setLoadingReports] =
@@ -118,11 +120,13 @@ export default function ReportForgePage() {
       setReport(data.content || "");
       setDraftChanged(false);
       setSaved(true);
+      setReportVisible(true);
     } else {
       setExistingReport(null);
       setReport("");
       setDraftChanged(false);
       setSaved(false);
+      setReportVisible(false);
     }
 
     setLoadingCurrentReport(false);
@@ -314,6 +318,7 @@ Based on the 70% rule, the purchase price ${
     setReport(generatedReport);
     setDraftChanged(true);
     setSaved(false);
+    setReportVisible(true);
 
     toast.success(
       existingReport
@@ -408,6 +413,7 @@ Based on the 70% rule, the purchase price ${
     setReport(savedReport.content || report);
     setDraftChanged(false);
     setSaved(true);
+    setReportVisible(true);
     setSavingReport(false);
 
     localStorage.setItem(
@@ -422,6 +428,102 @@ Based on the 70% rule, the purchase price ${
     );
 
     await loadReports();
+  }
+
+  async function openSavedReport(item: WorkspaceItem) {
+    const sourceAnalysisId = String(
+      item.metadata?.analysis_id ??
+        item.metadata?.sourceAnalysisId ??
+        ""
+    );
+
+    if (!sourceAnalysisId) {
+      toast.error(
+        "This saved report is not linked to a source analysis."
+      );
+      return;
+    }
+
+    setLoadingCurrentReport(true);
+
+    const { data, error } =
+      await getWorkspaceAnalysisById(
+        sourceAnalysisId
+      );
+
+    if (error) {
+      console.error(
+        "Saved report source analysis could not be loaded:",
+        error
+      );
+
+      toast.error(
+        "The source analysis for this report could not be loaded."
+      );
+
+      setLoadingCurrentReport(false);
+      return;
+    }
+
+    if (!data) {
+      toast.error(
+        "The source analysis for this report was not found."
+      );
+      setLoadingCurrentReport(false);
+      return;
+    }
+
+    const selectedAnalysis =
+      workspaceItemToSavedAnalysis(data);
+
+    setAnalysis(selectedAnalysis);
+    setExistingReport(item);
+    setReport(item.content || "");
+    setDraftChanged(false);
+    setSaved(true);
+    setReportVisible(true);
+    setLoadingCurrentReport(false);
+
+    localStorage.setItem(
+      "appstack_saved_analysis",
+      JSON.stringify(selectedAnalysis)
+    );
+
+    localStorage.setItem(
+      "appstack_saved_report",
+      JSON.stringify(item)
+    );
+
+    const nextUrl = new URL(window.location.href);
+    nextUrl.searchParams.set(
+      "analysisId",
+      sourceAnalysisId
+    );
+    window.history.replaceState(
+      {},
+      "",
+      nextUrl.toString()
+    );
+
+    requestAnimationFrame(() => {
+      generatedReportRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    toast.success("Saved report opened.");
+  }
+
+  function closeReportViewer() {
+    setReportVisible(false);
+
+    requestAnimationFrame(() => {
+      window.scrollTo({
+        top: 0,
+        behavior: "smooth",
+      });
+    });
   }
 
   function downloadReportPdf() {
@@ -539,11 +641,13 @@ Based on the 70% rule, the purchase price ${
               </p>
             </div>
 
-            <StatusBadge
-              status={formatRecommendation(
-                analysis.recommendation
-              )}
-            />
+            <div className="self-start">
+  <StatusBadge
+    status={formatRecommendation(
+      analysis.recommendation
+    )}
+  />
+</div>
           </div>
 
           <div className="mt-6 grid grid-cols-2 gap-4 lg:grid-cols-4">
@@ -624,7 +728,7 @@ Based on the 70% rule, the purchase price ${
         </Card>
       )}
 
-      {report && (
+      {report && reportVisible && (
         <div
           ref={generatedReportRef}
           className="scroll-mt-6"
@@ -731,6 +835,13 @@ Based on the 70% rule, the purchase price ${
             >
               Download PDF
             </Button>
+
+            <Button
+              variant="secondary"
+              onClick={closeReportViewer}
+            >
+              Close Report
+            </Button>
           </div>
 
           {saved && !draftChanged && (
@@ -836,9 +947,11 @@ Based on the 70% rule, the purchase price ${
               initialCount={5}
             >
               {(item, index) => (
-                <div
+                <button
                   key={`${item.id}-${item.created_at ?? "no-date"}-${index}`}
-                  className="flex flex-col gap-3 rounded-xl border border-slate-300 bg-white p-4 text-slate-900 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 sm:flex-row sm:items-center sm:justify-between"
+                  type="button"
+                  onClick={() => openSavedReport(item)}
+                  className="flex w-full flex-col gap-3 rounded-xl border border-slate-300 bg-white p-4 text-left text-slate-900 transition hover:border-blue-400 hover:bg-blue-50/50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-950 dark:text-slate-100 dark:hover:border-blue-500 dark:hover:bg-slate-900 sm:flex-row sm:items-center sm:justify-between"
                 >
                   <div className="min-w-0">
                     <p className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
@@ -856,20 +969,26 @@ Based on the 70% rule, the purchase price ${
                     )}
                   </div>
 
-                  <div className="shrink-0 text-left sm:text-right">
-                    <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                      {item.status || "Saved"}
-                    </p>
-
-                    {item.created_at && (
-                      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-                        {new Date(
-                          item.created_at
-                        ).toLocaleString()}
+                  <div className="flex shrink-0 items-center gap-4">
+                    <div className="text-left sm:text-right">
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {item.status || "Saved"}
                       </p>
-                    )}
+
+                      {item.created_at && (
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {new Date(
+                            item.created_at
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+
+                    <span className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100">
+                      Open
+                    </span>
                   </div>
-                </div>
+                </button>
               )}
             </ExpandableList>
           )}

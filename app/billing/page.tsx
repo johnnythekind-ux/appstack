@@ -50,6 +50,12 @@ const billingFlow = [
   },
 ];
 
+function formatBillingDate(value: string) {
+  return new Date(value).toLocaleDateString("en-US", {
+    timeZone: "UTC",
+  });
+}
+
 function getStatusLabel(
   status: SubscriptionRecord["status"]
 ) {
@@ -278,11 +284,11 @@ export default function BillingPage() {
     );
 
   const usagePeriodLabel = usage
-    ? `${new Date(
+    ? `${formatBillingDate(
         usage.periodStart
-      ).toLocaleDateString()} – ${new Date(
+      )} – ${formatBillingDate(
         usage.periodEnd
-      ).toLocaleDateString()}`
+      )}`
     : "Not available";
 
   const billingStatus = [
@@ -531,11 +537,11 @@ export default function BillingPage() {
                         ? usagePeriodLabel
                         : subscription.currentPeriodStart &&
                             subscription.currentPeriodEnd
-                          ? `${new Date(
+                          ? `${formatBillingDate(
                               subscription.currentPeriodStart
-                            ).toLocaleDateString()} – ${new Date(
+                            )} – ${formatBillingDate(
                               subscription.currentPeriodEnd
-                            ).toLocaleDateString()}`
+                            )}`
                           : "Not established yet"}
                     </p>
                   </div>

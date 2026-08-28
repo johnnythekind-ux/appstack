@@ -59,7 +59,45 @@ export async function POST(request: Request) {
       );
     }
 
-    // 2. Validate the AI request.
+    // 2. Enforce the user's AI Assistance preference at the trusted server boundary.
+    const {
+      data: userSettings,
+      error: settingsError,
+    } = await supabase
+      .from("user_settings")
+      .select("ai_assistance_enabled")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (settingsError) {
+      console.error(
+        "Workspace AI settings lookup failed:",
+        settingsError
+      );
+
+      return NextResponse.json(
+        {
+          error: "AI Assistance preference could not be verified.",
+        },
+        {
+          status: 500,
+        }
+      );
+    }
+
+    if (userSettings?.ai_assistance_enabled === false) {
+      return NextResponse.json(
+        {
+          error:
+            "AI Assistance is turned off in Settings. Turn it on to use Workspace AI.",
+        },
+        {
+          status: 403,
+        }
+      );
+    }
+
+    // 3. Validate the AI request.
     const body =
       (await request.json()) as BuildWorkspaceAIContextInput;
 
@@ -77,7 +115,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 3. Load the user's subscription.
+    // 4. Load the user's subscription.
     const {
       data: subscription,
       error: subscriptionError,
@@ -121,7 +159,7 @@ export async function POST(request: Request) {
       subscription?.current_period_end ??
       defaultPeriod.periodEnd;
 
-    // 4. Count AI requests already used this billing period.
+    // 5. Count AI requests already used this billing period.
     const {
       count: aiRequestsUsed,
       error: usageError,
@@ -152,7 +190,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Apply the shared deterministic entitlement rule.
+    // 6. Apply the shared deterministic entitlement rule.
     const entitlement =
       evaluateEntitlement({
         plan,
@@ -174,7 +212,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 6. Build trusted AI context and prompt.
+    // 7. Build trusted AI context and prompt.
     const context =
       buildWorkspaceAIContext({
         ...body,
@@ -184,13 +222,13 @@ export async function POST(request: Request) {
     const prompt =
       buildWorkspacePrompt(context);
 
-    // 7. Only after authentication + entitlement approval do we call OpenAI.
+    // 8. Only after authentication + preference + entitlement approval do we call OpenAI.
     const answer =
       await generateWorkspaceAIResponse(
         prompt
       );
 
-    // 8. Record one successful AI usage unit.
+    // 9. Record one successful AI usage unit.
     const {
       error: usageInsertError,
     } = await supabase
@@ -217,7 +255,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 9. Return the AI response only after successful usage recording.
+    // 10. Return the AI response only after successful usage recording.
     return NextResponse.json({
       answer,
       entitlement: {

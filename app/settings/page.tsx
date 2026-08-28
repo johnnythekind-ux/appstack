@@ -32,7 +32,6 @@ export default function SettingsPage() {
 
   const [displayName, setDisplayName] = useState("");
   const [theme, setTheme] = useState<ThemePreference>("system");
-  const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [aiAssistanceEnabled, setAiAssistanceEnabled] = useState(true);
 
   const [loading, setLoading] = useState(true);
@@ -73,7 +72,6 @@ export default function SettingsPage() {
 
     setSettings(loadedSettings);
     setTheme(loadedSettings?.theme ?? "system");
-    setNotificationsEnabled(loadedSettings?.notifications_enabled ?? true);
     setAiAssistanceEnabled(loadedSettings?.ai_assistance_enabled ?? true);
   }
 
@@ -199,7 +197,6 @@ export default function SettingsPage() {
       .from("user_settings")
       .update({
         theme,
-        notifications_enabled: notificationsEnabled,
         ai_assistance_enabled: aiAssistanceEnabled,
         updated_at: new Date().toISOString(),
       })
@@ -398,26 +395,6 @@ window.dispatchEvent(
               <label className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-muted p-4">
                 <div>
                   <p className="text-sm font-semibold text-foreground">
-                    Notifications
-                  </p>
-                  <p className="mt-1 text-sm leading-6 text-subtle">
-                    Allow AppStack to surface important workflow and platform
-                    notifications.
-                  </p>
-                </div>
-                <input
-                  type="checkbox"
-                  checked={notificationsEnabled}
-                  onChange={(event) =>
-                    setNotificationsEnabled(event.target.checked)
-                  }
-                  className="mt-1 h-4 w-4"
-                />
-              </label>
-
-              <label className="flex items-start justify-between gap-4 rounded-lg border border-border bg-surface-muted p-4">
-                <div>
-                  <p className="text-sm font-semibold text-foreground">
                     AI Assistance
                   </p>
                   <p className="mt-1 text-sm leading-6 text-subtle">
@@ -475,8 +452,8 @@ window.dispatchEvent(
           <div className="rounded-xl border border-border bg-surface-muted p-4">
             <p className="text-sm font-semibold text-foreground">3. Preferences</p>
             <p className="mt-2 text-sm leading-6 text-muted">
-              Theme, notifications, and AI-assistance preferences are persisted
-              per user.
+              Theme and AI-assistance preferences are persisted per user, while
+              notification controls remain a future capability.
             </p>
           </div>
 

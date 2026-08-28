@@ -6,10 +6,13 @@ import toast from "react-hot-toast";
 
 import Page from "../components/Page";
 import Card from "../components/Card";
-import Button from "../components/Button";
 import StatusBadge from "../components/StatusBadge";
 
 import { createJob as createWorkspaceJob } from "../../lib/jobService";
+import {
+  getWorkspaceItems,
+  type WorkspaceItem,
+} from "../../lib/workspaceService";
 import { createEvent } from "../../lib/eventService";
 import { canPerformBillingAction } from "../../lib/billingEntitlementService";
 
@@ -35,11 +38,109 @@ export default function JobsPage() {
     useState<PendingJobContext | null>(null);
   const [creating, setCreating] = useState(false);
   const [executing, setExecuting] = useState(false);
+  const [savedJobs, setSavedJobs] =
+    useState<WorkspaceItem[]>([]);
+  const [loadingJobs, setLoadingJobs] =
+    useState(true);
+  const [showAllJobs, setShowAllJobs] =
+    useState(false);
 
   const currentJobRef =
     useRef<HTMLDivElement | null>(null);
 
+  function workspaceItemToCurrentJob(
+    item: WorkspaceItem
+  ): CurrentJob {
+    const metadata = item.metadata ?? {};
+
+    const normalizedStatus =
+      item.status === "Running"
+        ? "Running"
+        : item.status === "Completed"
+          ? "Completed"
+          : "Queued";
+
+    return {
+      id: item.id,
+      title: item.title,
+      status: normalizedStatus,
+      source:
+        typeof metadata.source === "string"
+          ? metadata.source
+          : "QueuePilot",
+      reportId:
+        typeof metadata.reportId === "string"
+          ? metadata.reportId
+          : undefined,
+      reportTitle:
+        typeof metadata.reportTitle === "string"
+          ? metadata.reportTitle
+          : undefined,
+    };
+  }
+
+  async function loadSavedJobs() {
+    setLoadingJobs(true);
+
+    const { data, error } =
+      await getWorkspaceItems();
+
+    if (error) {
+      console.error(
+        "Saved jobs could not be loaded:",
+        error
+      );
+      toast.error(
+        "Saved jobs could not be loaded."
+      );
+      setLoadingJobs(false);
+      return;
+    }
+
+    const jobs = (data ?? [])
+      .filter(
+        (item: WorkspaceItem) =>
+          item.type === "job"
+      )
+      .sort((a: WorkspaceItem, b: WorkspaceItem) => {
+        const aTime = a.created_at
+          ? new Date(a.created_at).getTime()
+          : 0;
+        const bTime = b.created_at
+          ? new Date(b.created_at).getTime()
+          : 0;
+
+        return bTime - aTime;
+      });
+
+    setSavedJobs(jobs);
+    setLoadingJobs(false);
+  }
+
+  function openSavedJob(item: WorkspaceItem) {
+    const selectedJob =
+      workspaceItemToCurrentJob(item);
+
+    setCurrentJob(selectedJob);
+
+    localStorage.setItem(
+      "appstack_saved_job",
+      JSON.stringify(selectedJob)
+    );
+
+    requestAnimationFrame(() => {
+      currentJobRef.current?.scrollIntoView({
+        behavior: "smooth",
+        block: "start",
+      });
+    });
+
+    toast.success("Saved job opened.");
+  }
+
   useEffect(() => {
+    loadSavedJobs();
+
     const storedContext = localStorage.getItem(
       "appstack_pending_job_context"
     );
@@ -133,6 +234,7 @@ export default function JobsPage() {
       );
 
       toast.success("Job completed successfully.");
+      await loadSavedJobs();
     } catch (error) {
       console.error("Job execution failed:", error);
 
@@ -268,6 +370,7 @@ if (!billingDecision.allowed) {
     setCreating(false);
 
     toast.success("Job queued successfully.");
+    await loadSavedJobs();
 
     await executeJob(queuedJob);
   }
@@ -276,6 +379,15 @@ if (!billingDecision.allowed) {
     setJobName("");
     setCurrentJob(null);
     setPendingContext(null);
+
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth",
+    });
+  }
+
+  function closeCurrentJob() {
+    setCurrentJob(null);
 
     window.scrollTo({
       top: 0,
@@ -334,17 +446,18 @@ if (!billingDecision.allowed) {
           placeholder="Investor Report Processing Job"
         />
 
-        <Button
+        <button
+          type="button"
           onClick={createJob}
-          className="mt-6"
           disabled={creating || executing}
+          className="mt-6 inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-60 dark:focus:ring-offset-slate-950"
         >
           {creating
             ? "Creating Job..."
             : executing
               ? "Executing Job..."
               : "Create Job"}
-        </Button>
+        </button>
       </Card>
 
       {currentJob && (
@@ -455,22 +568,135 @@ if (!billingDecision.allowed) {
             <div className="mt-6 flex flex-wrap gap-3">
               <Link
                 href="/workspace"
-                className="rounded-lg bg-accent px-4 py-2 text-sm font-semibold text-accent-foreground transition hover:bg-accent-hover"
+                className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-950"
               >
                 Continue to Workspace
               </Link>
 
-              <Button
+              <button
+                type="button"
                 onClick={createAnotherJob}
-                variant="secondary"
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
               >
                 Create Another Job
-              </Button>
+              </button>
+
+              <button
+                type="button"
+                onClick={closeCurrentJob}
+                className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
+              >
+                Close Job
+              </button>
             </div>
           )}
           </Card>
         </div>
       )}
+
+      <Card
+        title="Saved Jobs"
+        className="mt-8"
+      >
+        <p className="mb-5 max-w-3xl text-sm leading-6 text-muted">
+          Reopen persisted execution jobs without crowding the page. The five most
+          recent jobs are shown first; expand the list only when you need older work.
+        </p>
+
+        {loadingJobs && (
+          <div className="rounded-xl border border-border bg-surface-muted p-5 text-sm text-muted">
+            Loading saved jobs...
+          </div>
+        )}
+
+        {!loadingJobs &&
+          savedJobs.length === 0 && (
+            <div className="rounded-xl border border-dashed border-border bg-surface-muted p-8 text-center">
+              <p className="font-semibold text-foreground">
+                No jobs saved yet
+              </p>
+
+              <p className="mt-2 text-sm text-muted">
+                Created jobs will appear here after they are persisted.
+              </p>
+            </div>
+          )}
+
+        {!loadingJobs &&
+          savedJobs.length > 0 && (
+            <>
+              <div className="space-y-3">
+                {(showAllJobs
+                  ? savedJobs
+                  : savedJobs.slice(0, 5)
+                ).map((item, index) => (
+                <button
+                  key={`${item.id}-${item.created_at ?? "no-date"}-${index}`}
+                  type="button"
+                  onClick={() => openSavedJob(item)}
+                  className="group flex w-full flex-col gap-3 rounded-xl border border-border bg-surface p-4 text-left transition hover:border-blue-400 hover:bg-surface-muted focus:outline-none focus:ring-2 focus:ring-blue-500/30 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+                      Processing Job
+                    </p>
+
+                    <h3 className="mt-1 truncate font-semibold text-foreground">
+                      {item.title}
+                    </h3>
+
+                    {typeof item.metadata?.reportTitle ===
+                      "string" && (
+                      <p className="mt-1 truncate text-sm text-muted">
+                        Source report:{" "}
+                        {item.metadata.reportTitle}
+                      </p>
+                    )}
+                  </div>
+
+                  <div className="flex shrink-0 items-center gap-4">
+                    <div className="text-left sm:text-right">
+                      <StatusBadge
+                        status={
+                          item.status || "Queued"
+                        }
+                      />
+
+                      {item.created_at && (
+                        <p className="mt-2 text-xs text-subtle">
+                          {new Date(
+                            item.created_at
+                          ).toLocaleString()}
+                        </p>
+                      )}
+                    </div>
+
+                    <span className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-900 transition group-hover:border-blue-300 group-hover:text-blue-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:group-hover:border-blue-600 dark:group-hover:text-blue-300">
+                      Open
+                    </span>
+                  </div>
+                </button>
+                ))}
+              </div>
+
+              {savedJobs.length > 5 && (
+                <div className="mt-5 flex justify-center">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setShowAllJobs((current) => !current)
+                    }
+                    className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-900 transition hover:border-blue-400 hover:text-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-blue-500 dark:hover:text-blue-300 dark:focus:ring-offset-slate-950"
+                  >
+                    {showAllJobs
+                      ? "Show fewer jobs"
+                      : `Show all ${savedJobs.length} jobs`}
+                  </button>
+                </div>
+              )}
+            </>
+          )}
+      </Card>
 
       <Card
         title="How this fits AppStack"

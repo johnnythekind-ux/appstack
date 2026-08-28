@@ -156,7 +156,7 @@ export default function WorkspaceIntelligence({
           </div>
         )}
 
-        <div className="mt-5 flex gap-2 overflow-x-auto">
+        <div className="mt-5 flex flex-wrap gap-2">
           {intelligenceTabs.map((tab) => (
             <button
               key={tab.id}
