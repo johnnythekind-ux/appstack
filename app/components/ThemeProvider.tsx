@@ -1,30 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { User } from "@supabase/supabase-js";
 
 import { supabase } from "../../lib/supabase";
 
-type ThemePreference =
-  | "system"
-  | "light"
-  | "dark";
+type ThemePreference = "system" | "light" | "dark";
+type ResolvedTheme = "light" | "dark";
 
-type ResolvedTheme =
-  | "light"
-  | "dark";
-
-const THEME_STORAGE_KEY =
-  "appstack-theme-preference";
+const THEME_STORAGE_KEY = "appstack-theme-preference";
 
 function getSystemTheme(): ResolvedTheme {
   if (typeof window === "undefined") {
     return "dark";
   }
 
-  return window.matchMedia(
-    "(prefers-color-scheme: dark)"
-  ).matches
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
@@ -37,45 +27,32 @@ function resolveTheme(
     : preference;
 }
 
-function applyTheme(
-  theme: ResolvedTheme
-) {
-  document.documentElement.dataset.theme =
-    theme;
-
-  document.documentElement.style.colorScheme =
-    theme;
+function applyTheme(theme: ResolvedTheme) {
+  document.documentElement.dataset.theme = theme;
+  document.documentElement.style.colorScheme = theme;
 }
 
-function isThemePreference(
-  value: string | null
-): value is ThemePreference {
-  return (
-    value === "system" ||
-    value === "light" ||
-    value === "dark"
-  );
-}
-
-function getCachedPreference():
-  ThemePreference {
+function getStoredPreference(): ThemePreference {
   if (typeof window === "undefined") {
     return "system";
   }
 
-  const cachedPreference =
-    window.localStorage.getItem(
-      THEME_STORAGE_KEY
-    );
+  const stored = window.localStorage.getItem(
+    THEME_STORAGE_KEY
+  );
 
-  return isThemePreference(
-    cachedPreference
-  )
-    ? cachedPreference
-    : "system";
+  if (
+    stored === "light" ||
+    stored === "dark" ||
+    stored === "system"
+  ) {
+    return stored;
+  }
+
+  return "system";
 }
 
-function cachePreference(
+function storePreference(
   preference: ThemePreference
 ) {
   window.localStorage.setItem(
@@ -89,44 +66,36 @@ export default function ThemeProvider({
 }: {
   children: React.ReactNode;
 }) {
-  const [
-    preference,
-    setPreference,
-  ] = useState<ThemePreference>(
-    () => getCachedPreference()
-  );
+  const [preference, setPreference] =
+    useState<ThemePreference>("system");
 
   useEffect(() => {
     let mounted = true;
 
-    async function loadThemePreference(
-      user: User | null
-    ) {
+    async function loadThemePreference() {
+      const storedPreference =
+        getStoredPreference();
+
+      // Apply the locally remembered preference immediately.
+      setPreference(storedPreference);
+      applyTheme(resolveTheme(storedPreference));
+
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
       if (!mounted) {
         return;
       }
 
+      const user = session?.user ?? null;
+
+      // Signed-out users keep the most recently selected theme.
       if (!user) {
-        const cachedPreference =
-          getCachedPreference();
-
-        setPreference(
-          cachedPreference
-        );
-
-        applyTheme(
-          resolveTheme(
-            cachedPreference
-          )
-        );
-
         return;
       }
 
-      const {
-        data,
-        error,
-      } = await supabase
+      const { data, error } = await supabase
         .from("user_settings")
         .select("theme")
         .eq("user_id", user.id)
@@ -138,141 +107,85 @@ export default function ThemeProvider({
 
       if (error) {
         console.error(
-  "Theme preference load error:",
-  {
-    message: error.message,
-    details: error.details,
-    hint: error.hint,
-    code: error.code,
-  }
-);
-
-        const cachedPreference =
-          getCachedPreference();
-
-        setPreference(
-          cachedPreference
+          "Theme preference load error:",
+          error
         );
-
-        applyTheme(
-          resolveTheme(
-            cachedPreference
-          )
-        );
-
         return;
       }
 
       const nextPreference =
-        isThemePreference(
-          data?.theme
-        )
-          ? data.theme
-          : "system";
+        (data?.theme as ThemePreference | undefined) ??
+        storedPreference;
 
-      cachePreference(
-        nextPreference
-      );
-
-      setPreference(
-        nextPreference
-      );
-
-      applyTheme(
-        resolveTheme(
-          nextPreference
-        )
-      );
+      storePreference(nextPreference);
+      setPreference(nextPreference);
+      applyTheme(resolveTheme(nextPreference));
     }
 
-    async function initializeTheme() {
-      const {
-        data: { session },
-      } =
-        await supabase.auth.getSession();
-
-      if (!mounted) {
-        return;
-      }
-
-      await loadThemePreference(
-        session?.user ?? null
-      );
-    }
-
-    initializeTheme();
+    loadThemePreference();
 
     const {
       data: { subscription },
-    } =
-      supabase.auth.onAuthStateChange(
-        (_event, session) => {
-          void loadThemePreference(
-            session?.user ?? null
+    } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        const storedPreference =
+          getStoredPreference();
+
+        // If the user just signed out, preserve the
+        // theme that was already selected.
+        if (!session?.user) {
+          setPreference(storedPreference);
+          applyTheme(
+            resolveTheme(storedPreference)
           );
+          return;
         }
-      );
 
-    const handlePreferenceUpdated:
-      EventListener = (event) => {
-        const customEvent =
-          event as CustomEvent<ThemePreference>;
+        loadThemePreference();
+      }
+    );
 
-        const nextPreference =
-          isThemePreference(
-            customEvent.detail
-          )
-            ? customEvent.detail
-            : "system";
+    function handlePreferenceUpdated(
+      event: Event
+    ) {
+      const customEvent =
+        event as CustomEvent<ThemePreference>;
 
-        cachePreference(
-          nextPreference
-        );
+      const nextPreference =
+        customEvent.detail ?? "system";
 
-        setPreference(
-          nextPreference
-        );
-
-        applyTheme(
-          resolveTheme(
-            nextPreference
-          )
-        );
-      };
+      storePreference(nextPreference);
+      setPreference(nextPreference);
+      applyTheme(resolveTheme(nextPreference));
+    }
 
     window.addEventListener(
       "appstack-theme-preference",
-      handlePreferenceUpdated
+      handlePreferenceUpdated as EventListener
     );
 
     return () => {
       mounted = false;
-
       subscription.unsubscribe();
 
       window.removeEventListener(
         "appstack-theme-preference",
-        handlePreferenceUpdated
+        handlePreferenceUpdated as EventListener
       );
     };
   }, []);
 
   useEffect(() => {
-    if (
-      preference !== "system"
-    ) {
+    if (preference !== "system") {
       return;
     }
 
-    const mediaQuery =
-      window.matchMedia(
-        "(prefers-color-scheme: dark)"
-      );
+    const mediaQuery = window.matchMedia(
+      "(prefers-color-scheme: dark)"
+    );
 
     const applySystemTheme = () => {
-      applyTheme(
-        getSystemTheme()
-      );
+      applyTheme(getSystemTheme());
     };
 
     mediaQuery.addEventListener(
