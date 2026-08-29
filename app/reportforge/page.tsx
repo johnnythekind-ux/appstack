@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 
 import Page from "../components/Page";
@@ -57,6 +58,8 @@ function workspaceItemToSavedAnalysis(
 }
 
 export default function ReportForgePage() {
+  const router = useRouter();
+
   const [analysis, setAnalysis] =
     useState<SavedAnalysis | null>(null);
   const [report, setReport] = useState("");
@@ -515,6 +518,23 @@ Based on the 70% rule, the purchase price ${
     toast.success("Saved report opened.");
   }
 
+  function createProcessingJobFromReport() {
+    if (!existingReport?.id) {
+      toast.error("Save the report before creating a processing job.");
+      return;
+    }
+
+    localStorage.setItem(
+      "appstack_pending_job_context",
+      JSON.stringify({
+        reportId: existingReport.id,
+        reportTitle: existingReport.title,
+      })
+    );
+
+    router.push("/jobs");
+  }
+
   function closeReportViewer() {
     setReportVisible(false);
 
@@ -855,12 +875,22 @@ Based on the 70% rule, the purchase price ${
                 into the execution stage as a processing job.
               </p>
 
-              <Link
-                href="/workspace"
-                className="mt-4 inline-flex rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500"
-              >
-                Continue to Workspace
-              </Link>
+              <div className="mt-4 flex flex-wrap gap-3">
+                <button
+                  type="button"
+                  onClick={createProcessingJobFromReport}
+                  className="inline-flex items-center justify-center rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:focus:ring-offset-slate-950"
+                >
+                  Create Processing Job
+                </button>
+
+                <Link
+                  href="/workspace"
+                  className="inline-flex items-center justify-center rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-slate-400 hover:bg-slate-50 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100 dark:hover:border-slate-600 dark:hover:bg-slate-800 dark:focus:ring-offset-slate-950"
+                >
+                  Continue to Workspace
+                </Link>
+              </div>
             </div>
           )}
           </Card>
