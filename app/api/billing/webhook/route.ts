@@ -44,6 +44,108 @@ function getSubscriptionPeriod(
   };
 }
 
+function getSubscriptionPriceId(
+  subscription: Stripe.Subscription
+) {
+  return subscription.items.data[0]?.price?.id ?? null;
+}
+
+function getSubscriptionCustomerId(
+  subscription: Stripe.Subscription
+) {
+  return typeof subscription.customer ===
+    "string"
+    ? subscription.customer
+    : subscription.customer.id;
+}
+
+function getSubscriptionState(
+  subscription: Stripe.Subscription
+) {
+  const active =
+    subscription.status === "active" ||
+    subscription.status === "trialing";
+
+  const cancellationScheduled =
+    Boolean(
+      subscription.cancel_at_period_end ||
+        subscription.cancel_at !== null
+    );
+
+  const {
+    currentPeriodStart,
+    currentPeriodEnd,
+  } = getSubscriptionPeriod(
+    subscription
+  );
+
+  return {
+    plan: active ? "pro" : "free",
+
+    status: active
+      ? "active"
+      : subscription.status === "past_due"
+        ? "past_due"
+        : "canceled",
+
+    stripe_customer_id:
+      getSubscriptionCustomerId(
+        subscription
+      ),
+
+    stripe_subscription_id:
+      subscription.id,
+
+    stripe_price_id:
+      getSubscriptionPriceId(
+        subscription
+      ),
+
+    cancel_at_period_end:
+      cancellationScheduled,
+
+    current_period_start:
+      currentPeriodStart,
+
+    current_period_end:
+      currentPeriodEnd,
+  };
+}
+
+async function syncSubscription(
+  subscription: Stripe.Subscription
+) {
+  const userId =
+    subscription.metadata
+      ?.appstack_user_id;
+
+  if (!userId) {
+    console.error(
+      "Subscription is missing appstack_user_id metadata."
+    );
+
+    return;
+  }
+
+  const {
+    error,
+  } = await supabaseAdmin
+    .from("subscriptions")
+    .update(
+      getSubscriptionState(
+        subscription
+      )
+    )
+    .eq(
+      "user_id",
+      userId
+    );
+
+  if (error) {
+    throw error;
+  }
+}
+
 export async function POST(
   request: NextRequest
 ) {
@@ -106,9 +208,6 @@ export async function POST(
   }
 
   try {
-    const supabase =
-      supabaseAdmin;
-
     switch (event.type) {
       case "checkout.session.completed": {
         const session =
@@ -141,7 +240,7 @@ export async function POST(
 
         const {
           error,
-        } = await supabase
+        } = await supabaseAdmin
           .from("subscriptions")
           .update({
             plan: "pro",
@@ -165,102 +264,16 @@ export async function POST(
         break;
       }
 
+      case "customer.subscription.created":
       case "customer.subscription.updated":
       case "customer.subscription.deleted": {
         const subscription =
           event.data
             .object as Stripe.Subscription;
 
-        const userId =
-          subscription.metadata
-            ?.appstack_user_id;
-
-        if (!userId) {
-          console.error(
-            "Subscription is missing appstack_user_id metadata."
-          );
-
-          break;
-        }
-
-        const active =
-          subscription.status ===
-            "active" ||
-          subscription.status ===
-            "trialing";
-
-        /*
-         * Stripe may represent a future
-         * cancellation using either
-         * cancel_at_period_end or an
-         * explicit cancel_at timestamp.
-         *
-         * This is cancellation state,
-         * not the normal billing-period
-         * boundary.
-         */
-        const cancellationScheduled =
+        await syncSubscription(
           subscription
-            .cancel_at_period_end ||
-          subscription.cancel_at !==
-            null;
-
-        /*
-         * In the Stripe object model used
-         * by AppStack, current period
-         * timestamps are present on the
-         * subscription item.
-         */
-        const {
-          currentPeriodStart,
-          currentPeriodEnd,
-        } =
-          getSubscriptionPeriod(
-            subscription
-          );
-
-        const {
-          error,
-        } = await supabase
-          .from("subscriptions")
-          .update({
-            plan: active
-              ? "pro"
-              : "free",
-
-            status: active
-              ? "active"
-              : subscription.status ===
-                  "past_due"
-                ? "past_due"
-                : "canceled",
-
-            stripe_customer_id:
-              typeof subscription.customer ===
-              "string"
-                ? subscription.customer
-                : subscription.customer.id,
-
-            stripe_subscription_id:
-              subscription.id,
-
-            cancel_at_period_end:
-              cancellationScheduled,
-
-            current_period_start:
-              currentPeriodStart,
-
-            current_period_end:
-              currentPeriodEnd,
-          })
-          .eq(
-            "user_id",
-            userId
-          );
-
-        if (error) {
-          throw error;
-        }
+        );
 
         break;
       }
