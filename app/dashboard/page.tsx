@@ -481,51 +481,63 @@ analysis-to-report-to-job workflow.
         </Card>
       </section>
 
-      <section className="mt-6 grid grid-cols-1 gap-4 md:grid-cols-3">
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-            Active Jobs
-          </p>
-
-          <p className="mt-2 text-2xl font-bold">
-            {activeJobs.length}
+      <section className="mt-6">
+        <div className="mb-4">
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
+            Operational Status
           </p>
 
           <p className="mt-2 text-sm text-muted">
-            Execution activity will appear here when jobs are created.
+            Job status is a breakdown of the {jobs.length} jobs already included in Total Items.
           </p>
-        </Card>
+        </div>
 
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-            Completed Jobs
-          </p>
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+          <Card>
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+              Active Jobs
+            </p>
 
-          <p className="mt-2 text-2xl font-bold">
-            {completedJobs.length}
-          </p>
+            <p className="mt-2 text-2xl font-bold">
+              {activeJobs.length}
+            </p>
 
-          <p className="mt-2 text-sm text-muted">
-            Operational workflows that reached their final state.
-          </p>
-        </Card>
+            <p className="mt-2 text-sm text-muted">
+              Jobs currently in an active processing state.
+            </p>
+          </Card>
 
-        <Card>
-          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-            Latest Analysis
-          </p>
+          <Card>
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+              Completed Jobs
+            </p>
 
-          <p className="mt-2 truncate text-lg font-bold">
-            {latestAnalysis
-              ? latestAnalysis.title
-              : "No analyses yet"}
-          </p>
+            <p className="mt-2 text-2xl font-bold">
+              {completedJobs.length}
+            </p>
 
-          <p className="mt-2 text-sm text-muted">
-            {latestAnalysis?.address ||
-              "Your latest saved analysis will appear here."}
-          </p>
-        </Card>
+            <p className="mt-2 text-sm text-muted">
+              Jobs from the total above that reached their final state.
+            </p>
+          </Card>
+
+          <Card>
+            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+              Latest Analysis
+            </p>
+
+            <p className="mt-2 truncate text-lg font-bold">
+              {latestAnalysis
+                ? latestAnalysis.title
+                : "No analyses yet"}
+            </p>
+
+            <p className="mt-2 text-sm text-muted">
+              {latestAnalysis?.address ||
+                "Your latest saved analysis will appear here."}
+            </p>
+          </Card>
+        </div>
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-4">
