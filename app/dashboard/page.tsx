@@ -185,14 +185,6 @@ export default function DashboardPage() {
 
   const recentItems = sortedItems.slice(0, 8);
 
-  const latestAnalysis = analyses
-    .slice()
-    .sort(
-      (a, b) =>
-        new Date(b.created_at).getTime() -
-        new Date(a.created_at).getTime()
-    )[0];
-
   const canonicalIntelligence = executiveIntelligence?.intelligence ?? null;
   const canonicalPriorities = executiveIntelligence?.priorities ?? [];
 
@@ -492,7 +484,7 @@ analysis-to-report-to-job workflow.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <Card>
             <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
               Active Jobs
@@ -521,22 +513,6 @@ analysis-to-report-to-job workflow.
             </p>
           </Card>
 
-          <Card>
-            <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
-              Latest Analysis
-            </p>
-
-            <p className="mt-2 truncate text-lg font-bold">
-              {latestAnalysis
-                ? latestAnalysis.title
-                : "No analyses yet"}
-            </p>
-
-            <p className="mt-2 text-sm text-muted">
-              {latestAnalysis?.address ||
-                "Your latest saved analysis will appear here."}
-            </p>
-          </Card>
         </div>
       </section>
 
