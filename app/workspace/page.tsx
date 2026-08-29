@@ -601,10 +601,16 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
   }
 
   async function generateReportFromSelectedItem() {
+    if (!selectedItem || selectedItem.type !== "analysis") {
+      return;
+    }
+
+    const analysisId = selectedItem.id;
     const report = await generateReportFromItem(selectedItem);
 
     if (report) {
       toast.success("Report generated successfully.");
+      router.push(`/reportforge?analysisId=${encodeURIComponent(analysisId)}`);
     }
   }
 
@@ -674,10 +680,14 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
     }
 
     if (action.actionType === "generate_report") {
+      const analysisId = item.id;
       const report = await generateReportFromItem(item);
 
       if (report) {
         toast.success("Report generated from priority action.");
+        router.push(
+          `/reportforge?analysisId=${encodeURIComponent(analysisId)}`
+        );
       }
 
       return;
