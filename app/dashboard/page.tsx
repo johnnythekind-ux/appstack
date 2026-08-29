@@ -163,6 +163,10 @@ export default function DashboardPage() {
     (item) => item.type === "job"
   );
 
+  const tasks = items.filter(
+    (item) => item.type === "task"
+  );
+
   // These raw job counts are retained only for the activity cards below.
   // They no longer drive the Executive Briefing.
   const activeJobs = jobs.filter(
@@ -425,7 +429,7 @@ analysis-to-report-to-job workflow.
         </Card>
       </section>
 
-      <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-4">
+      <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
         <Card>
           <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
             Total Items
@@ -463,6 +467,16 @@ analysis-to-report-to-job workflow.
 
           <p className="mt-2 text-3xl font-bold">
             {jobs.length}
+          </p>
+        </Card>
+
+        <Card>
+          <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
+            Tasks
+          </p>
+
+          <p className="mt-2 text-3xl font-bold">
+            {tasks.length}
           </p>
         </Card>
       </section>

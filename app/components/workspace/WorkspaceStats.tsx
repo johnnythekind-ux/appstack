@@ -2,6 +2,7 @@ type WorkspaceStatsProps = {
   analysesCount: number;
   reportsCount: number;
   jobsCount: number;
+  tasksCount: number;
   progressPercent: number;
   workspaceHealth: string;
 };
@@ -10,6 +11,7 @@ export default function WorkspaceStats({
   analysesCount,
   reportsCount,
   jobsCount,
+  tasksCount,
   progressPercent,
   workspaceHealth,
 }: WorkspaceStatsProps) {
@@ -23,7 +25,7 @@ export default function WorkspaceStats({
     "mt-2 text-2xl font-bold text-foreground";
 
   return (
-    <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-5">
+    <section className="mt-8 grid grid-cols-2 gap-4 lg:grid-cols-6">
       <div className={statCardClass}>
         <p className={labelClass}>
           Analyses
@@ -56,6 +58,16 @@ export default function WorkspaceStats({
 
       <div className={statCardClass}>
         <p className={labelClass}>
+          Tasks
+        </p>
+
+        <p className={valueClass}>
+          {tasksCount}
+        </p>
+      </div>
+
+      <div className={statCardClass}>
+        <p className={labelClass}>
           Progress
         </p>
 
@@ -64,7 +76,7 @@ export default function WorkspaceStats({
         </p>
       </div>
 
-      <div className={`col-span-2 lg:col-span-1 ${statCardClass}`}>
+      <div className={statCardClass}>
         <p className={labelClass}>
           Health
         </p>

@@ -219,6 +219,7 @@ export default function WorkspacePage() {
   const analyses = items.filter((item) => item.type === "analysis");
   const reports = items.filter((item) => item.type === "report");
   const jobs = items.filter((item) => item.type === "job");
+  const tasks = items.filter((item) => item.type === "task");
 
   const filteredItems = items
     .filter((item) => {
@@ -820,6 +821,7 @@ Based on the 70% rule, this deal currently receives a ${item.status} recommendat
         analysesCount={analyses.length}
         reportsCount={reports.length}
         jobsCount={jobs.length}
+        tasksCount={tasks.length}
         progressPercent={workspaceIntelligence.progressPercent}
         workspaceHealth={workspaceIntelligence.workspaceHealth}
       />
