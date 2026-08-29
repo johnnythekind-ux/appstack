@@ -127,7 +127,7 @@ export default function WorkspacePage() {
               setSearch("");
               await loadSelectedItem(requestedItem, true);
             } else {
-              toast.error("The requested workspace item could not be found.");
+              window.history.replaceState({}, "", "/workspace");
             }
           }
         }
@@ -446,6 +446,7 @@ export default function WorkspacePage() {
       if (selectedItem && deletedIdSet.has(selectedItem.id)) {
         setSelectedItem(null);
         setSelectedItemEvents([]);
+        window.history.replaceState({}, "", "/workspace");
       }
 
       const {
@@ -536,6 +537,7 @@ export default function WorkspacePage() {
 
     setSelectedItem(null);
     setSelectedItemEvents([]);
+    window.history.replaceState({}, "", "/workspace");
     toast.success("Item deleted successfully.");
   }
 
