@@ -940,7 +940,7 @@ Based on the 70% rule, the purchase price ${
               4. Execution handoff
             </p>
             <p className="mt-2 text-sm leading-6 text-slate-500 dark:text-slate-400">
-              Workspace can recognize the report and advance it toward job execution.
+            ReportForge can hand the persisted report directly into Jobs, while Workspace continues to recognize and orchestrate the same relationship.
             </p>
           </div>
         </div>
