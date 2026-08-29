@@ -71,6 +71,7 @@ export default function WorkspacePage() {
   const [deletingSelected, setDeletingSelected] = useState(false);
 
   const currentSelectionRef = useRef<HTMLDivElement | null>(null);
+  const requestedItemHandledRef = useRef(false);
   const router = useRouter();
 
   const workspaceAnalysis = analyzeWorkspaceEvents(
@@ -108,6 +109,28 @@ export default function WorkspacePage() {
 
         const workspaceItems = data || [];
         setItems(workspaceItems);
+
+        if (!requestedItemHandledRef.current) {
+          const requestedItemId = new URLSearchParams(
+            window.location.search
+          ).get("itemId");
+
+          if (requestedItemId) {
+            requestedItemHandledRef.current = true;
+
+            const requestedItem = workspaceItems.find(
+              (item) => item.id === requestedItemId
+            );
+
+            if (requestedItem) {
+              setFilter("all");
+              setSearch("");
+              await loadSelectedItem(requestedItem, true);
+            } else {
+              toast.error("The requested workspace item could not be found.");
+            }
+          }
+        }
 
         const {
           data: intelligence,

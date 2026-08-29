@@ -673,9 +673,10 @@ analysis-to-report-to-job workflow.
             initialCount={5}
           >
             {(item: any, index: number) => (
-              <div
+              <Link
                 key={`${item.type}-${item.id}-${item.created_at ?? "no-date"}-${index}`}
-                className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 sm:flex-row sm:items-center sm:justify-between"
+                href={`/workspace?itemId=${encodeURIComponent(item.id)}`}
+                className="flex flex-col gap-3 rounded-xl border border-border bg-surface p-4 transition hover:border-accent hover:bg-surface-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent sm:flex-row sm:items-center sm:justify-between"
               >
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wider text-subtle">
@@ -703,7 +704,7 @@ analysis-to-report-to-job workflow.
                     {new Date(item.created_at).toLocaleString()}
                   </p>
                 </div>
-              </div>
+              </Link>
             )}
           </ExpandableList>
         )}
