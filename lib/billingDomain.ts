@@ -41,6 +41,7 @@ export type SubscriptionRecord = {
   currentPeriodEnd?: string | null;
 
   cancelAtPeriodEnd: boolean;
+  cancelAt?: string | null;
 };
 
 export type EntitlementDecision = {

@@ -66,12 +66,6 @@ function getSubscriptionState(
     subscription.status === "active" ||
     subscription.status === "trialing";
 
-  const cancellationScheduled =
-    Boolean(
-      subscription.cancel_at_period_end ||
-        subscription.cancel_at !== null
-    );
-
   const {
     currentPeriodStart,
     currentPeriodEnd,
@@ -102,7 +96,12 @@ function getSubscriptionState(
       ),
 
     cancel_at_period_end:
-      cancellationScheduled,
+      subscription.cancel_at_period_end,
+
+    cancel_at:
+      timestampToISOString(
+        subscription.cancel_at
+      ),
 
     current_period_start:
       currentPeriodStart,

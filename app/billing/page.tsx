@@ -56,6 +56,30 @@ function formatBillingDate(value: string) {
   });
 }
 
+function getCancellationLabel(
+  subscription: SubscriptionRecord
+) {
+  if (subscription.status === "canceled") {
+    return "Completed";
+  }
+
+  if (subscription.cancelAt) {
+    return `Scheduled for ${formatBillingDate(
+      subscription.cancelAt
+    )}`;
+  }
+
+  if (subscription.cancelAtPeriodEnd) {
+    return subscription.currentPeriodEnd
+      ? `Scheduled for ${formatBillingDate(
+          subscription.currentPeriodEnd
+        )}`
+      : "Scheduled at period end";
+  }
+
+  return "Not scheduled";
+}
+
 function getStatusLabel(
   status: SubscriptionRecord["status"]
 ) {
@@ -552,12 +576,10 @@ export default function BillingPage() {
                     </p>
 
                     <p className="mt-1 text-muted">
-  {subscription.status === "canceled"
-    ? "Completed"
-    : subscription.cancelAtPeriodEnd
-      ? "Scheduled at period end"
-      : "Not scheduled"}
-</p>
+                      {getCancellationLabel(
+                        subscription
+                      )}
+                    </p>
                   </div>
                 </div>
               </div>

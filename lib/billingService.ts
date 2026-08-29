@@ -25,6 +25,7 @@ type SubscriptionRow = {
   current_period_end: string | null;
 
   cancel_at_period_end: boolean;
+  cancel_at: string | null;
 
   created_at?: string;
   updated_at?: string;
@@ -70,6 +71,9 @@ function mapSubscriptionRow(
 
     cancelAtPeriodEnd:
       row.cancel_at_period_end,
+
+    cancelAt:
+      row.cancel_at,
   };
 }
 
@@ -90,6 +94,7 @@ function createDefaultSubscription(
     currentPeriodEnd: null,
 
     cancelAtPeriodEnd: false,
+    cancelAt: null,
   };
 }
 
