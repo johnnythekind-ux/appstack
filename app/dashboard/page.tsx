@@ -24,7 +24,7 @@ const engineeringConcepts = [
   "Shared services",
   "CRUD operations",
   "Event tracking",
-  "Background processing",
+  "Job lifecycle modeling",
   "Deterministic business rules",
   "Platform intelligence",
 ];
@@ -288,7 +288,7 @@ export default function DashboardPage() {
   return (
     <Page
       title="Dashboard"
-      description="Explore a modern SaaS architecture by following a guided workflow that demonstrates business rules, shared services, reporting, background processing, and platform intelligence."
+      description="Explore a modern SaaS architecture through a connected workflow that demonstrates business rules, shared services, persistence, reporting, operational job lifecycles, and platform intelligence."
     >
       <ExecutiveBriefing status={platformStatus} />
 
