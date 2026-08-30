@@ -2104,7 +2104,7 @@ A successful local test tells you:
 
 > This works in my development environment.
 
-A successful production test tells you:
+A successful manual production verification tells you:
 
 > The deployed system, external integrations, environment configuration, and runtime behavior work together.
 

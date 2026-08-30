@@ -1015,7 +1015,7 @@ User-Defined Work
 
 ```text
 Persisted Task
-Pending / Completed Work Context
+Outstanding Work Context
 Intelligence Signal
 ```
 
@@ -1035,7 +1035,7 @@ Intelligence
 Health / Progress / Priority Impact
 ```
 
-Removing or completing relevant work can cause Intelligence to recalculate.
+Removing relevant work can cause Intelligence to recalculate.
 
 ---
 
@@ -1190,8 +1190,10 @@ Conceptually:
 
 ```text
 Workspace State
-      ↓
-Event Analysis
+      +
+Event Context (where applicable)
+      +
+Relationships
       ↓
 Workspace Analysis
       ↓
@@ -1210,7 +1212,7 @@ Strategy
 Insights
 ```
 
-Each stage adds a different kind of interpretation.
+Each stage adds a different kind of interpretation without implying that every Intelligence output depends on event analysis.
 
 ---
 
@@ -1557,6 +1559,8 @@ It answers:
 
 Stripe provides the external billing infrastructure.
 
+The deployed AppStack portfolio uses Stripe sandbox/test mode for billing verification; it does not represent live commercial billing.
+
 AppStack maintains the internal representation needed for product behavior.
 
 ---
@@ -1737,7 +1741,7 @@ This protects product policy even if client behavior is manipulated.
 
 ## Purpose
 
-Usage metering records consumption of limited capabilities.
+Usage metering measures consumption of limited capabilities.
 
 It answers:
 
@@ -1745,9 +1749,9 @@ It answers:
 
 ---
 
-## Metered Capabilities
+## Measured Capabilities
 
-Examples include:
+AppStack measures plan usage for:
 
 ```text
 Analyses
@@ -1756,9 +1760,18 @@ Jobs
 AI
 ```
 
+The mechanism is not identical for every capability.
+
+- **Analyses** — usage is derived from persisted analysis activity.
+- **Reports** — usage is derived from persisted report activity.
+- **Jobs** — usage is derived from persisted job activity.
+- **AI requests** — usage is explicitly metered and recorded.
+
 ---
 
 ## Workflow
+
+For persisted workspace capabilities:
 
 ```text
 Operation Requested
@@ -1767,10 +1780,22 @@ Entitlement Check
        ↓
 Operation Succeeds
        ↓
-Usage Recorded
+Persisted Activity Contributes to Usage
 ```
 
-Usage is interpreted within the relevant subscription period.
+For AI:
+
+```text
+Advisor Request
+       ↓
+Setting / Entitlement / Usage Check
+       ↓
+Model Invocation
+       ↓
+AI Usage Recorded
+```
+
+Usage is evaluated within the relevant subscription period. This distinction keeps the documentation aligned with the actual metering model instead of implying that every capability writes the same kind of usage record.
 
 ---
 
@@ -1861,25 +1886,26 @@ It stores user preferences consumed by those systems.
 
 Shared services centralize reusable application operations.
 
-Representative responsibilities include:
+Representative shared-service responsibilities include:
 
 ```text
-workspaceService
-eventService
-analysisService
-jobService
-billingService
-billingUsageService
-recommendationService
-workspaceIntelligenceService
-workspacePriorityService
-workspaceDirectorService
-workspaceForecastService
-workspaceRiskService
-workspaceStrategyService
-workspaceAdvisorService
-decisionService
+Workspace Persistence
+Event Persistence
+Analysis Operations
+Job Operations
+Billing Synchronization
+Usage Evaluation
+Recommendation Logic
+Workspace Intelligence
+Priority Derivation
+Director Planning
+Forecasting
+Risk Evaluation
+Strategy
+Advisor Integration
 ```
+
+These names describe architectural responsibilities rather than requiring every responsibility to map one-to-one to a specifically named source file.
 
 ---
 
@@ -2005,6 +2031,8 @@ Subscriptions
 Customer Billing Management
 Billing Events
 ```
+
+AppStack's deployed portfolio integration uses Stripe sandbox/test mode.
 
 ## OpenAI
 
@@ -2211,6 +2239,8 @@ Feature Access
 
 This separates payment infrastructure from product policy.
 
+The deployed portfolio exercises this workflow using Stripe sandbox/test mode.
+
 ---
 
 # 58. Module Dependency Principles
@@ -2346,9 +2376,9 @@ Examples:
 
 ```text
 Jobs
-Current lifecycle simulation
+Current persisted lifecycle through a server route
       ↓
-Future queue infrastructure
+Future durable queue / worker infrastructure
 ```
 
 ```text
@@ -2447,52 +2477,52 @@ This keeps module design consistent with the rest of AppStack.
                          USER
                            │
                            ▼
-                   AUTHENTICATION
+                    AUTHENTICATION
                            │
                            ▼
-                     APPSTACK SHELL
+                      APPSTACK SHELL
                            │
-        ┌──────────────────┼──────────────────┐
-        │                  │                  │
-        ▼                  ▼                  ▼
-    DASHBOARD          WORKSPACE         DEAL ANALYZER
-        │                  │                  │
-        │                  │                  ▼
-        │                  │              ANALYSIS
-        │                  │                  │
-        │                  │                  ▼
-        │                  └─────────── REPORTFORGE
-        │                                     │
-        │                                     ▼
-        │                                   REPORT
-        │                                     │
-        │                                     ▼
-        │                                    JOBS
-        │                                     │
-        │                                     ▼
-        │                                   EVENTS
-        │                                     │
-        │                                     ▼
-        │                              INTELLIGENCE
-        │                                     │
-        │                      ┌──────────────┼──────────────┐
-        │                      │              │              │
-        │                      ▼              ▼              ▼
-        │                  DIRECTOR       FORECAST          RISK
-        │                      │              │              │
-        │                      └──────┬───────┴──────┬───────┘
-        │                             │              │
-        │                             ▼              ▼
-        │                          STRATEGY        INSIGHTS
-        │                             │              │
-        │                             └──────┬───────┘
-        │                                    ▼
-        │                                 ADVISOR
-        │                                    │
-        └────────────────────────────────────┘
+         ┌─────────────────┼─────────────────┐
+         │                 │                 │
+         ▼                 ▼                 ▼
+     DASHBOARD         WORKSPACE        DEAL ANALYZER
+         │                 │                 │
+         │                 │                 ▼
+         │                 │              ANALYSIS
+         │                 │                 │
+         │                 │                 ▼
+         │                 └────────── REPORTFORGE
+         │                                   │
+         │                                   ▼
+         │                                 REPORT
+         │                                   │
+         │                                   ▼
+         │                                  JOBS
+         │                                   │
+         │                                   ▼
+         │                                 EVENTS
+         │                                   │
+         │                                   ▼
+         │                            INTELLIGENCE
+         │                                   │
+         │                    ┌──────────────┼──────────────┐
+         │                    │              │              │
+         │                    ▼              ▼              ▼
+         │                DIRECTOR       FORECAST          RISK
+         │                    │              │              │
+         │                    └──────┬───────┴──────┬───────┘
+         │                           │              │
+         │                           ▼              ▼
+         │                        STRATEGY        INSIGHTS
+         │                           │              │
+         │                           └──────┬───────┘
+         │                                  ▼
+         │                               ADVISOR
+         │                                  │
+         └──────────────────────────────────┘
                            │
                            ▼
-                     USER ACTION
+                      USER ACTION
 
 
 CROSS-CUTTING PLATFORM SYSTEMS
@@ -2552,7 +2582,8 @@ ENTITLEMENTS
 enforce product policy.
 
 USAGE
-measures consumption.
+measures persisted capability activity
+and explicitly records AI consumption.
 
 SETTINGS
 preserve user preferences.
@@ -2613,7 +2644,7 @@ Billing synchronizes commercial state.
 
 Entitlements translate commercial state into product access.
 
-Usage tracks consumption.
+Usage measures consumption according to the capability's actual metering model.
 
 Settings preserve user-controlled behavior.
 

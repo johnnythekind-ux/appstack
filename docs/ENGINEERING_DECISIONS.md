@@ -3229,8 +3229,8 @@ The major AppStack decisions can be grouped into several themes.
 
 ## Production Engineering
 
-- Production verification
-- End-to-end smoke tests
+- Manual production verification
+- Manual end-to-end smoke testing
 - Safe cleanup
 - Root-cause debugging
 - Accurate documentation
