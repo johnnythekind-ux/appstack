@@ -93,6 +93,74 @@ The system is intentionally designed so that AI does not become the source of ap
 
 ---
 
+# Product Walkthrough
+
+The screenshots below show AppStack's primary workflow and the architectural responsibilities demonstrated by each stage.
+
+## 1. Dashboard — System Overview
+
+![AppStack Dashboard](docs/images/dashboard.png)
+
+Dashboard provides an operational view of the application, combining persisted activity, workspace health, progress, priority state, and engineering context without becoming the primary management surface.
+
+---
+
+## 2. Deal Analyzer — Deterministic Business Logic
+
+![AppStack Deal Analyzer](docs/images/deal-analyzer.png)
+
+Deal Analyzer converts structured property inputs into a deterministic recommendation using explicit business rules. The resulting analysis can be persisted and reused by downstream modules.
+
+---
+
+## 3. ReportForge — Persistent Reporting & Workflow Handoff
+
+![AppStack ReportForge](docs/images/reportforge.png)
+
+ReportForge transforms a persisted analysis into a reusable investor report while preserving the relationship to its source analysis. A saved report can hand its context directly into the Jobs workflow.
+
+---
+
+## 4. Jobs — Modeled Execution Lifecycle
+
+![AppStack Jobs](docs/images/jobs.png)
+
+Jobs demonstrates persisted operational state through a modeled lifecycle of Queued → Running → Completed. The implementation preserves job state and source-report relationships without claiming dedicated distributed queue infrastructure.
+
+---
+
+## 5. Workspace — Shared Operational State
+
+![AppStack Workspace](docs/images/workspace.png)
+
+Workspace acts as the central management surface for analyses, reports, jobs, and tasks. It exposes persisted relationships, operational status, search, filtering, selection, and cross-module navigation.
+
+---
+
+## 6. Intelligence — Deterministic Operational Interpretation
+
+![AppStack Intelligence](docs/images/intelligence.png)
+
+Workspace Intelligence interprets authenticated, user-scoped application state to derive health, workflow patterns, priorities, forecasts, risk, strategy, and insights before AI reasoning is introduced.
+
+---
+
+## 7. AI Advisor — Grounded AI Synthesis
+
+![AppStack AI Advisor](docs/images/advisor.png)
+
+The AI Advisor operates downstream of deterministic intelligence. Its advisory output is grounded in structured workspace evidence rather than treating the language model as the application's source of truth.
+
+---
+
+## 8. Billing — SaaS Identity, Entitlements & Usage
+
+![AppStack Billing](docs/images/billing.png)
+
+Billing connects authenticated identity, persisted subscription state, deterministic entitlements, current-period usage metering, and Stripe sandbox integration into the application's access-control model.
+
+***
+
 # Core Modules
 
 ## Dashboard
