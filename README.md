@@ -979,6 +979,7 @@ The deeper engineering documentation is maintained in the `docs/` directory.
 
 | Document | Purpose |
 | --- | --- |
+| [Case Study](docs/CASE_STUDY.md) | Engineering journey, architectural evolution, major challenges, production debugging, decisions, tradeoffs, and lessons from building AppStack |
 | [Architecture](docs/ARCHITECTURE.md) | System organization, boundaries, layers, persistence, security, billing, AI, and deployment architecture |
 | [System Workflow](docs/SYSTEM_WORKFLOW.md) | End-to-end movement of information and work through the application |
 | [Intelligence Pipeline](docs/INTELLIGENCE_PIPELINE.md) | Deterministic intelligence architecture and the bounded AI Advisor layer |
